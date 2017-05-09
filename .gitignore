@@ -1,0 +1,5 @@
+# IntelliJ stuff:
+.idea/
+
+# Build files
+/target/
