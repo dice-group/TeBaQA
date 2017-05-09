@@ -4,7 +4,7 @@ import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.load.Dataset;
-import org.aksw.qa.commons.load.QALD_Loader;
+import org.aksw.qa.commons.load.LoaderController;
 import org.apache.log4j.Logger;
 
 import java.util.List;
@@ -27,7 +27,7 @@ public class PipelineController {
     }
 
     private void run() {
-        List<IQuestion> load = QALD_Loader.load(dataset);
+        List<IQuestion> load = LoaderController.load(dataset);
         List<HAWKQuestion> questions = HAWKQuestionFactory.createInstances(load);
     }
 
