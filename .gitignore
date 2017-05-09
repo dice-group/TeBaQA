@@ -1,5 +1,7 @@
 # IntelliJ stuff:
 .idea/
+*.iml
 
 # Build files
 /target/
+log.out
