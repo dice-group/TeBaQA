@@ -4,4 +4,7 @@
 
 # Build files
 /target/
+
+# Log files
 log.out
+*.log

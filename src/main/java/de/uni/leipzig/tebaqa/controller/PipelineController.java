@@ -14,22 +14,23 @@ import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class PipelineController {
     private static Logger log = Logger.getLogger(PipelineController.class);
 
-    private Dataset dataset;
+    private List<Dataset> datasets = new ArrayList<Dataset>();
     private StanfordCoreNLP pipeline;
 
     public static void main(String args[]) {
         PipelineController controller = new PipelineController();
         log.info("Configuring controller");
 
-        Dataset dataset = Dataset.QALD1_Test_dbpedia;
-        controller.setDataset(dataset);
-        log.info("Dataset: " + dataset);
+        controller.addDataset(Dataset.QALD6_Test_Multilingual);
+        controller.addDataset(Dataset.QALD7_Train_Multilingual);
 
         controller.setStanfordNLPPipeline(new StanfordCoreNLP(
                 PropertiesUtils.asProperties(
@@ -42,36 +43,42 @@ public class PipelineController {
     }
 
     private void run() {
-        List<IQuestion> load = LoaderController.load(dataset);
-        List<HAWKQuestion> questions = HAWKQuestionFactory.createInstances(load);
+        List<HAWKQuestion> questions = new ArrayList<HAWKQuestion>();
+        for (Dataset d : datasets) {
+            List<IQuestion> load = LoaderController.load(d);
+            questions.addAll(HAWKQuestionFactory.createInstances(load));
+        }
         Fox fox = new Fox();
+        List<String> sparqlQueries = new ArrayList<String>();
+        HashMap<String, String> questionWithQuery = new HashMap<String, String>();
         for (HAWKQuestion q : questions) {
             String questionText = q.getLanguageToQuestion().get("en");
+            sparqlQueries.add(q.getSparqlQuery());
+            questionWithQuery.put(q.getSparqlQuery(), questionText);
             log.info(questionText);
             Map<String, List<Entity>> entities = fox.getEntities(questionText);
             log.info("Entities from FOX:" + entities);
             Annotation document = new Annotation(questionText);
             pipeline.annotate(document);
-            log.info("Annotated Document: " + document);
 
             Document doc = new Document(questionText);
             for (Sentence sent : doc.sentences()) {
                 List<String> parse = sent.posTags();
                 log.info("The parse of the sentence '" + sent + "' is " + parse);
-                List<String> words = sent.words();
-                for (int i = 0; i < words.size(); i++) {
-                    log.info(String.format("Word: '%s' is %s", words.get(i), parse.get(i)));
-                }
             }
         }
+        QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionWithQuery);
     }
 
-    private void setDataset(Dataset dataset) {
-        this.dataset = dataset;
+    private void setDatasets(List<Dataset> datasets) {
+        this.datasets = datasets;
+    }
+
+    private void addDataset(Dataset dataset) {
+        this.datasets.add(dataset);
     }
 
     private void setStanfordNLPPipeline(StanfordCoreNLP pipeline) {
         this.pipeline = pipeline;
     }
-
 }

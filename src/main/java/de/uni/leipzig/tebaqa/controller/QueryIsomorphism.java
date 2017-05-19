@@ -1,10 +1,5 @@
 package de.uni.leipzig.tebaqa.controller;
 
-import org.aksw.hawk.datastructures.HAWKQuestion;
-import org.aksw.hawk.datastructures.HAWKQuestionFactory;
-import org.aksw.qa.commons.datastructure.Question;
-import org.aksw.qa.commons.load.Dataset;
-import org.aksw.qa.commons.load.LoaderController;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -27,32 +22,19 @@ import java.util.List;
 /**
  * Source: https://github.com/AKSW/NLIWOD/blob/master/qa.hawk/src/main/java/org/aksw/hawk/experiment/QueryIsomorphism.java
  */
-public class QueryIsomorphism {
+class QueryIsomorphism {
     private static Logger log = Logger.getLogger(QueryIsomorphism.class);
 
-    public static void main(String[] args) {
+    QueryIsomorphism(HashMap<String, String> queries) {
         HashMap<Graph, Integer> graphs = new HashMap<Graph, Integer>();
-        Dataset[] datasets = Dataset.values();
-        for (Dataset d : datasets) {
-            List<HAWKQuestion> questions = new ArrayList<HAWKQuestion>(0);
-            try {
-                questions = HAWKQuestionFactory.createInstances(LoaderController.load(d));
-            } catch (Exception e) {
-                System.out.println(d.name());
-            }
-            for (Question q : questions) {
+        HashMap<String, List<String>> graphsWithQuestion = new HashMap<String, List<String>>();
+        for (String s : queries.keySet()) {
                 //build the graph associated to the query
                 final Graph g = GraphFactory.createDefaultGraph();
-                String sparql = "";
                 Query query = new Query();
                 try {
-                    sparql = q.getSparqlQuery();
-                } catch (NullPointerException e) {
-                    log.warn(e.toString(), e);
-                }
-                try {
                     ParameterizedSparqlString pss = new ParameterizedSparqlString();
-                    pss.append(sparql);
+                    pss.append(s);
                     query = pss.asQuery();
                 } catch (QueryParseException e) {
                     log.warn(e.toString(), e);
@@ -88,15 +70,20 @@ public class QueryIsomorphism {
                             present = true;
                             int i = graphs.get(g_present) + 1;
                             graphs.put(g_present, i);
+                            List<String> currGraphQuestions = graphsWithQuestion.get(g.toString());
+                            currGraphQuestions.add(queries.get(s));
                         }
                     }
                     if (present == false) {
                         graphs.put(g, 1);
+                        List<String> currGraph = new ArrayList<String>();
+                        currGraph.add(queries.get(s));
+                        graphsWithQuestion.put(g.toString(), currGraph);
                     }
                 } catch (NullPointerException e) {
                     log.warn(e.toString(), e);
                 }
-            }
+
         }
         //look at some properties
         int i = 0;
@@ -111,5 +98,12 @@ public class QueryIsomorphism {
         }
         System.out.print(i + "\n");
         System.out.print(j);
+        for (String graph : graphsWithQuestion.keySet()) {
+            log.info(graph);
+            List<String> list = graphsWithQuestion.get(graph);
+            for (String s : list) {
+                log.info("\t" + s);
+            }
+        }
     }
 }
