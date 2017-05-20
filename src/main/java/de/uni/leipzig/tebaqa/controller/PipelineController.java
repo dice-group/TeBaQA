@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class PipelineController {
     private static Logger log = Logger.getLogger(PipelineController.class);
@@ -45,15 +46,16 @@ public class PipelineController {
     private void run() {
         List<HAWKQuestion> questions = new ArrayList<HAWKQuestion>();
         for (Dataset d : datasets) {
-            List<IQuestion> load = LoaderController.load(d);
-            questions.addAll(HAWKQuestionFactory.createInstances(load));
+            //Filter all non multilingual questions
+            List<IQuestion> result = LoaderController.load(d).stream()
+                    .filter(question -> question.getLanguageToQuestion().size() > 2)
+                    .collect(Collectors.toList());
+            questions.addAll(HAWKQuestionFactory.createInstances(result));
         }
         Fox fox = new Fox();
-        List<String> sparqlQueries = new ArrayList<String>();
         HashMap<String, String> questionWithQuery = new HashMap<String, String>();
         for (HAWKQuestion q : questions) {
             String questionText = q.getLanguageToQuestion().get("en");
-            sparqlQueries.add(q.getSparqlQuery());
             questionWithQuery.put(q.getSparqlQuery(), questionText);
             log.info(questionText);
             Map<String, List<Entity>> entities = fox.getEntities(questionText);
