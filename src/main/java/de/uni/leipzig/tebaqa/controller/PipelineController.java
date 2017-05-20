@@ -46,9 +46,10 @@ public class PipelineController {
     private void run() {
         List<HAWKQuestion> questions = new ArrayList<HAWKQuestion>();
         for (Dataset d : datasets) {
-            //Filter all non multilingual questions
-            List<IQuestion> result = LoaderController.load(d).stream()
-                    .filter(question -> question.getLanguageToQuestion().size() > 2)
+            //Filter all monolingual questions without SPARQL query
+            List<IQuestion> load = LoaderController.load(d);
+            List<IQuestion> result = load.stream()
+                    .filter(question -> question.getLanguageToQuestion().size() > 2 && question.getSparqlQuery() != null)
                     .collect(Collectors.toList());
             questions.addAll(HAWKQuestionFactory.createInstances(result));
         }
@@ -66,7 +67,7 @@ public class PipelineController {
             Document doc = new Document(questionText);
             for (Sentence sent : doc.sentences()) {
                 List<String> parse = sent.posTags();
-                log.info("The parse of the sentence '" + sent + "' is " + parse);
+                //log.info("The parse of the sentence '" + sent + "' is " + parse);
             }
         }
         QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionWithQuery);

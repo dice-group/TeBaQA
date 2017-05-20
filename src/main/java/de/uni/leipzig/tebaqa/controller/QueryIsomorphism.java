@@ -49,11 +49,11 @@ class QueryIsomorphism {
                                 Node s = t.getSubject();
                                 Node o = t.getObject();
                                 Node p = NodeFactory.createLiteral("p");
-                                if (dict.containsKey(s) == false) {
+                                if (!dict.containsKey(s)) {
                                     dict.put(s, NodeFactory.createLiteral(String.valueOf(i)));
                                     i++;
                                 }
-                                if (dict.containsKey(o) == false) {
+                                if (!dict.containsKey(o)) {
                                     dict.put(o, NodeFactory.createLiteral(String.valueOf(i)));
                                     i++;
                                 }
@@ -74,7 +74,7 @@ class QueryIsomorphism {
                             currGraphQuestions.add(queries.get(s));
                         }
                     }
-                    if (present == false) {
+                    if (!present) {
                         graphs.put(g, 1);
                         List<String> currGraph = new ArrayList<String>();
                         currGraph.add(queries.get(s));
