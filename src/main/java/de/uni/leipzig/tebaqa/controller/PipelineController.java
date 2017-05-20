@@ -2,8 +2,6 @@ package de.uni.leipzig.tebaqa.controller;
 
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import edu.stanford.nlp.simple.Document;
-import edu.stanford.nlp.simple.Sentence;
 import edu.stanford.nlp.util.PropertiesUtils;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
@@ -23,7 +21,7 @@ import java.util.stream.Collectors;
 public class PipelineController {
     private static Logger log = Logger.getLogger(PipelineController.class);
 
-    private List<Dataset> datasets = new ArrayList<Dataset>();
+    private List<Dataset> datasets = new ArrayList<>();
     private StanfordCoreNLP pipeline;
 
     public static void main(String args[]) {
@@ -35,7 +33,7 @@ public class PipelineController {
 
         controller.setStanfordNLPPipeline(new StanfordCoreNLP(
                 PropertiesUtils.asProperties(
-                        "annotators", "tokenize,ssplit,pos,lemma,parse,natlog",
+                        "annotators", "tokenize,ssplit,pos,lemma,parse,natlog,depparse",
                         "ssplit.isOneSentence", "true",
                         "tokenize.language", "en")));
 
@@ -43,32 +41,31 @@ public class PipelineController {
         controller.run();
     }
 
+    private void annotate(String text) {
+        Annotation annotation = new Annotation(text);
+        pipeline.annotate(annotation);
+        pipeline.prettyPrint(annotation, System.out);
+    }
+
     private void run() {
-        List<HAWKQuestion> questions = new ArrayList<HAWKQuestion>();
+        List<HAWKQuestion> questions = new ArrayList<>();
         for (Dataset d : datasets) {
-            //Filter all monolingual questions without SPARQL query
+            //Filter all questions without SPARQL query
             List<IQuestion> load = LoaderController.load(d);
             List<IQuestion> result = load.stream()
-                    .filter(question -> question.getLanguageToQuestion().size() > 2 && question.getSparqlQuery() != null)
+                    .filter(question -> question.getSparqlQuery() != null)
                     .collect(Collectors.toList());
             questions.addAll(HAWKQuestionFactory.createInstances(result));
         }
         Fox fox = new Fox();
-        HashMap<String, String> questionWithQuery = new HashMap<String, String>();
+        HashMap<String, String> questionWithQuery = new HashMap<>();
         for (HAWKQuestion q : questions) {
             String questionText = q.getLanguageToQuestion().get("en");
             questionWithQuery.put(q.getSparqlQuery(), questionText);
             log.info(questionText);
             Map<String, List<Entity>> entities = fox.getEntities(questionText);
             log.info("Entities from FOX:" + entities);
-            Annotation document = new Annotation(questionText);
-            pipeline.annotate(document);
-
-            Document doc = new Document(questionText);
-            for (Sentence sent : doc.sentences()) {
-                List<String> parse = sent.posTags();
-                //log.info("The parse of the sentence '" + sent + "' is " + parse);
-            }
+            annotate(questionText);
         }
         QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionWithQuery);
     }
