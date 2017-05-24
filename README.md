@@ -1,6 +1,6 @@
 # Template Based Question Answering
 ## Installation
-- Add the AKSW repository to your maven settins.xml file:
+- Add the AKSW repository to your maven settings.xml file:
 ```xml
 <settings>
   <profiles>
