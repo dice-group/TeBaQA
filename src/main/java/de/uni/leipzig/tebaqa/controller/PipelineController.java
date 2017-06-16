@@ -13,6 +13,7 @@ import org.aksw.qa.commons.load.LoaderController;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +29,7 @@ public class PipelineController {
         PipelineController controller = new PipelineController();
         log.info("Configuring controller");
 
-        controller.addDataset(Dataset.QALD6_Test_Multilingual);
-        controller.addDataset(Dataset.QALD7_Train_Multilingual);
+        controller.addDatasets(Dataset.values());
 
         controller.setStanfordNLPPipeline(new StanfordCoreNLP(
                 PropertiesUtils.asProperties(
@@ -39,6 +39,10 @@ public class PipelineController {
 
         log.info("Running controller");
         controller.run();
+    }
+
+    private void addDatasets(Dataset[] values) {
+        datasets.addAll(Arrays.asList(values));
     }
 
     private void annotate(String text) {
@@ -61,13 +65,28 @@ public class PipelineController {
         HashMap<String, String> questionWithQuery = new HashMap<>();
         for (HAWKQuestion q : questions) {
             String questionText = q.getLanguageToQuestion().get("en");
-            questionWithQuery.put(q.getSparqlQuery(), questionText);
+            if (!containsQuestionText(questionWithQuery, questionText)) {
+                questionWithQuery.put(q.getSparqlQuery(), questionText);
+            } else {
+                log.info("Duplicate question: " + questionText);
+            }
             log.info(questionText);
             Map<String, List<Entity>> entities = fox.getEntities(questionText);
             log.info("Entities from FOX:" + entities);
             annotate(questionText);
         }
         QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionWithQuery);
+    }
+
+    private boolean containsQuestionText(HashMap<String, String> map, String text) {
+        boolean isInside = false;
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            if (entry.getValue().equals(text)) {
+                isInside = true;
+                break;
+            }
+        }
+        return isInside;
     }
 
     private void setDatasets(List<Dataset> datasets) {
