@@ -1,5 +1,9 @@
 package de.uni.leipzig.tebaqa.controller;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import de.uni.leipzig.tebaqa.model.Cluster;
+import org.aksw.qa.commons.datastructure.Question;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
@@ -25,7 +29,11 @@ import java.util.List;
 class QueryIsomorphism {
     private static Logger log = Logger.getLogger(QueryIsomorphism.class);
 
+    private List<Cluster> clusters;
+
     QueryIsomorphism(HashMap<String, String> queries) {
+        BiMap<String, String> inverseQueryMap = HashBiMap.create(queries).inverse();
+        clusters = new ArrayList<>(new ArrayList<>());
         HashMap<Graph, Integer> graphs = new HashMap<Graph, Integer>();
         HashMap<String, List<String>> graphsWithQuestion = new HashMap<String, List<String>>();
         for (String s : queries.keySet()) {
@@ -100,10 +108,22 @@ class QueryIsomorphism {
         System.out.print(j);
         for (String graph : graphsWithQuestion.keySet()) {
             log.info(graph);
+            Cluster cluster = new Cluster(graph);
             List<String> list = graphsWithQuestion.get(graph);
             for (String s : list) {
+                Question question = new Question();
+                HashMap<String, String> languageToQuestion = new HashMap<>();
+                languageToQuestion.put("en", s);
+                question.setLanguageToQuestion(languageToQuestion);
+                question.setSparqlQuery(inverseQueryMap.get(s));
+                cluster.addQuestion(question);
                 log.info("\t" + s);
             }
+            clusters.add(cluster);
         }
+    }
+
+    List<Cluster> getClusters() {
+        return clusters;
     }
 }
