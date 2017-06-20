@@ -5,7 +5,7 @@ import java.util.Objects;
 public class Modifier {
     private String modifier;
 
-    //TODO Position speichern notwendig?
+    //TODO Is the position of the modifiers important?
     public enum Position {
         BETWEEN_ASK_WHERE,
         INSIDE_TRIPLE,

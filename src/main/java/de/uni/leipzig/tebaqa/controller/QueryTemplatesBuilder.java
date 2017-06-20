@@ -31,8 +31,7 @@ class QueryTemplatesBuilder {
                     log.warn("Query is neither from type ask nor type select: " + query);
                 }
             } catch (QueryParseException e) {
-                log.warn("Unable to parse query: " + queryString);
-                throw e;
+                log.warn("Unable to parse query: " + queryString, e);
             }
         }
         List<String> askQueriesCleaned = cleanQueries(askQueries);
@@ -53,11 +52,12 @@ class QueryTemplatesBuilder {
         for (Query query : queries) {
             query.setPrefixMapping(null);
             String trimmed = query.toString().trim()
+                    //replace newlines with space
                     .replaceAll("\n", " ")
                     //replace every variable with ?
                     .replaceAll("\\?[a-zA-Z\\d]+", " ? ")
                     //replace every number(e.g. 2 or 2.5) with a ?
-                    .replaceAll("\\s+\\d+.?\\d*", " ? ")
+                    .replaceAll("\\s+\\d+\\.?\\d*", " ? ")
                     //replace everything in quotes with ?
                     .replaceAll("([\"'])(?:(?=(\\\\?))\\2.)*?\\1", " ? ")
                     //remove everything between <>

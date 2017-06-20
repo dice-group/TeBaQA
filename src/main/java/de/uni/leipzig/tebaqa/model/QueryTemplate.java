@@ -33,16 +33,19 @@ public class QueryTemplate {
         Matcher keywordMatcherCurrent = KEYWORD_MATCHER.matcher(query);
         while (keywordMatcherCurrent.find()) {
             String currentModifier = keywordMatcherCurrent.group();
+            //TODO endIndex is not always calculated correctly.
+            int endIndex = remaining.indexOf(currentModifier);
+            log.info("endIndex: " + endIndex + "; currentModifier: " + currentModifier + "; remaining: " + remaining);
+            int length = currentModifier.length();
             if (currentModifier.equalsIgnoreCase("union")) {
-                char[] left = remaining.substring(0, remaining.indexOf(currentModifier)).toCharArray();
-                char[] right = remaining.substring(remaining.indexOf(currentModifier) + currentModifier.length(),
-                        remaining.length()).toCharArray();
+                char[] left = remaining.substring(0, endIndex).toCharArray();
+                char[] right = remaining.substring(endIndex + length, remaining.length()).toCharArray();
 
                 int lastIndexOfTriple = lastIndexOfTriple(right) + 1;
                 modifiers.add(new Modifier(remaining.substring(firstIndexOfTriple(remaining, left),
-                        remaining.indexOf(currentModifier) + currentModifier.length())
+                        endIndex + length)
                         + new String(right).substring(0, lastIndexOfTriple)));
-                remaining = remaining.substring(remaining.indexOf(currentModifier) + lastIndexOfTriple,
+                remaining = remaining.substring(endIndex + lastIndexOfTriple,
                         remaining.length());
 
             }
@@ -52,16 +55,16 @@ public class QueryTemplate {
 
                 int depthCurrent = getDepth(query, currentModifier);
                 int depthNext = getDepth(query, nextModifier);
-                int currentModifierIndex = remaining.indexOf(currentModifier);
+                int currentModifierIndex = endIndex;
                 if (depthCurrent == depthNext) {
                     //TODO alle parts bis zum nächsten modifier bzw schließenden klammer
-                    remaining = remaining.substring(currentModifierIndex + currentModifier.length(), remaining.length());
+                    remaining = remaining.substring(currentModifierIndex + length, remaining.length());
                     modifiers.add(new Modifier(currentModifier + remaining.substring(0, getLastModifierPartPosition(remaining))));
                 } else {
                     int lastModifierPartPosition = getLastModifierPartPosition(query);
                     //TODO position
                     modifiers.add(new Modifier(currentModifier.trim() + remaining.substring(0, lastModifierPartPosition)));
-                    remaining = remaining.substring(currentModifierIndex + currentModifier.length(), remaining.length());
+                    remaining = remaining.substring(currentModifierIndex + length, remaining.length());
                 }
             }
         }

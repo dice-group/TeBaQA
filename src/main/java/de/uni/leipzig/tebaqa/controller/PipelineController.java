@@ -1,11 +1,13 @@
 package de.uni.leipzig.tebaqa.controller;
 
 import de.uni.leipzig.tebaqa.model.Cluster;
+import de.uni.leipzig.tebaqa.model.QueryTemplate;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.util.PropertiesUtils;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.annotation.spotter.Fox;
@@ -30,13 +32,12 @@ public class PipelineController {
 
         controller.addDatasets(Dataset.values());
 
-        //TODO reanenable before commiting
-        /*controller.setStanfordNLPPipeline(new StanfordCoreNLP(
+        controller.setStanfordNLPPipeline(new StanfordCoreNLP(
                 PropertiesUtils.asProperties(
                         "annotators", "tokenize,ssplit,pos,lemma,parse,natlog,depparse",
                         "ssplit.isOneSentence", "true",
                         "tokenize.language", "en")));
-         */
+
         log.info("Running controller");
         controller.run();
     }
@@ -81,12 +82,12 @@ public class PipelineController {
                 .filter(cluster -> cluster.size() > 10)
                 .collect(Collectors.toList());
         log.info("Create SPARQL Queries from questions");
-        new QueryTemplatesBuilder(sparqlQueries);
-
+        QueryTemplatesBuilder templatesBuilder = new QueryTemplatesBuilder(sparqlQueries);
+        List<QueryTemplate> queryTemplates = templatesBuilder.getQueryTemplates();
     }
 
     private void createQueries(List<Cluster> clusters) {
-        // TODO Query aus Frage erstellen
+        // TODO Generate Queries from question
         // createQueries(relevantClusters);
         Fox fox = new Fox();
         for (Cluster cluster : clusters) {
@@ -94,12 +95,10 @@ public class PipelineController {
             for (Question question : questions) {
                 String sparqlQuery = "";
                 String questionText = question.getLanguageToQuestion().get("en");
+                //TODO Uncomment these lines to enable FOX (may be slow)
                 //Map<String, List<Entity>> entities = fox.getEntities(questionText);
                 //log.info("Entities from FOX:" + entities);
                 Annotation annotation = annotate(questionText);
-                // TODO anhand der Annotation zwischen ASK und SELECT query unterscheiden
-                // Wenn an erster Stelle VBZ kommt -> ASK, sonst SELECT
-                // Siehe pipeline.prettyPrint(), woher PartOfSpeech=VBZ kommt
                 List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
                 CoreMap sentence = sentences.get(0);
                 List<CoreLabel> tokens = sentence.get(CoreAnnotations.TokensAnnotation.class);

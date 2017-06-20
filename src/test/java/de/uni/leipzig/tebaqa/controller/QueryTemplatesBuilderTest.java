@@ -62,7 +62,6 @@ public class QueryTemplatesBuilderTest {
         assertTrue(modifiersToTest.contains(new Modifier("{ ? <> <> } UNION { ? <> ? FILTER regex( ? , ? , ? ) }")));
     }
 
-
     @Test
     public void testNonSelectAskQuery() throws Exception {
         ArrayList<String> queries = new ArrayList<>();
@@ -72,6 +71,22 @@ public class QueryTemplatesBuilderTest {
         List<QueryTemplate> queryTemplates = queryTemplatesBuilder.getQueryTemplates();
 
         assert queryTemplates.isEmpty();
+    }
+
+    //TODO modifier values is not recognized well
+    @Test
+    public void testNestedSelect() throws Exception {
+        ArrayList<String> queries = new ArrayList<>();
+        String nestedSelectQuery = "select ?x ?y where {values ?x { 1 2 3 } " +
+                "{ select ?y where {  values ?y { 5 6 7 8 } } limit 2 }}";
+        queries.add(nestedSelectQuery);
+        QueryTemplatesBuilder queryTemplatesBuilder = new QueryTemplatesBuilder(queries);
+        Set<Modifier> modifiersToTest = queryTemplatesBuilder.getQueryTemplates().get(0).getModifiers();
+
+        assertEquals(3, modifiersToTest.size());
+        assertTrue(modifiersToTest.contains(new Modifier("VALUES ? { ? ? ? }")));
+        assertTrue(modifiersToTest.contains(new Modifier("VALUES ? { ? ? ? ?}")));
+        assertTrue(modifiersToTest.contains(new Modifier("LIMIT ?")));
     }
 
     @Test
