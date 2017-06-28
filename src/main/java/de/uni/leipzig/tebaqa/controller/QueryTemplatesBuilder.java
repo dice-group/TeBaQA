@@ -8,6 +8,8 @@ import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The QueryTemplatesBuilder creates clean templates with placeholders and extracts query modifier.
@@ -16,6 +18,10 @@ class QueryTemplatesBuilder {
     private List<QueryTemplate> queryTemplates = new ArrayList<>();
     private static Logger log = Logger.getLogger(QueryTemplatesBuilder.class);
 
+    /**
+     * TODO: Still unifished.
+     * @param queries
+     */
     QueryTemplatesBuilder(List<String> queries) {
         List<Query> askQueries = new ArrayList<>();
         List<Query> selectQueries = new ArrayList<>();

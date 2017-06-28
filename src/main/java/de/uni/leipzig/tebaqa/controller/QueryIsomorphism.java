@@ -104,10 +104,10 @@ class QueryIsomorphism {
                 System.out.println(graphs.get(g));
             }
         }
-        System.out.print(i + "\n");
-        System.out.print(j);
+        //uncomment these lines to for debugging
+        //System.out.print(i + "\n");
+        //System.out.print(j);
         for (String graph : graphsWithQuestion.keySet()) {
-            log.info(graph);
             Cluster cluster = new Cluster(graph);
             List<String> list = graphsWithQuestion.get(graph);
             for (String s : list) {
@@ -117,7 +117,6 @@ class QueryIsomorphism {
                 question.setLanguageToQuestion(languageToQuestion);
                 question.setSparqlQuery(inverseQueryMap.get(s));
                 cluster.addQuestion(question);
-                log.info("\t" + s);
             }
             clusters.add(cluster);
         }

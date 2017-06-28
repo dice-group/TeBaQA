@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Cluster {
+    public String getGraph() {
+        return graph;
+    }
+
     private String graph;
     private List<Question> questions;
 
