@@ -1,22 +1,24 @@
 package de.uni.leipzig.tebaqa.controller;
 
+import de.uni.leipzig.tebaqa.model.Cluster;
+import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.PropertiesUtils;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
-import org.aksw.qa.annotation.spotter.Fox;
-import org.aksw.qa.commons.datastructure.Entity;
 import org.aksw.qa.commons.datastructure.IQuestion;
+import org.aksw.qa.commons.datastructure.Question;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
+import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.QueryParseException;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class PipelineController {
@@ -30,6 +32,7 @@ public class PipelineController {
         log.info("Configuring controller");
 
         controller.addDatasets(Dataset.values());
+        controller.addDataset(Dataset.QALD6_Train_Multilingual);
 
         controller.setStanfordNLPPipeline(new StanfordCoreNLP(
                 PropertiesUtils.asProperties(
@@ -45,10 +48,11 @@ public class PipelineController {
         datasets.addAll(Arrays.asList(values));
     }
 
-    private void annotate(String text) {
+    private Annotation annotate(String text) {
         Annotation annotation = new Annotation(text);
         pipeline.annotate(annotation);
-        pipeline.prettyPrint(annotation, System.out);
+        //pipeline.prettyPrint(annotation, System.out);
+        return annotation;
     }
 
     private void run() {
@@ -61,24 +65,100 @@ public class PipelineController {
                     .collect(Collectors.toList());
             questions.addAll(HAWKQuestionFactory.createInstances(result));
         }
-        Fox fox = new Fox();
         HashMap<String, String> questionWithQuery = new HashMap<>();
         for (HAWKQuestion q : questions) {
+            //only use unique questions
             String questionText = q.getLanguageToQuestion().get("en");
             if (!containsQuestionText(questionWithQuery, questionText)) {
                 questionWithQuery.put(q.getSparqlQuery(), questionText);
-            } else {
-                log.info("Duplicate question: " + questionText);
             }
-            log.info(questionText);
-            Map<String, List<Entity>> entities = fox.getEntities(questionText);
-            log.info("Entities from FOX:" + entities);
-            annotate(questionText);
         }
+
         QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionWithQuery);
+        List<Cluster> clusters = queryIsomorphism.getClusters();
+
+        //only use cluster with at least 30 questions, can be lowered to 10 for more clusters
+        List<Cluster> relevantClusters = clusters.stream()
+                .filter(cluster -> cluster.size() >= 30)
+                .collect(Collectors.toList());
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        for (Cluster cluster : relevantClusters) {
+            String graph = cluster.getGraph();
+            //log.info(graph);
+            List<Question> questionList = cluster.getQuestions();
+            for (Question question : questionList) {
+                String questionText = question.getLanguageToQuestion().get("en");
+                List<String> simpleModifiers = getSimpleModifiers(question.getSparqlQuery());
+                customQuestions.add(new CustomQuestion(question.getSparqlQuery(), questionText, simpleModifiers, graph));
+            }
+
+        }
+        ArffGenerator arffGenerator = new ArffGenerator(customQuestions);
+        arffGenerator.writeArffFile();
+
+        //QueryTemplatesBuilder templatesBuilder = new QueryTemplatesBuilder(sparqlQueries);
+        //List<QueryTemplate> queryTemplates = templatesBuilder.getQueryTemplates();
     }
 
-    private boolean containsQuestionText(HashMap<String, String> map, String text) {
+    private List<String> getSimpleModifiers(String queryString) {
+        Pattern KEYWORD_MATCHER = Pattern.compile("\\w{2}+(?:\\s*\\w+)*");
+        try {
+            String trimmedQuery = cleanQuery(queryString);
+
+            Matcher keywordMatcherCurrent = KEYWORD_MATCHER.matcher(trimmedQuery);
+            List<String> modifiers = new ArrayList<>();
+            while (keywordMatcherCurrent.find()) {
+                String modifier = keywordMatcherCurrent.group();
+                if (modifier.equalsIgnoreCase("en OPTIONAL")) {
+                    modifiers.add("OPTIONAL");
+                } else if (!modifier.equalsIgnoreCase("_type")
+                        && !modifier.equalsIgnoreCase("en")
+                        && !modifier.equalsIgnoreCase("es")) {
+                    modifiers.add(modifier);
+                }
+            }
+            return modifiers;
+        } catch (QueryParseException e) {
+            log.warn("Unable to parse query: " + queryString, e);
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Removes all variables, prefixes, newlines, standard keywords like ASK, SELECT, WHERE, DISTINCT.
+     *
+     * @param queryString The sparql query string.
+     * @return A string which only contains sparql modifiers, a '?' as placeholder for a variable and '<>' as
+     * placeholders for strings like this: { <> <> ? . ? <> ? FILTER regex( ? , ? ) }
+     */
+    private String cleanQuery(String queryString) {
+        Query query = QueryFactory.create(queryString);
+        query.setPrefixMapping(null);
+        return query.toString().trim()
+                //replace newlines with space
+                .replaceAll("\n", " ")
+                //replace every variable with ?
+                .replaceAll("\\?[a-zA-Z\\d]+", " ? ")
+                //replace every number(e.g. 2 or 2.5) with a ?
+                .replaceAll("\\s+\\d+\\.?\\d*", " ? ")
+                //replace everything in quotes with ?
+                .replaceAll("([\"'])(?:(?=(\\\\?))\\2.)*?\\1", " ? ")
+                //remove everything between <>
+                .replaceAll("<\\S*>", " <> ")
+                //remove all SELECT, ASK, DISTINCT and WHERE keywords
+                .replaceAll("(?i)(select|ask|where|distinct)", " ")
+                //remove every consecutive spaces
+                .replaceAll("\\s+", " ");
+    }
+
+    /**
+     * Checks, if a question is inside a Map.
+     *
+     * @param map  The map in which the question is not is not.
+     * @param text The question text.
+     * @return true if the text is inside, false otherwise.
+     */
+    private boolean containsQuestionText(Map<String, String> map, String text) {
         boolean isInside = false;
         for (Map.Entry<String, String> entry : map.entrySet()) {
             if (entry.getValue().equals(text)) {
