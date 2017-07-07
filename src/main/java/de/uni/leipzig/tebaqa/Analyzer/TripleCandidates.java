@@ -46,49 +46,63 @@ public class TripleCandidates implements IAnalyzer {
         attribute = new Attribute("TripleCandidatesCount");
     }
 
+    /**
+     * Counts all verbs, adjective and group of consecutive nouns of a question and infer the number of possible
+     * SPARQL triple to answer it.
+     *
+     * @param q A question like: What is Batman's real name?
+     * @return The number of possible SPARQL triples to answer the question.
+     */
     @Override
     public Object analyze(String q) {
-        List<String> nouns = new ArrayList<>();
-        List<String> verbs = new ArrayList<>();
-        List<String> adj = new ArrayList<>();
-        List<String> neList = getNEList(q);
+        List<List<String>> entityGroups = new ArrayList<>();
         String exceptions = "have||do||be||many||much||give||call||list";
-
-        //prevents double recognizing named entities
-        String qWithoutNE = "";
-        for (String ne : neList) {
-            qWithoutNE = q.replace(ne, "");
-        }
-        Annotation annotation = new Annotation(qWithoutNE);
+        Annotation annotation = new Annotation(q);
         pipeline.annotate(annotation);
         List<CoreMap> sentences = annotation.get(SentencesAnnotation.class);
         for (CoreMap sentence : sentences) {
             List<CoreLabel> labels = sentence.get(TokensAnnotation.class);
-            for (int i = 0; i < labels.size(); i++) {
-                CoreLabel token = labels.get(i);
+            boolean foundNounGroup = false;
+            List<String> wordGroup = new ArrayList<>();
+            for (CoreLabel token : labels) {
                 String word = token.get(TextAnnotation.class);
                 String pos = token.get(PartOfSpeechAnnotation.class);
                 String lemma = token.get(LemmaAnnotation.class);
-                if (!lemma.matches(exceptions)) {
-                    if (pos.startsWith("VB") && !neList.contains(word)) {
-                        verbs.add(word);
-                    } else if (pos.startsWith("NN") && !neList.contains(word)) {
-                        if (i > 0) {
-                            String previousWord = labels.get(i - 1).get(PartOfSpeechAnnotation.class);
-                            if (!previousWord.startsWith("NN") && !neList.contains(previousWord)) {
-                                nouns.add(word);
-                            }
+                if (pos.startsWith("NN") || lemma.equals("of")) {
+                    //beginning of a group of related words
+                    if (foundNounGroup) {
+                        wordGroup.add(word);
+                    } else {
+                        foundNounGroup = true;
+                        wordGroup.add(word);
+                    }
+                } else {
+                    foundNounGroup = false;
+                    if (!wordGroup.isEmpty()) {
+                        //flush the last group of related words
+                        entityGroups.add(wordGroup);
+                        wordGroup = new ArrayList<>();
+                    }
+                    if (pos.startsWith("JJ") && !lemma.matches(exceptions)) {
+                        List<String> adjective = new ArrayList<>();
+                        adjective.add(word);
+                        entityGroups.add(adjective);
+                    } else if (pos.startsWith("VB")) {
+                        if (pos.startsWith("VB") && !lemma.matches(exceptions)) {
+                            wordGroup.add(word);
+                            entityGroups.add(wordGroup);
+                            wordGroup = new ArrayList<>();
                         }
-
-                    } else if (pos.startsWith("JJ") && !neList.contains(word)) {
-                        adj.add(word);
                     }
                 }
-
+            }
+            if (!wordGroup.isEmpty()) {
+                //flush the last group of related words when they are at the end of a sentence
+                entityGroups.add(wordGroup);
             }
         }
 
-        int tokenCount = adj.size() + verbs.size() + nouns.size() + neList.size();
+        int tokenCount = entityGroups.size();
         if (tokenCount > 4) {
             return (double) 4;
         } else if (tokenCount == 4) {
@@ -100,9 +114,10 @@ public class TripleCandidates implements IAnalyzer {
 
     }
 
+    // This method isn't used anymore because named entities are mostly consecutive nouns which the analyze() method
+    // can handle most of the time. Named entity detection might still be useful sometimes.
     private List<String> getNEList(String text) {
         List<String> neList = new ArrayList<>();
-
         try {
             String classifiedText = classifier.classifyWithInlineXML(text);
             String xml = "<sentence>" + classifiedText.trim() + "</sentence>";
