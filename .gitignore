@@ -1,6 +1,9 @@
 # IntelliJ stuff:
 .idea/
 *.iml
+.classpath
+.project
+.settings/
 
 # Build files
 /target/
