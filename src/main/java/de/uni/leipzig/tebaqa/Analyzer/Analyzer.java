@@ -18,7 +18,7 @@ public class Analyzer {
     private static Logger log = Logger.getLogger(Analyzer.class);
 
     private ArrayList<IAnalyzer> analyzers;
-    public ArrayList<Attribute> fvWekaAttributes = new ArrayList<Attribute>();
+    public ArrayList<Attribute> fvWekaAttributes = new ArrayList<>();
 
     public Analyzer(List<Attribute> attributes) {
 
@@ -26,6 +26,7 @@ public class Analyzer {
         analyzers.add(new QuestionWord());
         analyzers.add(new EntityPerson());
         analyzers.add(new NumberOfToken());
+        analyzers.add(new QueryResourceTypeAnalyzer());
         analyzers.add(new Noun());
         analyzers.add(new Number());
         analyzers.add(new Verb());
@@ -66,6 +67,5 @@ public class Analyzer {
             }
         }
         return tmpInstance;
-
     }
 }

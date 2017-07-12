@@ -16,7 +16,12 @@ import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QueryParseException;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -77,9 +82,9 @@ public class PipelineController {
         QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionWithQuery);
         List<Cluster> clusters = queryIsomorphism.getClusters();
 
-        //only use cluster with at least 30 questions, can be lowered to 10 for more clusters
+        //only use cluster with at least x questions
         List<Cluster> relevantClusters = clusters.stream()
-                .filter(cluster -> cluster.size() >= 30)
+                .filter(cluster -> cluster.size() >= 20)
                 .collect(Collectors.toList());
         List<CustomQuestion> customQuestions = new ArrayList<>();
         for (Cluster cluster : relevantClusters) {
@@ -88,13 +93,13 @@ public class PipelineController {
             List<Question> questionList = cluster.getQuestions();
             for (Question question : questionList) {
                 String questionText = question.getLanguageToQuestion().get("en");
+                //log.info("\t" + questionText);
                 List<String> simpleModifiers = getSimpleModifiers(question.getSparqlQuery());
                 customQuestions.add(new CustomQuestion(question.getSparqlQuery(), questionText, simpleModifiers, graph));
             }
 
         }
         ArffGenerator arffGenerator = new ArffGenerator(customQuestions);
-        arffGenerator.writeArffFile();
 
         //QueryTemplatesBuilder templatesBuilder = new QueryTemplatesBuilder(sparqlQueries);
         //List<QueryTemplate> queryTemplates = templatesBuilder.getQueryTemplates();

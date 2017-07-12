@@ -6,17 +6,21 @@ import org.apache.log4j.Logger;
 import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.converters.ArffLoader;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class ArffGenerator {
     private static Logger log = Logger.getLogger(ArffGenerator.class);
-    private Instances trainingSet;
 
     ArffGenerator(List<CustomQuestion> questions) {
         log.debug("Calculate the features per question and cluster");
@@ -38,18 +42,13 @@ public class ArffGenerator {
         limit.add("Limit");
         limit.add("noLimit");
 
-
         List<String> orderBy = new ArrayList<>();
         orderBy.add("OrderBy");
         orderBy.add("noOrderBy");
 
-
         List<String> union = new ArrayList<>();
         union.add("Union");
         union.add("noUnion");
-
-        List<String> graphsList = new ArrayList<>();
-        graphsList.addAll(graphs);
 
         List<Attribute> attributes = new ArrayList<>();
         Attribute filterAttribute = new Attribute("filter", filter);
@@ -57,27 +56,38 @@ public class ArffGenerator {
         Attribute limitAttribute = new Attribute("limit", limit);
         Attribute orderByAttribute = new Attribute("orderBy", orderBy);
         Attribute unionAttribute = new Attribute("union", union);
-        Attribute classAttribute = new Attribute("class", graphsList);
+
         attributes.add(filterAttribute);
         attributes.add(optionalAttribute);
         attributes.add(limitAttribute);
         attributes.add(orderByAttribute);
         attributes.add(unionAttribute);
+
+        // Add all occurring graphs(=class attribute) as possible attribute values
+        List<String> graphsList = new ArrayList<>();
+        graphsList.addAll(graphs);
+        Attribute classAttribute = new Attribute("class", graphsList);
         attributes.add(classAttribute);
         Analyzer analyzer = new Analyzer(attributes);
         ArrayList<Attribute> fvfinal = analyzer.fvWekaAttributes;
 
-        trainingSet = new Instances("training_classifier: -C 4", fvfinal, questions.size());
+        Instances trainingSet = new Instances("training_classifier: -C 4", fvfinal, questions.size());
+        Instances testSet = new Instances("training_classifier: -C 4", fvfinal, questions.size());
         log.debug("Start collection of training data for each class");
+        Map<Integer, CustomQuestion> idGraph = new HashMap<>();
+        for (int i = 0; i < questions.size(); i++) {
+            CustomQuestion question = questions.get(i);
+            idGraph.put(i, question);
 
-        for (CustomQuestion question : questions) {
             Instance instance = analyzer.analyze(question.getQuestionText());
             List<String> modifiers = question.getModifiers();
+
             instance.setValue(filterAttribute, "noFilter");
             instance.setValue(optionalAttribute, "noOptional");
             instance.setValue(limitAttribute, "noLimit");
             instance.setValue(orderByAttribute, "noOrderBy");
             instance.setValue(unionAttribute, "noUnion");
+
             for (String modifier : modifiers) {
                 if (modifier.contains("FILTER")) {
                     instance.setValue(filterAttribute, "Filter");
@@ -89,22 +99,61 @@ public class ArffGenerator {
                     instance.setValue(orderByAttribute, "OrderBy");
                 } else if (modifier.contains("UNION")) {
                     instance.setValue(unionAttribute, "Union");
-                } else {
-                    log.warn("unknown modifier: " + modifier);
                 }
             }
 
-            instance.setValue(classAttribute, question.getGraph());
-            trainingSet.add(instance);
+            //Create instance and set the class attribute missing for testing
+            Instance testInstance = instance;
+            testInstance.setMissing(classAttribute);
+            testSet.add(testInstance);
+
+            //Create instance with the class attribute for training
+            Instance trainInstance = instance;
+            trainInstance.setValue(classAttribute, question.getGraph());
+            trainingSet.add(trainInstance);
         }
 
+        writeSetToArffFile(trainingSet, "./src/main/resources/Train.arff");
+        writeSetToArffFile(testSet, "./src/main/resources/Test.arff");
+
+        WekaWrapper wekaWrapper = new WekaWrapper();
+        wekaWrapper.classifyJ48();
+        Instances classifiedResult = readClassifiedResult();
+        int correctlyClassified = 0;
+        int classified = 0;
+        int numInstances = classifiedResult.numInstances();
+        for (int i = 0; i < numInstances; i++) {
+            classified++;
+            Instance instance = classifiedResult.instance(i);
+            String classifiedGraph = instance.stringValue(instance.numAttributes() - 1);
+            String correctGraph = idGraph.get(i).getGraph();
+            if (!classifiedGraph.equals(correctGraph)) {
+                log.info("False classified: " + idGraph.get(i).getQuestionText());
+            } else {
+                correctlyClassified++;
+            }
+        }
+        log.info("Correctly classified: " + correctlyClassified + " / " + classified);
     }
 
-    void writeArffFile() {
-        try (FileWriter file = new FileWriter("./src/main/resources/Train.arff")) {
-            file.write(trainingSet.toString());
+    private void writeSetToArffFile(Instances set, String path) {
+        try (FileWriter file = new FileWriter(path)) {
+            file.write(set.toString());
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Unable to write set to Arff file: " + path, e);
         }
+    }
+
+    private Instances readClassifiedResult() {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader("./src/main/resources/Test.arff"));
+            ArffLoader.ArffReader arff = new ArffLoader.ArffReader(reader);
+            Instances data = arff.getData();
+            data.setClassIndex(data.numAttributes() - 1);
+            return data;
+        } catch (IOException e) {
+            log.error("Unable to read Arff file Test.arff", e);
+        }
+        return null;
     }
 }
