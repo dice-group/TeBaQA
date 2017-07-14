@@ -2,7 +2,7 @@ package de.uni.leipzig.tebaqa.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import weka.classifiers.trees.J48;
+import weka.classifiers.AbstractClassifier;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
 
@@ -11,27 +11,22 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 
 class WekaWrapper {
 
     private static Logger log = LoggerFactory.getLogger(WekaWrapper.class);
-    private J48 tree;
     private Instances unlabeled;
+    private Instances data;
 
     WekaWrapper() {
         try {
             DataSource source = new DataSource("./src/main/resources/Train.arff");
-            Instances data = source.getDataSet();
+            data = source.getDataSet();
             // setting class attribute if the data format does not provide this information
             // For example, the XRFF format saves the class attribute information as well
             if (data.classIndex() == -1)
                 data.setClassIndex(data.numAttributes() - 1);
-            String[] options = new String[1];
-            options[0] = "-U";            // unpruned tree
-
-            tree = new J48();
-            tree.setOptions(options);     // set the options
-            tree.buildClassifier(data);   // build classifier
 
             // load unlabeled data
             unlabeled = new Instances(
@@ -45,7 +40,21 @@ class WekaWrapper {
         }
     }
 
-    void classifyJ48() {
+    void classify(AbstractClassifier classifier, String[] options) {
+        if (options.length > 0) {
+            try {
+                classifier.setOptions(options);     // set the options
+            } catch (Exception e) {
+                log.error("Option not supported:" + Arrays.toString(options), e);
+            }
+        }
+
+        try {
+            classifier.buildClassifier(data);   // build classifier
+        } catch (Exception e) {
+            log.error("Can't build classifier", e);
+        }
+
         // create copy
         Instances labeled = new Instances(unlabeled);
 
@@ -53,9 +62,10 @@ class WekaWrapper {
         for (int i = 0; i < unlabeled.numInstances(); i++) {
             double clsLabel = 0;
             try {
-                clsLabel = tree.classifyInstance(unlabeled.instance(i));
+                clsLabel = classifier.classifyInstance(unlabeled.instance(i));
             } catch (Exception e) {
                 log.error("Unable to classify instances", e);
+                break;
             }
             labeled.instance(i).setClassValue(clsLabel);
         }

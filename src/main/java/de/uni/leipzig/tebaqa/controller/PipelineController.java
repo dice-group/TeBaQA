@@ -36,7 +36,8 @@ public class PipelineController {
         PipelineController controller = new PipelineController();
         log.info("Configuring controller");
 
-        controller.addDatasets(Dataset.values());
+        //Uncomment to use questions from all QALD's combined (~600)
+        //controller.addDatasets(Dataset.values());
         controller.addDataset(Dataset.QALD6_Train_Multilingual);
 
         controller.setStanfordNLPPipeline(new StanfordCoreNLP(
@@ -82,9 +83,9 @@ public class PipelineController {
         QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionWithQuery);
         List<Cluster> clusters = queryIsomorphism.getClusters();
 
-        //only use cluster with at least x questions
+        //only use clusters with at least x questions
         List<Cluster> relevantClusters = clusters.stream()
-                .filter(cluster -> cluster.size() >= 20)
+                .filter(cluster -> cluster.size() >= 5)
                 .collect(Collectors.toList());
         List<CustomQuestion> customQuestions = new ArrayList<>();
         for (Cluster cluster : relevantClusters) {
