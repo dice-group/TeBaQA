@@ -3,6 +3,7 @@ package de.uni.leipzig.tebaqa.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import weka.classifiers.AbstractClassifier;
+import weka.classifiers.Evaluation;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
 
@@ -12,6 +13,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+
+import static weka.core.Debug.Random;
 
 class WekaWrapper {
 
@@ -49,18 +52,44 @@ class WekaWrapper {
             }
         }
 
+        int seed = 1;          // the seed for randomizing the data
+        int folds = 10;         // the number of folds to generate, >=2
+        Random rand = new Random(seed);   // create seeded number generator
+        Instances randData = new Instances(data);   // create copy of original data
+        randData.randomize(rand);         // randomize data with number generator
+
+        // perform cross-validation
+        Evaluation eval = null;
         try {
-            classifier.buildClassifier(data);   // build classifier
+            eval = new Evaluation(randData);
         } catch (Exception e) {
-            log.error("Can't build classifier", e);
+            log.error("Unable to evaluate data", e);
         }
+        for (int n = 0; n < folds; n++) {
+            Instances train = randData.trainCV(folds, n);
+            Instances test = randData.testCV(folds, n);
+
+            try {
+                classifier.buildClassifier(train);
+            } catch (Exception e) {
+                log.error("Can't build classifier", e);
+            }
+
+            try {
+                eval.evaluateModel(classifier, test);
+            } catch (Exception e) {
+                log.error("Unable to evaluate classifier model", e);
+            }
+        }
+
+        log.info(eval.toSummaryString("=== " + folds + "-fold Cross-validation ===", false));
 
         // create copy
         Instances labeled = new Instances(unlabeled);
 
         // label instances
         for (int i = 0; i < unlabeled.numInstances(); i++) {
-            double clsLabel = 0;
+            double clsLabel;
             try {
                 clsLabel = classifier.classifyInstance(unlabeled.instance(i));
             } catch (Exception e) {
