@@ -13,12 +13,11 @@ import java.util.regex.Pattern;
 public class QueryTemplate {
     private static Logger log = Logger.getLogger(QueryTemplate.class);
     private Pattern KEYWORD_MATCHER = Pattern.compile("\\w{2}+(?:\\s*\\w+)*");
+    private Set<Modifier> modifiers = new HashSet<>();
 
     public void setModifiers(Set<Modifier> modifiers) {
         this.modifiers = modifiers;
     }
-
-    private Set<Modifier> modifiers = new HashSet<>();
 
     public QueryTemplate(String query) {
         //TODO Get every modifier in WHERE clause

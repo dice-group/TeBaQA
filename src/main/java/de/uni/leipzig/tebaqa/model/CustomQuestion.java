@@ -5,13 +5,12 @@ import java.util.List;
 public class CustomQuestion {
     private List<String> modifiers;
     private String query;
+    private String questionText;
+    private String graph;
 
     public String getQuestionText() {
         return questionText;
     }
-
-    private String questionText;
-    private String graph;
 
     public List<String> getModifiers() {
         return modifiers;

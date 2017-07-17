@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Cluster {
+    private String graph;
+    private List<Question> questions;
+
     public String getGraph() {
         return graph;
     }
-
-    private String graph;
-    private List<Question> questions;
 
     public Cluster(String graph) {
         this.graph = graph;

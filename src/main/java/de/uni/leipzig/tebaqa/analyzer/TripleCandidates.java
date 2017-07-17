@@ -1,4 +1,4 @@
-package de.uni.leipzig.tebaqa.Analyzer;
+package de.uni.leipzig.tebaqa.analyzer;
 
 import edu.stanford.nlp.ie.AbstractSequenceClassifier;
 import edu.stanford.nlp.ie.crf.CRFClassifier;
@@ -21,7 +21,11 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import weka.core.Attribute;
 
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -37,7 +41,7 @@ public class TripleCandidates implements IAnalyzer {
     private String serializedClassifier = "edu/stanford/nlp/models/ner/english.all.3class.distsim.crf.ser.gz";
     private AbstractSequenceClassifier<CoreLabel> classifier = CRFClassifier.getClassifier(serializedClassifier);
 
-    public TripleCandidates() throws IOException, ClassNotFoundException {
+    TripleCandidates() throws IOException, ClassNotFoundException {
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner");
         props.setProperty("ner.useSUTime", "false");
@@ -68,7 +72,7 @@ public class TripleCandidates implements IAnalyzer {
                 String word = token.get(TextAnnotation.class);
                 String pos = token.get(PartOfSpeechAnnotation.class);
                 String lemma = token.get(LemmaAnnotation.class);
-                if (pos.startsWith("NN") || lemma.equals("of")) {
+                if (pos.startsWith("NN") || "of".equals(lemma)) {
                     //beginning of a group of related words
                     if (foundNounGroup) {
                         wordGroup.add(word);
@@ -87,12 +91,10 @@ public class TripleCandidates implements IAnalyzer {
                         List<String> adjective = new ArrayList<>();
                         adjective.add(word);
                         entityGroups.add(adjective);
-                    } else if (pos.startsWith("VB")) {
-                        if (pos.startsWith("VB") && !lemma.matches(exceptions)) {
+                    } else if (pos.startsWith("VB") && !lemma.matches(exceptions)) {
                             wordGroup.add(word);
                             entityGroups.add(wordGroup);
                             wordGroup = new ArrayList<>();
-                        }
                     }
                 }
             }

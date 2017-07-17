@@ -1,4 +1,4 @@
-package de.uni.leipzig.tebaqa.Analyzer;
+package de.uni.leipzig.tebaqa.analyzer;
 
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -11,38 +11,34 @@ import weka.core.Attribute;
 import java.util.List;
 import java.util.Properties;
 
-public class Noun implements IAnalyzer {
+public class Verb implements IAnalyzer {
     private Attribute attribute = null;
     private StanfordCoreNLP pipeline;
 
-    public Noun() {
+    Verb() {
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner");
         props.setProperty("ner.useSUTime", "false");
         pipeline = new StanfordCoreNLP(props);
-        attribute = new Attribute("NumberOfNouns");
+        attribute = new Attribute("NumberOfVerbs");
     }
 
     public Object analyze(String q) {
         Annotation annotation = new Annotation(q);
         pipeline.annotate(annotation);
-        double nounCnt = 0;
+        double verbCnt = 0;
         List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
         for (CoreMap sentence : sentences) {
             List<CoreLabel> tokens = sentence.get(CoreAnnotations.TokensAnnotation.class);
-            for (int i = 0; i < tokens.size(); i++) {
-                CoreLabel token = tokens.get(i);
+            for (CoreLabel token : tokens) {
                 String posTag = token.tag();
-                if (posTag.toLowerCase().startsWith("nn")) {
-                    if (i == 0 || !tokens.get(i - 1).tag().equalsIgnoreCase(posTag)) {
-                        nounCnt++;
-                    }
+                if (posTag.startsWith("VB")) {
+                    verbCnt++;
                 }
             }
 
         }
-
-        return nounCnt;
+        return verbCnt;
     }
 
     @Override

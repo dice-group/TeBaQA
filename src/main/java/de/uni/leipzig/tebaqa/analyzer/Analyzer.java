@@ -1,4 +1,4 @@
-package de.uni.leipzig.tebaqa.Analyzer;
+package de.uni.leipzig.tebaqa.analyzer;
 
 import org.aksw.mlqa.analyzer.IAnalyzer;
 import org.aksw.mlqa.analyzer.comperative.Comperative;

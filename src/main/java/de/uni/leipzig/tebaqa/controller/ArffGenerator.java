@@ -1,6 +1,6 @@
 package de.uni.leipzig.tebaqa.controller;
 
-import de.uni.leipzig.tebaqa.Analyzer.Analyzer;
+import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import org.apache.log4j.Logger;
 import weka.classifiers.bayes.BayesNet;
@@ -251,10 +251,6 @@ public class ArffGenerator {
         result = getCorrectClassifiedCount(idGraph);
         log.info("Vote: " + result * 100 + "%");
 
-        wekaWrapper.classify(new InputMappedClassifier(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("InputMappedClassifier: " + result * 100 + "%");
-
         wekaWrapper.classify(new DecisionTable(), new String[0]);
         result = getCorrectClassifiedCount(idGraph);
         log.info("DecisionTable: " + result * 100 + "%");
@@ -312,10 +308,10 @@ public class ArffGenerator {
             Instance instance = classifiedResult.instance(i);
             String classifiedGraph = instance.stringValue(instance.numAttributes() - 1);
             String correctGraph = idGraph.get(i).getGraph();
-            if (!classifiedGraph.equals(correctGraph)) {
-                //log.info("False classified: " + idGraph.get(i).getQuestionText() + "\t" + classifiedGraph + "\t" + idGraph.get(i).getGraph());
-            } else {
+            if (classifiedGraph.equals(correctGraph)) {
                 correctlyClassified++;
+            } else {
+                //log.info("False classified: " + idGraph.get(i).getQuestionText() + "\t" + classifiedGraph + "\t" + idGraph.get(i).getGraph());
             }
         }
         return (float) correctlyClassified / classified;

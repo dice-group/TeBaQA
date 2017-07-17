@@ -70,7 +70,7 @@ public class QueryTemplatesBuilderTest {
         QueryTemplatesBuilder queryTemplatesBuilder = new QueryTemplatesBuilder(queries);
         List<QueryTemplate> queryTemplates = queryTemplatesBuilder.getQueryTemplates();
 
-        assert queryTemplates.isEmpty();
+        assert(queryTemplates.isEmpty());
     }
 
     //TODO modifier values is not recognized well
