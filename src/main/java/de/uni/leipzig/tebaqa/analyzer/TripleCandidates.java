@@ -60,7 +60,7 @@ public class TripleCandidates implements IAnalyzer {
     @Override
     public Object analyze(String q) {
         List<List<String>> entityGroups = new ArrayList<>();
-        String exceptions = "have||do||be||many||much||give||call||list";
+        String exceptions = "have|do|be|many|much|give|call|list";
         Annotation annotation = new Annotation(q);
         pipeline.annotate(annotation);
         List<CoreMap> sentences = annotation.get(SentencesAnnotation.class);

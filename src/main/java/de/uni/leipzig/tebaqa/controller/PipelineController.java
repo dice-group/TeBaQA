@@ -2,8 +2,12 @@ package de.uni.leipzig.tebaqa.controller;
 
 import de.uni.leipzig.tebaqa.model.Cluster;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
+import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.semgraph.SemanticGraph;
+import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
+import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.util.PropertiesUtils;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
@@ -36,9 +40,7 @@ public class PipelineController {
         PipelineController controller = new PipelineController();
         log.info("Configuring controller");
 
-        //Uncomment to use questions from all QALD's combined (~600)
-        //controller.addDatasets(Dataset.values());
-        controller.addDataset(Dataset.QALD6_Train_Multilingual);
+        controller.addDataset(Dataset.QALD7_Train_Multilingual);
 
         controller.setStanfordNLPPipeline(new StanfordCoreNLP(
                 PropertiesUtils.asProperties(
@@ -54,9 +56,25 @@ public class PipelineController {
         datasets.addAll(Arrays.asList(values));
     }
 
+    //TODO use SemanticAnalysisHelper.annotate()
     private Annotation annotate(String text) {
         Annotation annotation = new Annotation(text);
         pipeline.annotate(annotation);
+
+        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+        for (CoreMap sentence : sentences) {
+            SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
+            if (dependencyGraph == null) {
+                dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
+            }
+            //dependencyGraph.prettyPrint();
+            String compactGraph = dependencyGraph.toCompactString();
+
+            log.info(compactGraph);
+
+        }
+
+
         //pipeline.prettyPrint(annotation, System.out);
         return annotation;
     }
@@ -85,7 +103,7 @@ public class PipelineController {
 
         //only use clusters with at least x questions
         List<Cluster> relevantClusters = clusters.stream()
-                .filter(cluster -> cluster.size() >= 5)
+                .filter(cluster -> cluster.size() >= 0)
                 .collect(Collectors.toList());
         List<CustomQuestion> customQuestions = new ArrayList<>();
         for (Cluster cluster : relevantClusters) {
@@ -97,6 +115,7 @@ public class PipelineController {
                 //log.info("\t" + questionText);
                 List<String> simpleModifiers = getSimpleModifiers(question.getSparqlQuery());
                 customQuestions.add(new CustomQuestion(question.getSparqlQuery(), questionText, simpleModifiers, graph));
+                annotate(questionText);
             }
 
         }

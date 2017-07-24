@@ -1,0 +1,44 @@
+@relation classifier_evaluation
+
+@attribute name {BayesNet,NaiveBayes,NaiveBayesUpdateable,NaiveBayesMultinominalText,Logistic,MultilayerPerception,SimpleLogistic,SMO,IBk,KStar,LWL,AdaBoostM1,Bagging,ClassificationViaRegression,CVParameterSelection,FilteredClassifier,IterativeClassifierOptimizer,LogitBoost,MultiClassClassifier,MultiClassClassifierUpdateable,MultiScheme,RandomCommittee,RandomizableFilteredClassifier,RandomSubSpace,Stacking,Vote,DecisionTable,JRip,OneR,PART,ZeroR,DecisionStump,HoeffdingTree,J48,LMT,RandomTree,REPTree}
+@attribute f-measure numeric
+@attribute 'correctly classified' numeric
+
+@data
+BayesNet,0.554262,0.651163
+NaiveBayes,0.557919,0.697674
+NaiveBayesUpdateable,0.557919,0.697674
+NaiveBayesMultinominalText,0.427497,0.581395
+Logistic,0.572532,0.753488
+MultilayerPerception,0.646849,0.883721
+SimpleLogistic,0.594571,0.646512
+SMO,0.573369,0.688372
+IBk,0.622577,0.911628
+KStar,0.615378,0.92093
+LWL,0.569824,0.697674
+AdaBoostM1,0.485282,0.609302
+Bagging,0.555941,0.693023
+ClassificationViaRegression,0.573297,0.697674
+CVParameterSelection,0.427497,0.581395
+FilteredClassifier,0.549712,0.660465
+IterativeClassifierOptimizer,0.595556,0.762791
+LogitBoost,0.620783,0.762791
+MultiClassClassifier,0.576944,0.753488
+MultiClassClassifierUpdateable,0.506299,0.688372
+MultiScheme,0.427497,0.581395
+RandomCommittee,0.61254,0.92093
+RandomizableFilteredClassifier,0.601334,0.92093
+RandomSubSpace,0.491592,0.665116
+Stacking,0.427497,0.581395
+Vote,0.427497,0.581395
+DecisionTable,0.503831,0.613953
+JRip,0.550665,0.683721
+OneR,0.478975,0.623256
+PART,0.591946,0.781395
+ZeroR,0.427497,0.581395
+DecisionStump,0.485282,0.609302
+HoeffdingTree,0.427497,0.581395
+J48,0.593244,0.790698
+LMT,0.604606,0.748837
+RandomTree,0.581972,0.916279
+REPTree,0.508476,0.581395

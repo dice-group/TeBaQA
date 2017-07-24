@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.controller;
 
+import com.google.common.collect.Lists;
 import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import org.apache.log4j.Logger;
@@ -15,7 +16,6 @@ import weka.classifiers.lazy.IBk;
 import weka.classifiers.lazy.KStar;
 import weka.classifiers.lazy.LWL;
 import weka.classifiers.meta.*;
-import weka.classifiers.misc.InputMappedClassifier;
 import weka.classifiers.rules.DecisionTable;
 import weka.classifiers.rules.JRip;
 import weka.classifiers.rules.OneR;
@@ -28,11 +28,14 @@ import weka.classifiers.trees.LMT;
 import weka.classifiers.trees.REPTree;
 import weka.classifiers.trees.RandomTree;
 import weka.core.Attribute;
+import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ArffLoader;
+import weka.core.converters.CSVSaver;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -145,157 +148,295 @@ public class ArffGenerator {
 
     private void classifyResult(Map<Integer, CustomQuestion> idGraph) {
         WekaWrapper wekaWrapper = new WekaWrapper();
-        float result;
+        double f_measure;
+        ArrayList<Attribute> attributes = new ArrayList<>();
+        List<String> classifiers = new ArrayList<>();
+        classifiers.addAll(Lists.asList("BayesNet", new String[]{"NaiveBayes", "NaiveBayesUpdateable",
+                "NaiveBayesMultinominalText", "Logistic", "MultilayerPerception", "SimpleLogistic", "SMO", "IBk",
+                "KStar", "LWL", "AdaBoostM1", "Bagging", "ClassificationViaRegression", "CVParameterSelection",
+                "FilteredClassifier", "IterativeClassifierOptimizer", "LogitBoost", "MultiClassClassifier",
+                "MultiClassClassifierUpdateable", "MultiScheme", "RandomCommittee", "RandomizableFilteredClassifier",
+                "RandomSubSpace", "Stacking", "Vote", "DecisionTable", "JRip", "OneR", "PART",
+                "ZeroR", "DecisionStump", "HoeffdingTree", "J48", "LMT", "RandomTree",
+                "REPTree"}));
+        Attribute name_attribute = new Attribute("name", classifiers);
+        attributes.add(name_attribute);
+        Attribute f_measure_attribute = new Attribute("f-measure");
+        attributes.add(f_measure_attribute);
+        Attribute correctly_classified_attribute = new Attribute("correctly classified");
+        attributes.add(correctly_classified_attribute);
+        Instances set = new Instances("classifier_evaluation", attributes, 36);
 
-        wekaWrapper.classify(new BayesNet(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("BayesNet: " + result * 100 + "%");
+        Instance instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new BayesNet(), new String[0]);
+        instance.setValue(name_attribute, "BayesNet");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new NaiveBayes(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("NaiveBayes: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new NaiveBayes(), new String[0]);
+        instance.setValue(name_attribute, "NaiveBayes");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new NaiveBayesUpdateable(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("NaiveBayesUpdateable: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new NaiveBayesUpdateable(), new String[0]);
+        instance.setValue(name_attribute, "NaiveBayesUpdateable");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new NaiveBayesMultinomialText(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("NaiveBayesMultinominalText: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new NaiveBayesMultinomialText(), new String[0]);
+        instance.setValue(name_attribute, "NaiveBayesMultinominalText");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new Logistic(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("Logistic: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new Logistic(), new String[0]);
+        instance.setValue(name_attribute, "Logistic");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new MultilayerPerceptron(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("MultilayerPerception: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new MultilayerPerceptron(), new String[0]);
+        instance.setValue(name_attribute, "MultilayerPerception");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new SimpleLogistic(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("SimpleLogistic: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new SimpleLogistic(), new String[0]);
+        instance.setValue(name_attribute, "SimpleLogistic");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new SMO(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("SMO: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new SMO(), new String[0]);
+        instance.setValue(name_attribute, "SMO");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new IBk(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("IBK: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new IBk(), new String[0]);
+        instance.setValue(name_attribute, "IBk");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new KStar(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("KStar: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new KStar(), new String[0]);
+        instance.setValue(name_attribute, "KStar");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new LWL(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("LWL: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new LWL(), new String[0]);
+        instance.setValue(name_attribute, "LWL");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new AdaBoostM1(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("AdaBoostM1: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new AdaBoostM1(), new String[0]);
+        instance.setValue(name_attribute, "AdaBoostM1");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new Bagging(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("Bagging: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new Bagging(), new String[0]);
+        instance.setValue(name_attribute, "Bagging");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new ClassificationViaRegression(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("ClassificationViaRegression: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new ClassificationViaRegression(), new String[0]);
+        instance.setValue(name_attribute, "ClassificationViaRegression");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new CVParameterSelection(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("CVParameterSelection: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new CVParameterSelection(), new String[0]);
+        instance.setValue(name_attribute, "CVParameterSelection");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new FilteredClassifier(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("FilteredClassifier: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new FilteredClassifier(), new String[0]);
+        instance.setValue(name_attribute, "FilteredClassifier");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new IterativeClassifierOptimizer(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("IterativeClassifierOptimizer: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new IterativeClassifierOptimizer(), new String[0]);
+        instance.setValue(name_attribute, "IterativeClassifierOptimizer");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new LogitBoost(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("LogitBoost: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new LogitBoost(), new String[0]);
+        instance.setValue(name_attribute, "LogitBoost");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new MultiClassClassifier(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("MultiClassClassifier: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new MultiClassClassifier(), new String[0]);
+        instance.setValue(name_attribute, "MultiClassClassifier");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new MultiClassClassifierUpdateable(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("MultiClassClassifierUpdateable: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new MultiClassClassifierUpdateable(), new String[0]);
+        instance.setValue(name_attribute, "MultiClassClassifierUpdateable");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new MultiScheme(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("MultiScheme: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new MultiScheme(), new String[0]);
+        instance.setValue(name_attribute, "MultiScheme");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new RandomCommittee(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("RandomCommittee: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new RandomCommittee(), new String[0]);
+        instance.setValue(name_attribute, "RandomCommittee");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new RandomizableFilteredClassifier(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("RandomizableFilteredClassifier: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new RandomizableFilteredClassifier(), new String[0]);
+        instance.setValue(name_attribute, "RandomizableFilteredClassifier");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new RandomSubSpace(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("RandomSubSpace: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new RandomSubSpace(), new String[0]);
+        instance.setValue(name_attribute, "RandomSubSpace");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new Stacking(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("Stacking: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new Stacking(), new String[0]);
+        instance.setValue(name_attribute, "Stacking");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new Vote(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("Vote: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new Vote(), new String[0]);
+        instance.setValue(name_attribute, "Vote");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new DecisionTable(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("DecisionTable: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new DecisionTable(), new String[0]);
+        instance.setValue(name_attribute, "DecisionTable");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new JRip(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("JRip: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new JRip(), new String[0]);
+        instance.setValue(name_attribute, "JRip");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new OneR(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("OneR: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new OneR(), new String[0]);
+        instance.setValue(name_attribute, "OneR");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new PART(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("PART: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new PART(), new String[0]);
+        instance.setValue(name_attribute, "PART");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new ZeroR(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("MultiClassClassifierUpdateable: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new ZeroR(), new String[0]);
+        instance.setValue(name_attribute, "ZeroR");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new DecisionStump(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("DecisionStump: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new DecisionStump(), new String[0]);
+        instance.setValue(name_attribute, "DecisionStump");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new HoeffdingTree(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("HoeffdingTree: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new HoeffdingTree(), new String[0]);
+        instance.setValue(name_attribute, "HoeffdingTree");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
         String[] j48Options = new String[1];
         j48Options[0] = "-U";            // unpruned tree
-        wekaWrapper.classify(new J48(), j48Options);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("J48: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new J48(), j48Options);
+        instance.setValue(name_attribute, "J48");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new LMT(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("LMT: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new LMT(), new String[0]);
+        instance.setValue(name_attribute, "LMT");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new RandomTree(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("RandomTree: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new RandomTree(), new String[0]);
+        instance.setValue(name_attribute, "RandomTree");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
 
-        wekaWrapper.classify(new REPTree(), new String[0]);
-        result = getCorrectClassifiedCount(idGraph);
-        log.info("REPTree: " + result * 100 + "%");
+        instance = new DenseInstance(3);
+        f_measure = wekaWrapper.classify(new REPTree(), new String[0]);
+        instance.setValue(name_attribute, "REPTree");
+        instance.setValue(f_measure_attribute, f_measure);
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        set.add(instance);
+
+        writeSetToArffFile(set, "./src/main/resources/Evaluation.arff");
+        CSVSaver csvSaver = new CSVSaver();
+        try {
+            csvSaver.setInstances(set);
+            csvSaver.setFile(new File("./src/main/resources/Evaluation.csv"));
+            csvSaver.writeBatch();
+        } catch (IOException e) {
+            log.error("Unable to write classifier evaluation to CSV", e);
+        }
     }
 
     private float getCorrectClassifiedCount(Map<Integer, CustomQuestion> idGraph) {

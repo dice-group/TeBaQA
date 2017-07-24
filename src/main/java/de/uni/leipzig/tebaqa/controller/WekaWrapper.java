@@ -43,7 +43,13 @@ class WekaWrapper {
         }
     }
 
-    void classify(AbstractClassifier classifier, String[] options) {
+    /**
+     * Classifies data with the given classifier from the weka framework and it's options.
+     * @param classifier The classifier to classify the data.
+     * @param options Options for the classifier. If there are non given the weka framework will use the standard ones.
+     * @return The macro weighted average f-measure. The classified instances are in the created Test.arff file.
+     */
+    double classify(AbstractClassifier classifier, String[] options) {
         if (options.length > 0) {
             try {
                 classifier.setOptions(options);     // set the options
@@ -111,5 +117,8 @@ class WekaWrapper {
         } catch (IOException e) {
             log.error("IOException while writing Test.arff", e);
         }
+        log.info(classifier.getClass() + "> Recall: " + eval.weightedRecall() + "; Precision:" + eval.weightedPrecision());
+
+        return eval.weightedFMeasure();
     }
 }
