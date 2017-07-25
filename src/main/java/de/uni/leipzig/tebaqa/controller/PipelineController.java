@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.controller;
 
 import de.uni.leipzig.tebaqa.model.Cluster;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
+import de.uni.leipzig.tebaqa.model.QueryBuilder;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
@@ -100,6 +101,7 @@ public class PipelineController {
 
         QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionWithQuery);
         List<Cluster> clusters = queryIsomorphism.getClusters();
+        QueryBuilder queryBuilder = new QueryBuilder(clusters);
 
         //only use clusters with at least x questions
         List<Cluster> relevantClusters = clusters.stream()
