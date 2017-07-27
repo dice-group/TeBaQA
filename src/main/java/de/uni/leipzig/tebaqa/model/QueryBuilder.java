@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.model;
 
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
+import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import org.aksw.qa.commons.datastructure.Question;
@@ -17,11 +18,17 @@ public class QueryBuilder {
     private SemanticAnalysisHelper analysis = new SemanticAnalysisHelper();
 
     public QueryBuilder(List<Cluster> clusters) {
+        List<List<String>> dependencySequences = new ArrayList<>();
         for (Cluster cluster : clusters) {
             log.info("Graph: " + cluster.getGraph());
             for (Question question : cluster.getQuestions()) {
-                log.info("\t" + String.join(" ", processQuestion(question.getLanguageToQuestion().get("en"),
-                        cluster.getGraph())));
+                List<String> dependencySequence = processQuestion(question.getLanguageToQuestion().get("en"),
+                        cluster.getGraph());
+                dependencySequences.add(dependencySequence);
+                log.info("\t" + String.join(" ", dependencySequence));
+                log.info("\t" + question.getLanguageToQuestion().get("en"));
+                log.info("\t" + question.getSparqlQuery().replaceAll("\n", " ").trim());
+                log.info("\n-------------------------\n");
             }
         }
     }
@@ -35,7 +42,7 @@ public class QueryBuilder {
         sequence.forEach(word -> posSequence.add(word.get(PartOfSpeechAnnotation.class)));
         log.debug(String.join(" ", posSequence));
 
-        log.debug(semanticGraph);
+        log.info(semanticGraph);
         return posSequence;
     }
 
@@ -47,17 +54,20 @@ public class QueryBuilder {
     }
 
     private List<IndexedWord> getDependenciesFromEdge(IndexedWord root, SemanticGraph semanticGraph) {
-        final String exclusion = "DT|IN|WDT\\.";
+        final String posExclusion = "DT|IN|WDT|W.*|\\.";
+        final String lemmaExclusion = "have|do|be|many|much|give|call|list";
         List<IndexedWord> sequence = new ArrayList<>();
         String rootPos = root.get(PartOfSpeechAnnotation.class);
-        if (!rootPos.matches(exclusion)) {
+        String rootLemma = root.get(CoreAnnotations.LemmaAnnotation.class);
+        if (!rootPos.matches(posExclusion) && !rootLemma.matches(lemmaExclusion)) {
             sequence.add(root);
         }
         Set<IndexedWord> childrenFromRoot = semanticGraph.getChildren(root);
 
         for (IndexedWord word : childrenFromRoot) {
             String wordPos = word.get(PartOfSpeechAnnotation.class);
-            if (!wordPos.matches(exclusion)) {
+            String wordLemma = word.get(CoreAnnotations.LemmaAnnotation.class);
+            if (!wordPos.matches(posExclusion) && !wordLemma.matches(lemmaExclusion)) {
                 sequence.add(word);
             }
             List<IndexedWord> children = semanticGraph.getChildList(word);

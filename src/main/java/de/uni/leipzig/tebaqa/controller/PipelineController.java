@@ -36,6 +36,7 @@ public class PipelineController {
 
     private List<Dataset> datasets = new ArrayList<>();
     private StanfordCoreNLP pipeline;
+    SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
 
     public static void main(String args[]) {
         PipelineController controller = new PipelineController();
@@ -55,29 +56,6 @@ public class PipelineController {
 
     private void addDatasets(Dataset[] values) {
         datasets.addAll(Arrays.asList(values));
-    }
-
-    //TODO use SemanticAnalysisHelper.annotate()
-    private Annotation annotate(String text) {
-        Annotation annotation = new Annotation(text);
-        pipeline.annotate(annotation);
-
-        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
-        for (CoreMap sentence : sentences) {
-            SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
-            if (dependencyGraph == null) {
-                dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
-            }
-            //dependencyGraph.prettyPrint();
-            String compactGraph = dependencyGraph.toCompactString();
-
-            log.info(compactGraph);
-
-        }
-
-
-        //pipeline.prettyPrint(annotation, System.out);
-        return annotation;
     }
 
     private void run() {
@@ -117,7 +95,7 @@ public class PipelineController {
                 //log.info("\t" + questionText);
                 List<String> simpleModifiers = getSimpleModifiers(question.getSparqlQuery());
                 customQuestions.add(new CustomQuestion(question.getSparqlQuery(), questionText, simpleModifiers, graph));
-                annotate(questionText);
+                semanticAnalysisHelper.annotate(questionText);
             }
 
         }

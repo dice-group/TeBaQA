@@ -4,7 +4,6 @@ import org.aksw.mlqa.analyzer.IAnalyzer;
 import org.aksw.mlqa.analyzer.comperative.Comperative;
 import org.aksw.mlqa.analyzer.entityType.EntityPerson;
 import org.aksw.mlqa.analyzer.numberOfToken.NumberOfToken;
-import org.aksw.mlqa.analyzer.querytype.QueryResourceTypeAnalyzer;
 import org.aksw.mlqa.analyzer.questionword.QuestionWord;
 import org.apache.log4j.Logger;
 import weka.core.Attribute;
@@ -33,6 +32,7 @@ public class Analyzer {
         analyzers.add(new Verb());
         analyzers.add(new Adjective());
         analyzers.add(new Comperative());
+        analyzers.add(new NamedEntities());
         try {
             analyzers.add(new TripleCandidates());
         } catch (IOException | ClassNotFoundException e) {
@@ -63,7 +63,7 @@ public class Analyzer {
                 try {
                     tmpInstance.setValue(attribute, analyze);
                 } catch (IllegalArgumentException e) {
-                    log.warn("Not found: " + analyze);
+                    log.warn("Unable to set: " + analyze + " in " + attribute);
                 }
             }
         }
