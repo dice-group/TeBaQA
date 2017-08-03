@@ -13,6 +13,7 @@ public class Utilities {
      * Use reflection to create a Spotlight instance with a given URL.
      * This is a workaround because the API from {@link Spotlight} is down.
      *
+     * @param url The URL of the Spotlight instance.
      * @return A {@link Spotlight} instance with a custom URL.
      */
     public static Spotlight createCustomSpotlightInstance(String url) {
