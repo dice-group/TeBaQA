@@ -97,10 +97,15 @@ public class PipelineController {
         QueryBuilder queryBuilder = new QueryBuilder(customQuestions);
         customQuestions = queryBuilder.getQuestions();
 
+        Map<String, Map<String, Integer>> unresolvedEntities = new HashMap<>();
         for (CustomQuestion question : customQuestions) {
             QueryMapping queryMapping = new QueryMapping(question.getQuestionText(),
                     question.getDependencySequencePosMap(), question.getQuery());
             String queryPattern = queryMapping.getQueryPattern();
+
+            Map<String, List<String>> unresolved = queryMapping.getUnresolvedEntities();
+            addUnresolvedEntities(unresolved, unresolvedEntities);
+
             if (!queryPattern.contains("http://")) {
                 log.info(queryPattern);
             }
@@ -112,6 +117,26 @@ public class PipelineController {
 
         //QueryTemplatesBuilder templatesBuilder = new QueryTemplatesBuilder(sparqlQueries);
         //List<QueryTemplate> queryTemplates = templatesBuilder.getQueryTemplates();
+    }
+
+    private void addUnresolvedEntities(Map<String, List<String>> from, Map<String, Map<String, Integer>> to) {
+        from.forEach((entity, posSequence) -> {
+            if (to.containsKey(entity)) {
+                Map<String, Integer> tmp = to.get(entity);
+                posSequence.forEach(s -> {
+                    if (tmp.containsKey(s)) {
+                        tmp.put(s, tmp.get(s) + 1);
+                    } else {
+                        tmp.put(s, 1);
+                    }
+                });
+                to.put(entity, tmp);
+            } else {
+                HashMap<String, Integer> tmp = new HashMap<>();
+                posSequence.forEach(s -> tmp.put(s, 1));
+                to.put(entity, tmp);
+            }
+        });
     }
 
     private List<String> getSimpleModifiers(String queryString) {

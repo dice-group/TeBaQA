@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -42,6 +43,7 @@ import static org.apache.commons.lang3.StringUtils.getLevenshteinDistance;
 public class QueryMapping {
 
     private String queryPattern = "";
+    private Map<String, List<String>> unresolvedEntities = new HashMap<>();
 
     /**
      * Default constructor.
@@ -54,8 +56,6 @@ public class QueryMapping {
     public QueryMapping(String question, Map<String, String> dependencySequencePos, String sparqlQuery) {
         String queryString = Utilities.resolveNamespaces(sparqlQuery);
         List<String> permutations = getNeighborCoOccurrencePermutations(question.split(" "));
-
-
 
         Spotlight spotlight = Utilities.createCustomSpotlightInstance("http://model.dbpedia-spotlight.org/en/annotate");
         //spotlight.setConfidence(0.5);
@@ -140,6 +140,8 @@ public class QueryMapping {
                 if (newString.contains("<" + uriToReplace + ">")) {
                     newString = newString.replace(uriToReplace, "^" + join("_", posList) + "^");
                 }
+            } else {
+                unresolvedEntities.put(uriToReplace, new ArrayList<>(dependencySequencePos.keySet()));
             }
         }
         return newString;
@@ -175,4 +177,9 @@ public class QueryMapping {
     public String getQueryPattern() {
         return queryPattern;
     }
+
+    public Map<String, List<String>> getUnresolvedEntities() {
+        return unresolvedEntities;
+    }
+
 }
