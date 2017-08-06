@@ -1,14 +1,10 @@
 package de.uni.leipzig.tebaqa.controller;
 
+import de.uni.leipzig.tebaqa.helper.QueryMapping;
 import de.uni.leipzig.tebaqa.model.Cluster;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryBuilder;
-import edu.stanford.nlp.ling.CoreAnnotations;
-import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import edu.stanford.nlp.semgraph.SemanticGraph;
-import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
-import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.util.PropertiesUtils;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
@@ -79,13 +75,13 @@ public class PipelineController {
 
         QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionWithQuery);
         List<Cluster> clusters = queryIsomorphism.getClusters();
-        QueryBuilder queryBuilder = new QueryBuilder(clusters);
 
         //only use clusters with at least x questions
         List<Cluster> relevantClusters = clusters.stream()
                 .filter(cluster -> cluster.size() >= 0)
                 .collect(Collectors.toList());
         List<CustomQuestion> customQuestions = new ArrayList<>();
+
         for (Cluster cluster : relevantClusters) {
             String graph = cluster.getGraph();
             //log.info(graph);
@@ -97,8 +93,21 @@ public class PipelineController {
                 customQuestions.add(new CustomQuestion(question.getSparqlQuery(), questionText, simpleModifiers, graph));
                 semanticAnalysisHelper.annotate(questionText);
             }
-
         }
+        QueryBuilder queryBuilder = new QueryBuilder(customQuestions);
+        customQuestions = queryBuilder.getQuestions();
+
+        for (CustomQuestion question : customQuestions) {
+            QueryMapping queryMapping = new QueryMapping(question.getQuestionText(),
+                    question.getDependencySequencePosMap(), question.getQuery());
+            String queryPattern = queryMapping.getQueryPattern();
+            if (!queryPattern.contains("http://")) {
+                log.info(queryPattern);
+            }
+            //log.info(question.toString() + "\n" + queryPattern);
+            //log.info("---------------------------------------------------------------\n");
+        }
+
         ArffGenerator arffGenerator = new ArffGenerator(customQuestions);
 
         //QueryTemplatesBuilder templatesBuilder = new QueryTemplatesBuilder(sparqlQueries);

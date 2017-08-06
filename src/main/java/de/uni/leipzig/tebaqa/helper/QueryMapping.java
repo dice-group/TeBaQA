@@ -2,9 +2,7 @@ package de.uni.leipzig.tebaqa.helper;
 
 import org.aksw.qa.commons.datastructure.Entity;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
-import org.apache.jena.query.Query;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.sparql.syntax.ElementGroup;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -21,7 +19,7 @@ import static org.apache.commons.lang3.StringUtils.getLevenshteinDistance;
 /**
  * Creates a Mapping between a part-of-speech tag sequence and a SPARQL query.
  * Algorithm:
- * <br>Input: Question, wordPosMap(mapping between the words of the question and their part-of-speech tag),
+ * <br>Input: Question, dependencySequencePos(mapping between the words of the question and their part-of-speech tag),
  * QueryPattern from <i>sparqlQuery</i></br>
  * <ol>
  * <li>Get Named Entities of the <i>question</i> from DBpedia Spotlight.</li>
@@ -29,9 +27,9 @@ import static org.apache.commons.lang3.StringUtils.getLevenshteinDistance;
  * If there is no exactly same entity to replace in step go to step 3.</li>
  * <li>Find possible matches based on string similarities:
  * <ol>
- * <li type="1">Create a List with all possible co-occurrences from the words in <i>Question</i>. Calculate the
- * levenshtein distance between every co-occurrence permutation and the entity from Spotlight</li>
- * <li type="1">If the distance of the likeliest group of co-occurrences is lower than 0.4 and the ratio between
+ * <li type="1">Create a List with all possible neighbor co-occurrences from the words in <i>Question</i>. Calculate the
+ * levenshtein distance between every neighbor co-occurrence permutation and the entity from Spotlight</li>
+ * <li type="1">If the distance of the likeliest group of neighbor co-occurrences is lower than 0.4 and the ratio between
  * the 2 likeliest group of words is smaller than 0.6, replace the resource in the <i>QueryPattern</i> with the
  * part-of-speech tags of the word group</li>
  * </ol>
@@ -48,18 +46,15 @@ public class QueryMapping {
     /**
      * Default constructor.
      *
-     * @param wordPosMap A map which contains every relevant word as key and its part-of-speech tag as value.
+     * @param dependencySequencePos A map which contains every relevant word as key and its part-of-speech tag as value.
      *                   Like this: "Airlines" -> "NNP"
      * @param sparqlQuery The SPARQL query with a query pattern. The latter is used to replace resources with their
      *                    part-of-speech tag.
      */
-    QueryMapping(String question, Map<String, String> wordPosMap, Query sparqlQuery) {
-        this.queryPattern = sparqlQuery.toString();
+    public QueryMapping(String question, Map<String, String> dependencySequencePos, String sparqlQuery) {
+        String queryString = Utilities.resolveNamespaces(sparqlQuery);
+        List<String> permutations = getNeighborCoOccurrencePermutations(question.split(" "));
 
-        List<String> permutations = getCoOccurrencePermutations(question.split(" "));
-
-        ElementGroup queryPattern = (ElementGroup) sparqlQuery.getQueryPattern();
-        String queryPatternString = queryPattern.toString();
 
 
         Spotlight spotlight = Utilities.createCustomSpotlightInstance("http://model.dbpedia-spotlight.org/en/annotate");
@@ -68,7 +63,7 @@ public class QueryMapping {
         Map<String, List<Entity>> spotlightEntities = spotlight.getEntities(question);
 
         //get (multi-word) named entities from DBpedia's Spotlight
-        final String[] tmpQueryPatternString = {queryPatternString};
+        final String[] tmpQueryPatternString = {queryString};
         if (spotlightEntities.size() > 0) {
             spotlightEntities.get("en").forEach((Entity entity) -> {
                         String label = entity.getLabel();
@@ -79,7 +74,7 @@ public class QueryMapping {
                         for (Resource uri : uris) {
                             List<String> wordPos = new ArrayList<>();
                             for (String word : words) {
-                                wordPos.add(wordPosMap.get(word));
+                                wordPos.add(dependencySequencePos.get(word));
                             }
                             String replace;
                             if (tmpQueryPatternString[0].toLowerCase().contains("<" + uri.toString().toLowerCase() + ">")) {
@@ -88,7 +83,7 @@ public class QueryMapping {
                             } else {
                                 //get the most similar word
                                 TreeMap<Double, String> distances = getLevenshteinDistances(permutations, uri.getLocalName());
-                                replace = conditionallyReplaceResourceWithPOSTag(wordPosMap, tmpQueryPatternString[0],
+                                replace = conditionallyReplaceResourceWithPOSTag(dependencySequencePos, tmpQueryPatternString[0],
                                         uri.toString(), distances);
 
                             }
@@ -98,10 +93,10 @@ public class QueryMapping {
             );
         }
 
-        queryPatternString = tmpQueryPatternString[0];
+        queryString = tmpQueryPatternString[0];
 
         Pattern pattern = Pattern.compile("<(.*?)>");
-        Matcher matcher = pattern.matcher(queryPatternString);
+        Matcher matcher = pattern.matcher(queryString);
 
         //Step 4: If there is a resource which isn't detected by Spotlight, search for a similar string in the question.
         //Find every resource between <>
@@ -110,25 +105,26 @@ public class QueryMapping {
             if (!resource.startsWith("<^") && !resource.startsWith("^")) {
                 String[] split = resource.split("/");
                 String entity = split[split.length - 1];
-                if (wordPosMap.containsKey(entity)) {
-                    queryPatternString = queryPatternString.replace(resource,
-                            "^" + wordPosMap.get(entity) + "^");
+                if (dependencySequencePos.containsKey(entity)) {
+                    queryString = queryString.replace(resource,
+                            "^" + dependencySequencePos.get(entity) + "^");
                 } else {
                     //Calculate levenshtein distance
                     TreeMap<Double, String> distances = getLevenshteinDistances(permutations, entity);
-                    queryPatternString = conditionallyReplaceResourceWithPOSTag(wordPosMap, tmpQueryPatternString[0],
+                    queryString = conditionallyReplaceResourceWithPOSTag(dependencySequencePos, tmpQueryPatternString[0],
                             resource, distances);
                 }
             }
         }
 
-        this.queryPattern = queryPatternString
+        this.queryPattern = queryString
                 .replaceAll("\n", " ")
                 .replaceAll("\\s+", " ");
     }
 
-    private String conditionallyReplaceResourceWithPOSTag(Map<String, String> wordPosMap, String stringWithResources,
-                                                          String uriToReplace, TreeMap<Double, String> distances) {
+    private String conditionallyReplaceResourceWithPOSTag(Map<String, String> dependencySequencePos,
+                                                          String stringWithResources, String uriToReplace,
+                                                          TreeMap<Double, String> distances) {
         String newString = stringWithResources;
 
         //Check if the difference between the two shortest distances is big enough
@@ -139,7 +135,7 @@ public class QueryMapping {
                 List<String> posList = new ArrayList<>();
                 String[] split = distances.firstEntry().getValue().split(" ");
                 for (String aSplit : split) {
-                    posList.add(wordPosMap.get(aSplit));
+                    posList.add(dependencySequencePos.get(aSplit));
                 }
                 if (newString.contains("<" + uriToReplace + ">")) {
                     newString = newString.replace(uriToReplace, "^" + join("_", posList) + "^");
@@ -160,7 +156,7 @@ public class QueryMapping {
         return distances;
     }
 
-    private List<String> getCoOccurrencePermutations(String[] s) {
+    private List<String> getNeighborCoOccurrencePermutations(String[] s) {
         List<String> permutations = new ArrayList<>();
         for (int i = 0; i <= s.length; i++) {
             for (int y = 1; y <= s.length - i; y++) {

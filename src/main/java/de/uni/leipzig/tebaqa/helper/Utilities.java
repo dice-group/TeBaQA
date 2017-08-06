@@ -1,9 +1,12 @@
 package de.uni.leipzig.tebaqa.helper;
 
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
+import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
 
 import java.lang.reflect.Field;
+import java.util.Map;
 
 public class Utilities {
 
@@ -29,5 +32,29 @@ public class Utilities {
             log.error("Unable to change the Spotlight API URL using reflection. Using it's default value.", e);
         }
         return spotlight;
+    }
+
+    /**
+     * Resolves all namespaces in a sparql query.
+     *
+     * @param query
+     * @return
+     */
+    public static String resolveNamespaces(String query) {
+        Query q = QueryFactory.create(query);
+        Map<String, String> nsPrefixMap = q.getPrefixMapping().getNsPrefixMap();
+        q.setPrefixMapping(null);
+        final String[] queryWithoutPrefix = {q.toString()};
+        nsPrefixMap.forEach((s, s2) -> {
+            queryWithoutPrefix[0] = queryWithoutPrefix[0].replace(s + ":", s2);
+        });
+
+        String[] split = queryWithoutPrefix[0].split(" ");
+        for (int i = 0; i < split.length; i++) {
+            if (split[0].startsWith("http://") || split[0].startsWith("https://")) {
+                split[0] = "<" + split[0] + ">";
+            }
+        }
+        return String.join(" ", split).trim();
     }
 }

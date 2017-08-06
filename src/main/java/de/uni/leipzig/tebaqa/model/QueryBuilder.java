@@ -4,11 +4,12 @@ import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.semgraph.SemanticGraph;
-import org.aksw.qa.commons.datastructure.Question;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
@@ -16,32 +17,30 @@ import static edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
 public class QueryBuilder {
     private static Logger log = Logger.getLogger(QueryBuilder.class);
     private SemanticAnalysisHelper analysis = new SemanticAnalysisHelper();
+    private List<CustomQuestion> questions;
 
-    public QueryBuilder(List<Cluster> clusters) {
-        List<List<String>> dependencySequences = new ArrayList<>();
-        for (Cluster cluster : clusters) {
-            log.info("Graph: " + cluster.getGraph());
-            for (Question question : cluster.getQuestions()) {
-                List<String> dependencySequence = processQuestion(question.getLanguageToQuestion().get("en"),
-                        cluster.getGraph());
-                dependencySequences.add(dependencySequence);
-                log.info("\t" + String.join(" ", dependencySequence));
-                log.info("\t" + question.getLanguageToQuestion().get("en"));
-                log.info("\t" + question.getSparqlQuery().replaceAll("\n", " ").trim());
-                log.info("\n-------------------------\n");
-            }
+    public QueryBuilder(List<CustomQuestion> questions) {
+        for (CustomQuestion question : questions) {
+            int i = questions.indexOf(question);
+            Map<String, String> dependencySequence = processQuestion(question.getQuestionText());
+            question.setDependencySequencePosMap(dependencySequence);
+            questions.set(i, question);
         }
+        this.questions = questions;
     }
 
-    private List<String> processQuestion(String question, String graph) {
+    private Map<String, String> processQuestion(String question) {
         //TODO detect entities, properties and classes from the question
         SemanticGraph semanticGraph = analysis.extractDependencyGraph(question);
 
         List<IndexedWord> sequence = getDependencySequence(semanticGraph);
-        List<String> posSequence = new ArrayList<>();
-        sequence.forEach(word -> posSequence.add(word.get(PartOfSpeechAnnotation.class)));
-        log.debug(String.join(" ", posSequence));
-
+        Map<String, String> posSequence = new HashMap<>();
+        //Remove the part-of-speech tag from the word: "Atacama/NNP" => "Atacama"
+        for (int i = 0; i < sequence.size(); i++) {
+            IndexedWord word = sequence.get(i);
+            posSequence.put(word.toString().split("/")[0],
+                    word.get(PartOfSpeechAnnotation.class) + i);
+        }
         log.info(semanticGraph);
         return posSequence;
     }
@@ -80,6 +79,13 @@ public class QueryBuilder {
             }
         }
         return sequence;
+    }
 
+    public List<CustomQuestion> getQuestions() {
+        return questions;
+    }
+
+    public void setQuestions(List<CustomQuestion> questions) {
+        this.questions = questions;
     }
 }
