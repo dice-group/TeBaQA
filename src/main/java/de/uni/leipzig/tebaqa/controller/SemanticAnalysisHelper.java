@@ -34,10 +34,9 @@ public class SemanticAnalysisHelper {
                 dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
             }
             //dependencyGraph.prettyPrint();
-            String compactGraph = dependencyGraph.toCompactString();
+            //String compactGraph = dependencyGraph.toCompactString();
 
-            log.info(compactGraph);
-
+            //log.info(compactGraph);
         }
 
 

@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.controller;
 
 import de.uni.leipzig.tebaqa.helper.QueryMapping;
+import de.uni.leipzig.tebaqa.helper.Utilities;
 import de.uni.leipzig.tebaqa.model.Cluster;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryBuilder;
@@ -32,7 +33,7 @@ public class PipelineController {
 
     private List<Dataset> datasets = new ArrayList<>();
     private StanfordCoreNLP pipeline;
-    SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+    private SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
 
     public static void main(String args[]) {
         PipelineController controller = new PipelineController();
@@ -98,6 +99,8 @@ public class PipelineController {
         customQuestions = queryBuilder.getQuestions();
 
         Map<String, Map<String, Integer>> unresolvedEntities = new HashMap<>();
+        Map<String, List<String>> mappings = new HashMap<>();
+        int completeMappings = 0;
         for (CustomQuestion question : customQuestions) {
             QueryMapping queryMapping = new QueryMapping(question.getQuestionText(),
                     question.getDependencySequencePosMap(), question.getQuery());
@@ -106,12 +109,29 @@ public class PipelineController {
             Map<String, List<String>> unresolved = queryMapping.getUnresolvedEntities();
             addUnresolvedEntities(unresolved, unresolvedEntities);
 
+
             if (!queryPattern.contains("http://")) {
-                log.info(queryPattern);
+                completeMappings++;
+                if (mappings.containsKey(question.getGraph())) {
+                    List<String> currMappingsOfGraph = mappings.get(question.getGraph());
+                    currMappingsOfGraph.add(queryPattern);
+                    mappings.put(question.getGraph(), currMappingsOfGraph);
+                } else {
+                    mappings.put(question.getGraph(), new ArrayList<>(Collections.singletonList(queryPattern)));
+                }
+
+                //log.info(question.getGraph());
+                //log.info(queryPattern);
+            } else {
+                log.info(queryPattern + "\n" + question.getQuestionText() + "\n" + question.getDependencySequencePosMap());
+                log.info("\n");
             }
             //log.info(question.toString() + "\n" + queryPattern);
             //log.info("---------------------------------------------------------------\n");
         }
+        log.info("Got " + completeMappings + " / " + customQuestions.size() + " Mappings.");
+        log.info(mappings);
+        Utilities.writeToFile("./src/main/resources/mappings.json", mappings);
 
         ArffGenerator arffGenerator = new ArffGenerator(customQuestions);
 

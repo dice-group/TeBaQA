@@ -4,8 +4,12 @@ import org.aksw.qa.commons.nlp.nerd.Spotlight;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
 
 public class Utilities {
@@ -37,10 +41,10 @@ public class Utilities {
     /**
      * Resolves all namespaces in a sparql query.
      *
-     * @param query
-     * @return
+     * @param query The query with namespaces
+     * @return The given query where all namespaces are replaced with their full URI.
      */
-    public static String resolveNamespaces(String query) {
+    static String resolveNamespaces(String query) {
         Query q = QueryFactory.create(query);
         Map<String, String> nsPrefixMap = q.getPrefixMapping().getNsPrefixMap();
         q.setPrefixMapping(null);
@@ -56,5 +60,25 @@ public class Utilities {
             }
         }
         return String.join(" ", split).trim();
+    }
+
+    /**
+     * Converts a map to a JSON object and writes it to a file.
+     *
+     * @param outputPath The path of the file in which the content shall be written.
+     * @param map        The map which shall be written to a file.
+     */
+    public static void writeToFile(String outputPath, Map<String, List<String>> map) {
+        JSONObject json = new JSONObject();
+        for (String entry : map.keySet()) {
+            List<String> mappings = map.get(entry);
+            json.put(entry, mappings);
+        }
+
+        try (FileWriter file = new FileWriter(outputPath)) {
+            file.write(json.toString(2));
+        } catch (IOException e) {
+            log.error("Unable to write map to file", e);
+        }
     }
 }

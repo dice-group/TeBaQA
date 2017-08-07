@@ -30,8 +30,8 @@ import static org.apache.commons.lang3.StringUtils.getLevenshteinDistance;
  * <ol>
  * <li type="1">Create a List with all possible neighbor co-occurrences from the words in <i>Question</i>. Calculate the
  * levenshtein distance between every neighbor co-occurrence permutation and the entity from Spotlight</li>
- * <li type="1">If the distance of the likeliest group of neighbor co-occurrences is lower than 0.4 and the ratio between
- * the 2 likeliest group of words is smaller than 0.6, replace the resource in the <i>QueryPattern</i> with the
+ * <li type="1">If the distance of the likeliest group of neighbor co-occurrences is lower than 0.5 and the ratio between
+ * the 2 likeliest group of words is smaller than 0.7, replace the resource in the <i>QueryPattern</i> with the
  * part-of-speech tags of the word group</li>
  * </ol>
  * </li>
@@ -130,8 +130,8 @@ public class QueryMapping {
         //Check if the difference between the two shortest distances is big enough
         if (distances.size() > 1) {
             Object[] keys = distances.keySet().toArray();
-            //The thresholds 0.4 and 0.6 are based on testing and might be suboptimal.
-            if ((double) keys[0] < 0.4 && (double) keys[0] / (double) keys[1] < 0.6) {
+            //The thresholds are based on testing and might be suboptimal.
+            if ((double) keys[0] < 0.5 && (double) keys[0] / (double) keys[1] < 0.7) {
                 List<String> posList = new ArrayList<>();
                 String[] split = distances.firstEntry().getValue().split(" ");
                 for (String aSplit : split) {

@@ -41,7 +41,7 @@ public class QueryBuilder {
             posSequence.put(word.toString().split("/")[0],
                     word.get(PartOfSpeechAnnotation.class) + i);
         }
-        log.info(semanticGraph);
+        //log.info(semanticGraph);
         return posSequence;
     }
 
