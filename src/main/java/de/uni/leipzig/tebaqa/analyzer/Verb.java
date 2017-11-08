@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.analyzer;
 
+import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -9,17 +10,13 @@ import org.aksw.mlqa.analyzer.IAnalyzer;
 import weka.core.Attribute;
 
 import java.util.List;
-import java.util.Properties;
 
 public class Verb implements IAnalyzer {
     private Attribute attribute = null;
     private StanfordCoreNLP pipeline;
 
-    Verb() {
-        Properties props = new Properties();
-        props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner");
-        props.setProperty("ner.useSUTime", "false");
-        pipeline = new StanfordCoreNLP(props);
+    public Verb() {
+        pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
         attribute = new Attribute("NumberOfVerbs");
     }
 

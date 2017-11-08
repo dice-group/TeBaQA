@@ -8,7 +8,7 @@ import weka.core.Attribute;
 public class NamedEntities implements IAnalyzer {
     private Attribute attribute = null;
 
-    NamedEntities() {
+    public NamedEntities() {
         attribute = new Attribute("NumberOfDBPediaNamedEntities");
     }
 
