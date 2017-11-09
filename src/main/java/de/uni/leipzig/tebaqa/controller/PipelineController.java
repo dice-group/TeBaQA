@@ -112,7 +112,9 @@ public class PipelineController {
         NTripleParser nTripleParser = new NTripleParser();
         Set<RDFNode> nodes = nTripleParser.getNodes();
 
-        Map<String, List<QueryTemplateMapping>> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes));
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+
+        Map<String, List<QueryTemplateMapping>> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
         //log.info(mappings);
         //Utilities.writeToFile("./src/main/resources/mappings.json", mappings);
 
@@ -131,7 +133,7 @@ public class PipelineController {
             boolean answered = false;
             String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
 
-            QueryMappingFactory mappingFactory = new QueryMappingFactory(question.getQuestionText(), question.getQuery(), Lists.newArrayList(nodes));
+            QueryMappingFactory mappingFactory = new QueryMappingFactory(question.getQuestionText(), question.getQuery(), Lists.newArrayList(nodes), dBpediaProperties);
             List<String> queries = mappingFactory.generateQueries(mappings, graphPattern);
             if (queries.isEmpty()) {
                 queries = mappingFactory.generateQueries(mappings);
@@ -150,7 +152,7 @@ public class PipelineController {
                 currentAnswers.addAll(tmp);
                 if (correctAnswers.containsAll(tmp) && tmp.containsAll(correctAnswers) && !tmp.isEmpty()) {
                     correctlyAnswered[0]++;
-                    log.info(String.format("Found correct answer! Question: '%s' -> '%s' with: %s", question.getQuestionText(), Strings.join(tmp, ";"), s));
+                    log.info(String.format("Found correct answer! Question: '%s'\nAnswer(s): '%s'\nQuery: %s", question.getQuestionText(), Strings.join(tmp, ";"), s));
                     answered = true;
                     break queryIteration;
                 }

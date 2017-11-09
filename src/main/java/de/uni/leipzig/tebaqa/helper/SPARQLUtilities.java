@@ -13,9 +13,13 @@ import org.apache.log4j.Logger;
 import org.assertj.core.util.Lists;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
+
+import static com.google.common.collect.Lists.newArrayList;
 
 public class SPARQLUtilities {
     private static Logger log = Logger.getLogger(SPARQLUtilities.class);
@@ -106,5 +110,23 @@ public class SPARQLUtilities {
             //log.info("Result: " + Strings.join(result, "; "));
         }
         return result;
+    }
+
+    public static List<String> getDBpediaProperties() {
+        Set<String> properties = new HashSet<>();
+        String query = "select ?property where { ?property a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> } OFFSET %d LIMIT 10000";
+        boolean gotResult = true;
+        int offset = 0;
+        while (gotResult) {
+            String format = String.format(query, offset);
+            List<String> result = SPARQLUtilities.executeSPARQLQuery(format);
+            if (!result.isEmpty()) {
+                properties.addAll(result);
+                offset += 10000;
+            } else {
+                gotResult = false;
+            }
+        }
+        return newArrayList(properties);
     }
 }

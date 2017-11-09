@@ -121,11 +121,11 @@ public class SemanticAnalysisHelper {
      * @return A list which contains SPARQL query templates, divided by their number of entities and classes and by
      * their query type (ASK or SELECT).
      */
-    Map<String, List<QueryTemplateMapping>> extractTemplates(List<CustomQuestion> questions, List<RDFNode> nodes) {
+    Map<String, List<QueryTemplateMapping>> extractTemplates(List<CustomQuestion> questions, List<RDFNode> nodes, List<String> properties) {
         Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
         for (CustomQuestion question : questions) {
             String query = question.getQuery();
-            QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question.getQuestionText(), query, nodes);
+            QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question.getQuestionText(), query, nodes, properties);
             String queryPattern = queryMappingFactory.getQueryPattern();
 
             // if (!queryPattern.contains("http://")) {
