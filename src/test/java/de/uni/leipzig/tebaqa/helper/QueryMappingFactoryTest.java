@@ -140,6 +140,7 @@ public class QueryMappingFactoryTest {
         assertEquals("SELECT DISTINCT ?uri WHERE { <^NNP2^> <^NN1^> ?uri . }", queryMappingFactory.getQueryPattern());
     }
 
+    //TODO Fix test
     @Test
     public void testQuery2() throws Exception {
         String question = "Give me all launch pads operated by NASA.";
@@ -182,20 +183,23 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
 
-        List<QueryTemplateMapping> mappings = new ArrayList<>();
-        QueryTemplateMapping mapping1 = new QueryTemplateMapping(2, 2);
-        mapping1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NN2^> <^NN1^> ?uri }");
-        mappings.add(mapping1);
+        List<QueryTemplateMapping> templates = new ArrayList<>();
+        QueryTemplateMapping template1 = new QueryTemplateMapping(2, 2);
+        template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NN2^> <^NN1^> ?uri }");
+        templates.add(template1);
 
-        QueryTemplateMapping mapping2 = new QueryTemplateMapping(2, 2);
-        mapping2.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NNP4^> <^NN3^> ?x }");
-        mappings.add(mapping2);
+        QueryTemplateMapping template2 = new QueryTemplateMapping(2, 2);
+        template2.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NNP4^> <^NN3^> ?x }");
+        templates.add(template2);
+
+        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
+        mappings.put("", templates);
 
         List<String> expected = new ArrayList<>();
-        expected.add("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NN2^> <^NN1^> ?uri }");
-        expected.add("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NNP4^> <^NN3^> ?x }");
+        expected.add("SELECT DISTINCT ?uri WHERE { ?class_ ?property_ ?x . ?class_ ?property_ ?uri . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
+        expected.add("SELECT DISTINCT ?uri WHERE { ?class_ ?property_ ?x . ?class_ ?property_ ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
 
-        //assertEquals(expected, queryMappingFactory.generateQueries(mappings));
+        assertEquals(expected, queryMappingFactory.generateQueries(mappings));
     }
 
 
@@ -213,20 +217,22 @@ public class QueryMappingFactoryTest {
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
-        List<QueryTemplateMapping> mappings = new ArrayList<>();
-        QueryTemplateMapping mapping1 = new QueryTemplateMapping(1, 1);
-        mapping1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x }");
-        mappings.add(mapping1);
+        List<QueryTemplateMapping> templates = new ArrayList<>();
+        QueryTemplateMapping template1 = new QueryTemplateMapping(1, 1);
+        template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x }");
+        templates.add(template1);
 
-        QueryTemplateMapping mapping2 = new QueryTemplateMapping(1, 1);
-        mapping2.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x }");
-        mappings.add(mapping2);
+        QueryTemplateMapping template2 = new QueryTemplateMapping(1, 1);
+        template2.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x }");
+        templates.add(template2);
 
         List<String> expected = new ArrayList<>();
-        expected.add("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x }");
-        expected.add("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x }");
+        expected.add("SELECT DISTINCT ?uri WHERE { ?class_ ?property_ ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
 
-        //assertEquals(expected, queryMappingFactory.generateQueries(mappings));
+        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
+        mappings.put("", templates);
+
+        assertEquals(expected, queryMappingFactory.generateQueries(mappings));
     }
 
     @Test
@@ -243,15 +249,18 @@ public class QueryMappingFactoryTest {
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
-        List<QueryTemplateMapping> mappings = new ArrayList<>();
-        QueryTemplateMapping mapping1 = new QueryTemplateMapping(1, 0);
-        mapping1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> a ?x }");
-        mappings.add(mapping1);
+        List<QueryTemplateMapping> templates = new ArrayList<>();
+        QueryTemplateMapping template1 = new QueryTemplateMapping(1, 0);
+        template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> a ?x }");
+        templates.add(template1);
 
         List<String> expected = new ArrayList<>();
-        expected.add("SELECT DISTINCT ?uri WHERE { <^NNP4^> a ?x }");
+        expected.add("SELECT DISTINCT ?uri WHERE { ?class_ a ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
 
-        //assertEquals(expected, queryMappingFactory.generateQueries(mappings));
+        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
+        mappings.put("", templates);
+
+        assertEquals(expected, queryMappingFactory.generateQueries(mappings));
     }
 
     @Test
@@ -268,15 +277,18 @@ public class QueryMappingFactoryTest {
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
-        List<QueryTemplateMapping> mappings = new ArrayList<>();
-        QueryTemplateMapping mapping1 = new QueryTemplateMapping(0, 1);
-        mapping1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { ?x <^NN3^> ?x }");
-        mappings.add(mapping1);
+        List<QueryTemplateMapping> templates = new ArrayList<>();
+        QueryTemplateMapping template1 = new QueryTemplateMapping(0, 1);
+        template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { ?x <^NN3^> ?x }");
+        templates.add(template1);
 
         List<String> expected = new ArrayList<>();
-        expected.add("SELECT DISTINCT ?uri WHERE { ?x <^NN3^> ?x }");
+        expected.add("SELECT DISTINCT ?uri WHERE { ?x ?property_ ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
 
-        //assertEquals(expected, queryMappingFactory.generateQueries(mappings));
+        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
+        mappings.put("", templates);
+
+        assertEquals(expected, queryMappingFactory.generateQueries(mappings));
     }
 
     @Test
@@ -293,16 +305,23 @@ public class QueryMappingFactoryTest {
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
-        List<QueryTemplateMapping> mappings = new ArrayList<>();
-        QueryTemplateMapping mapping1 = new QueryTemplateMapping(3, 3);
-        mapping1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x. <^NNP4^> <^NN3^> ?x. <^NNP4^> <^NN3^> ?x }");
-        mappings.add(mapping1);
+        List<QueryTemplateMapping> templates = new ArrayList<>();
+        QueryTemplateMapping template1 = new QueryTemplateMapping(3, 3);
+        template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x. <^NNP4^> <^NN3^> ?x. <^NNP4^> <^NN3^> ?x }");
+        templates.add(template1);
 
         QueryTemplateMapping mapping2 = new QueryTemplateMapping(3, 3);
         mapping2.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NNP4^> <^NN3^> ?x . <^NNP4^> <^NN3^> ?x }");
-        mappings.add(mapping2);
+        templates.add(mapping2);
 
-        //assertEquals(Lists.emptyList(), queryMappingFactory.generateQueries(mappings));
+        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
+        mappings.put("", templates);
+
+        List<String> expected = new ArrayList<>();
+        expected.add("SELECT DISTINCT ?uri WHERE { ?class_ ?property_ ?x. ?class_ ?property_ ?x. ?class_ ?property_ ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
+        expected.add("SELECT DISTINCT ?uri WHERE { ?class_ ?property_ ?x . ?class_ ?property_ ?x . ?class_ ?property_ ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
+
+        assertEquals(expected, queryMappingFactory.generateQueries(mappings));
     }
 
     @Test
@@ -320,15 +339,18 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         List<String> expected = new ArrayList<>();
-        expected.add("SELECT DISTINCT ?uri WHERE { <^http://foo.bar.some.thing^> <^NN3^> ?x. <http://some.url> <^NN3^> ?x. <http://foo.bar.com> <^NN3^> ?x }");
+        expected.add("SELECT DISTINCT ?uri WHERE { ?class_ ?property_ ?x. <http://some.url> ?property_ ?x. <http://foo.bar.com> ?property_ ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
 
 
-        List<QueryTemplateMapping> mappings = new ArrayList<>();
-        QueryTemplateMapping mapping1 = new QueryTemplateMapping(0, 0);
-        mapping1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^http://foo.bar.some.thing^> <^NN3^> ?x. <http://some.url> <^NN3^> ?x. <http://foo.bar.com> <^NN3^> ?x }");
-        mappings.add(mapping1);
+        List<QueryTemplateMapping> templates = new ArrayList<>();
+        QueryTemplateMapping template1 = new QueryTemplateMapping(0, 0);
+        template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^http://foo.bar.some.thing^> <^NN3^> ?x. <http://some.url> <^NN3^> ?x. <http://foo.bar.com> <^NN3^> ?x }");
+        templates.add(template1);
 
-        //assertEquals(expected, queryMappingFactory.generateQueries(mappings));
+        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
+        mappings.put("", templates);
+
+        assertEquals(expected, queryMappingFactory.generateQueries(mappings));
     }
 
     @Test
