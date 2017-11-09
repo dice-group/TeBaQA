@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.analyzer;
 
+import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -16,10 +17,7 @@ public class Noun implements IAnalyzer {
     private StanfordCoreNLP pipeline;
 
     Noun() {
-        Properties props = new Properties();
-        props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner");
-        props.setProperty("ner.useSUTime", "false");
-        pipeline = new StanfordCoreNLP(props);
+        pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
         attribute = new Attribute("NumberOfNouns");
     }
 
@@ -40,7 +38,6 @@ public class Noun implements IAnalyzer {
                     }
                 }
             }
-
         }
 
         return nounCnt;

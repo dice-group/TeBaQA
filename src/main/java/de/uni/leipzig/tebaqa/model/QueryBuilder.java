@@ -16,10 +16,11 @@ import static edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
 
 public class QueryBuilder {
     private static Logger log = Logger.getLogger(QueryBuilder.class);
-    private SemanticAnalysisHelper analysis = new SemanticAnalysisHelper();
+    private SemanticAnalysisHelper analysis;
     private List<CustomQuestion> questions;
 
-    public QueryBuilder(List<CustomQuestion> questions) {
+    public QueryBuilder(List<CustomQuestion> questions, SemanticAnalysisHelper analysis) {
+        this.analysis = analysis;
         for (CustomQuestion question : questions) {
             int i = questions.indexOf(question);
             Map<String, String> dependencySequence = processQuestion(question.getQuestionText());

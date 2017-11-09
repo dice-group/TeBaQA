@@ -31,6 +31,7 @@ import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.SerializationHelper;
 import weka.core.converters.ArffLoader;
 import weka.core.converters.CSVSaver;
 
@@ -51,11 +52,6 @@ public class ArffGenerator {
 
     ArffGenerator(List<CustomQuestion> questions) {
         log.debug("Calculate the features per question and cluster");
-
-        Set<String> graphs = new HashSet<>();
-        for (CustomQuestion customQuestion : questions) {
-            graphs.add(customQuestion.getGraph());
-        }
 
         List<String> filter = new ArrayList<>();
         filter.add("Filter");
@@ -91,6 +87,10 @@ public class ArffGenerator {
         attributes.add(unionAttribute);
 
         // Add all occurring graphs(=class attribute) as possible attribute values
+        Set<String> graphs = new HashSet<>();
+        for (CustomQuestion customQuestion : questions) {
+            graphs.add(customQuestion.getGraph());
+        }
         List<String> graphsList = new ArrayList<>();
         graphsList.addAll(graphs);
         Attribute classAttribute = new Attribute("class", graphsList);
@@ -143,10 +143,20 @@ public class ArffGenerator {
         writeSetToArffFile(trainingSet, "./src/main/resources/Train.arff");
         writeSetToArffFile(testSet, "./src/main/resources/Test.arff");
 
-        classifyResult(idGraph);
+        MultilayerPerceptron multilayerPerceptron = new MultilayerPerceptron();
+        try {
+            trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
+            multilayerPerceptron.buildClassifier(trainingSet);
+            SerializationHelper.write("./src/main/resources/multilayerPerceptron.model", multilayerPerceptron);
+        } catch (Exception e) {
+            log.error("Unable to generate weka model and save it file!", e);
+        }
+
+        //TODO enable to evaluate result
+        //evaluateResult(idGraph);
     }
 
-    private void classifyResult(Map<Integer, CustomQuestion> idGraph) {
+    private void evaluateResult(Map<Integer, CustomQuestion> idGraph) {
         WekaWrapper wekaWrapper = new WekaWrapper();
         double f_measure;
         ArrayList<Attribute> attributes = new ArrayList<>();
@@ -168,6 +178,7 @@ public class ArffGenerator {
         Instances set = new Instances("classifier_evaluation", attributes, 36);
 
         Instance instance = new DenseInstance(3);
+
         f_measure = wekaWrapper.classify(new BayesNet(), new String[0]);
         instance.setValue(name_attribute, "BayesNet");
         instance.setValue(f_measure_attribute, f_measure);

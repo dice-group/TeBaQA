@@ -1,51 +1,59 @@
 package de.uni.leipzig.tebaqa.controller;
 
-import de.uni.leipzig.tebaqa.helper.QueryMapping;
-import de.uni.leipzig.tebaqa.helper.Utilities;
+import com.google.common.collect.Lists;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import de.uni.leipzig.tebaqa.helper.NTripleParser;
+import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
+import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
+import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
 import de.uni.leipzig.tebaqa.model.Cluster;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryBuilder;
+import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import edu.stanford.nlp.util.PropertiesUtils;
+import joptsimple.internal.Strings;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.datastructure.Question;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QueryParseException;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
+
+
+
 public class PipelineController {
+
     private static Logger log = Logger.getLogger(PipelineController.class);
 
     private List<Dataset> datasets = new ArrayList<>();
-    private StanfordCoreNLP pipeline;
-    private SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+    private static SemanticAnalysisHelper semanticAnalysisHelper;
+    static StanfordCoreNLP pipeline;
+
 
     public static void main(String args[]) {
-        PipelineController controller = new PipelineController();
+
         log.info("Configuring controller");
+        pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
+        semanticAnalysisHelper = new SemanticAnalysisHelper();
 
+
+        PipelineController controller = new PipelineController();
         controller.addDataset(Dataset.QALD7_Train_Multilingual);
-
-        controller.setStanfordNLPPipeline(new StanfordCoreNLP(
-                PropertiesUtils.asProperties(
-                        "annotators", "tokenize,ssplit,pos,lemma,parse,natlog,depparse",
-                        "ssplit.isOneSentence", "true",
-                        "tokenize.language", "en")));
 
         log.info("Running controller");
         controller.run();
@@ -69,7 +77,7 @@ public class PipelineController {
         for (HAWKQuestion q : questions) {
             //only use unique questions
             String questionText = q.getLanguageToQuestion().get("en");
-            if (!containsQuestionText(questionWithQuery, questionText)) {
+            if (!semanticAnalysisHelper.containsQuestionText(questionWithQuery, questionText)) {
                 questionWithQuery.put(q.getSparqlQuery(), questionText);
             }
         }
@@ -90,53 +98,72 @@ public class PipelineController {
             for (Question question : questionList) {
                 String questionText = question.getLanguageToQuestion().get("en");
                 //log.info("\t" + questionText);
-                List<String> simpleModifiers = getSimpleModifiers(question.getSparqlQuery());
-                customQuestions.add(new CustomQuestion(question.getSparqlQuery(), questionText, simpleModifiers, graph));
+                String sparqlQuery = question.getSparqlQuery();
+                List<String> simpleModifiers = getSimpleModifiers(sparqlQuery);
+                Map<String, List<String>> goldenAnswers = new HashMap<>();
+                goldenAnswers.put(sparqlQuery, SPARQLUtilities.executeSPARQLQuery(sparqlQuery));
+                customQuestions.add(new CustomQuestion(sparqlQuery, questionText, simpleModifiers, graph, goldenAnswers));
                 semanticAnalysisHelper.annotate(questionText);
             }
         }
-        QueryBuilder queryBuilder = new QueryBuilder(customQuestions);
+        QueryBuilder queryBuilder = new QueryBuilder(customQuestions, semanticAnalysisHelper);
         customQuestions = queryBuilder.getQuestions();
 
-        Map<String, Map<String, Integer>> unresolvedEntities = new HashMap<>();
-        Map<String, List<String>> mappings = new HashMap<>();
-        int completeMappings = 0;
-        for (CustomQuestion question : customQuestions) {
-            QueryMapping queryMapping = new QueryMapping(question.getQuestionText(),
-                    question.getDependencySequencePosMap(), question.getQuery());
-            String queryPattern = queryMapping.getQueryPattern();
+        NTripleParser nTripleParser = new NTripleParser();
+        Set<RDFNode> nodes = nTripleParser.getNodes();
 
-            Map<String, List<String>> unresolved = queryMapping.getUnresolvedEntities();
-            addUnresolvedEntities(unresolved, unresolvedEntities);
+        Map<String, List<QueryTemplateMapping>> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes));
+        //log.info(mappings);
+        //Utilities.writeToFile("./src/main/resources/mappings.json", mappings);
 
-
-            if (!queryPattern.contains("http://")) {
-                completeMappings++;
-                if (mappings.containsKey(question.getGraph())) {
-                    List<String> currMappingsOfGraph = mappings.get(question.getGraph());
-                    currMappingsOfGraph.add(queryPattern);
-                    mappings.put(question.getGraph(), currMappingsOfGraph);
-                } else {
-                    mappings.put(question.getGraph(), new ArrayList<>(Collections.singletonList(queryPattern)));
-                }
-
-                //log.info(question.getGraph());
-                //log.info(queryPattern);
-            } else {
-                log.info(queryPattern + "\n" + question.getQuestionText() + "\n" + question.getDependencySequencePosMap());
-                log.info("\n");
-            }
-            //log.info(question.toString() + "\n" + queryPattern);
-            //log.info("---------------------------------------------------------------\n");
-        }
-        log.info("Got " + completeMappings + " / " + customQuestions.size() + " Mappings.");
-        log.info(mappings);
-        Utilities.writeToFile("./src/main/resources/mappings.json", mappings);
 
         ArffGenerator arffGenerator = new ArffGenerator(customQuestions);
 
-        //QueryTemplatesBuilder templatesBuilder = new QueryTemplatesBuilder(sparqlQueries);
-        //List<QueryTemplate> queryTemplates = templatesBuilder.getQueryTemplates();
+        List<Map<String, List<String>>> answers = new ArrayList<>();
+        Map<String, List<String>> questionToAnswers = new HashMap<>();
+        HashSet<String> graphs = new HashSet<>();
+        customQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
+        final int[] correctlyAnswered = {0};
+        //Generate SPARQL Queries
+
+        //TODO enable parallelization with customQuestions.parallelStream.forEach()
+        customQuestions.forEach(question -> {
+            boolean answered = false;
+            String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
+
+            QueryMappingFactory mappingFactory = new QueryMappingFactory(question.getQuestionText(), question.getQuery(), Lists.newArrayList(nodes));
+            List<String> queries = mappingFactory.generateQueries(mappings, graphPattern);
+            if (queries.isEmpty()) {
+                queries = mappingFactory.generateQueries(mappings);
+            }
+
+            List<String> currentAnswers = new ArrayList<>();
+            Map<String, List<String>> goldenAnswers = question.getGoldenAnswers();
+            List<String> correctAnswers = new ArrayList<>();
+            goldenAnswers.forEach((s, strings) -> {
+                //log.info(String.format("Golden Answer: %s", Strings.join(strings, "; ")));
+                correctAnswers.addAll(strings);
+            });
+            queryIteration:
+            for (String s : queries) {
+                List<String> tmp = SPARQLUtilities.executeSPARQLQuery(s);
+                currentAnswers.addAll(tmp);
+                if (correctAnswers.containsAll(tmp) && tmp.containsAll(correctAnswers) && !tmp.isEmpty()) {
+                    correctlyAnswered[0]++;
+                    log.info(String.format("Found correct answer! Question: '%s' -> '%s' with: %s", question.getQuestionText(), Strings.join(tmp, ";"), s));
+                    answered = true;
+                    break queryIteration;
+                }
+            }
+            if (!answered) {
+                log.info("Unanswered: " + question.getQuestionText());
+                log.info("Correct would be: " + question.getQuery());
+            }
+            questionToAnswers.put(question.getQuestionText(), currentAnswers);
+            answers.add(questionToAnswers);
+            log.info("---------------------------------------------------------------------------------------------------------------");
+        });
+        log.info("Correctly answered: " + correctlyAnswered[0] + "/" + questions.size());
     }
 
     private void addUnresolvedEntities(Map<String, List<String>> from, Map<String, Map<String, Integer>> to) {
@@ -162,7 +189,7 @@ public class PipelineController {
     private List<String> getSimpleModifiers(String queryString) {
         Pattern KEYWORD_MATCHER = Pattern.compile("\\w{2}+(?:\\s*\\w+)*");
         try {
-            String trimmedQuery = cleanQuery(queryString);
+            String trimmedQuery = semanticAnalysisHelper.cleanQuery(queryString);
 
             Matcher keywordMatcherCurrent = KEYWORD_MATCHER.matcher(trimmedQuery);
             List<String> modifiers = new ArrayList<>();
@@ -180,52 +207,7 @@ public class PipelineController {
         } catch (QueryParseException e) {
             log.warn("Unable to parse query: " + queryString, e);
         }
-        return Collections.emptyList();
-    }
-
-    /**
-     * Removes all variables, prefixes, newlines, standard keywords like ASK, SELECT, WHERE, DISTINCT.
-     *
-     * @param queryString The sparql query string.
-     * @return A string which only contains sparql modifiers, a '?' as placeholder for a variable and '<>' as
-     * placeholders for strings like this: { <> <> ? . ? <> ? FILTER regex( ? , ? ) }
-     */
-    private String cleanQuery(String queryString) {
-        Query query = QueryFactory.create(queryString);
-        query.setPrefixMapping(null);
-        return query.toString().trim()
-                //replace newlines with space
-                .replaceAll("\n", " ")
-                //replace every variable with ?
-                .replaceAll("\\?[a-zA-Z\\d]+", " ? ")
-                //replace every number(e.g. 2 or 2.5) with a ?
-                .replaceAll("\\s+\\d+\\.?\\d*", " ? ")
-                //replace everything in quotes with ?
-                .replaceAll("([\"'])(?:(?=(\\\\?))\\2.)*?\\1", " ? ")
-                //remove everything between <>
-                .replaceAll("<\\S*>", " <> ")
-                //remove all SELECT, ASK, DISTINCT and WHERE keywords
-                .replaceAll("(?i)(select|ask|where|distinct)", " ")
-                //remove every consecutive spaces
-                .replaceAll("\\s+", " ");
-    }
-
-    /**
-     * Checks, if a question is inside a Map.
-     *
-     * @param map  The map in which the question is not is not.
-     * @param text The question text.
-     * @return true if the text is inside, false otherwise.
-     */
-    private boolean containsQuestionText(Map<String, String> map, String text) {
-        boolean isInside = false;
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            if (entry.getValue().equals(text)) {
-                isInside = true;
-                break;
-            }
-        }
-        return isInside;
+        return emptyList();
     }
 
     private void setDatasets(List<Dataset> datasets) {
@@ -234,9 +216,5 @@ public class PipelineController {
 
     private void addDataset(Dataset dataset) {
         this.datasets.add(dataset);
-    }
-
-    private void setStanfordNLPPipeline(StanfordCoreNLP pipeline) {
-        this.pipeline = pipeline;
     }
 }

@@ -63,7 +63,7 @@ public class Analyzer {
                 try {
                     tmpInstance.setValue(attribute, analyze);
                 } catch (IllegalArgumentException e) {
-                    log.warn("Unable to set: " + analyze + " in " + attribute);
+                    //log.warn(String.format("Unable to set: '%s' in '%s'", analyze, attribute), e);
                 }
             }
         }

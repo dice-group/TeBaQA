@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.analyzer;
 
+import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
 import edu.stanford.nlp.ie.AbstractSequenceClassifier;
 import edu.stanford.nlp.ie.crf.CRFClassifier;
 import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
@@ -30,7 +31,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import static edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 
@@ -42,20 +42,17 @@ public class TripleCandidates implements IAnalyzer {
     private AbstractSequenceClassifier<CoreLabel> classifier = CRFClassifier.getClassifier(serializedClassifier);
 
     TripleCandidates() throws IOException, ClassNotFoundException {
-        Properties props = new Properties();
-        props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner");
-        props.setProperty("ner.useSUTime", "false");
-        pipeline = new StanfordCoreNLP(props);
+        pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
 
         attribute = new Attribute("TripleCandidatesCount");
     }
 
     /**
      * Counts all verbs, adjective and group of consecutive nouns of a question and infer the number of possible
-     * SPARQL triple to answer it.
+     * SPARQL triple to generateQueries it.
      *
      * @param q A question like: What is Batman's real name?
-     * @return The number of possible SPARQL triples to answer the question.
+     * @return The number of possible SPARQL triples to generateQueries the question.
      */
     @Override
     public Object analyze(String q) {
