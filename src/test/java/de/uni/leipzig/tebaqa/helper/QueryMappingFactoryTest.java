@@ -361,7 +361,8 @@ public class QueryMappingFactoryTest {
         String question = "In which country does the Nile start?";
         NTripleParser nTripleParser = new NTripleParser();
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes);
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . }", queryMappingFactory.getQueryPattern());
     }
@@ -374,7 +375,8 @@ public class QueryMappingFactoryTest {
         String question = "In which country does the Nile start?";
         NTripleParser nTripleParser = new NTripleParser();
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes);
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . <^VAR_2^> <^VAR_3^> ?uri . }", queryMappingFactory.getQueryPattern());
     }

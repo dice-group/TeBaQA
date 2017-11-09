@@ -5,7 +5,6 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import edu.stanford.nlp.simple.Sentence;
-import joptsimple.internal.Strings;
 import org.aksw.qa.commons.datastructure.Entity;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
 import org.apache.jena.rdf.model.Resource;
@@ -61,6 +60,7 @@ public class QueryMappingFactory {
     private Map<String, List<String>> unresolvedEntities = new HashMap<>();
     private String question = "";
     private List<RDFNode> nodes = new ArrayList<>();
+    private List<String> properties = new ArrayList<>();
 
     /**
      * Default constructor. Tries to create a mapping between a word or group of words and a resource in it's SPARQL
@@ -114,8 +114,9 @@ public class QueryMappingFactory {
                 .replaceAll("\\s+", " ");
     }
 
-    public QueryMappingFactory(String question, String sparqlQuery, List<RDFNode> nodes) {
+    public QueryMappingFactory(String question, String sparqlQuery, List<RDFNode> nodes, List<String> properties) {
         this.nodes = nodes;
+        this.properties = properties;
         this.queryType = SemanticAnalysisHelper.determineQueryType(question);
 
         this.question = question;
@@ -263,15 +264,14 @@ public class QueryMappingFactory {
         for (String word : question.split("\\W+")) {
             rdfResources.addAll(getResources(word));
         }
-        log.info("Found resources: " + Strings.join(rdfResources, "; "));
+        //log.info("Found resources: " + Strings.join(rdfResources, "; "));
 
         List<String> classes = new ArrayList<>();
         List<String> properties = new ArrayList<>();
         for (String resource : rdfResources) {
-            String s = resource.substring(resource.lastIndexOf('/') + 1);
-            if (isClass(s)) {
+            if (isClass(resource)) {
                 classes.add(resource);
-            } else if (isProperty(s)) {
+            } else if (isProperty(resource)) {
                 properties.add(resource);
             } else {
                 log.error("First char of resource is no valid character: " + resource);
@@ -398,12 +398,19 @@ public class QueryMappingFactory {
         return result;
     }
 
+    //TODO Don't just check for string equality, example: birth -> birthPlace
+    //TODO use the lemma to exclude Question words (POS: WP, DT)
     private List<String> getResources(String word) {
         String lemma = new Sentence(word).lemma(0);
-        return nodes.stream()
+        Set<String> collect = nodes.stream()
                 .filter(rdfNode -> rdfNode.toString().equalsIgnoreCase(String.format("http://dbpedia.org/ontology/%s", lemma)))
                 .map(RDFNode::toString)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
+        Set<String> matchingProperties = properties.stream()
+                .filter(property -> property.equalsIgnoreCase(String.format("http://dbpedia.org/property/%s", lemma)))
+                .collect(Collectors.toSet());
+        collect.addAll(matchingProperties);
+        return Lists.newArrayList(collect);
     }
 
     public Map<String, List<String>> getUnresolvedEntities() {
@@ -411,10 +418,10 @@ public class QueryMappingFactory {
     }
 
     private boolean isProperty(String rdfResource) {
-        return Character.isLowerCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0));
+        return rdfResource.startsWith("http://dbpedia.org/property/") || Character.isLowerCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0));
     }
 
     private boolean isClass(String rdfResource) {
-        return Character.isUpperCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0));
+        return !rdfResource.startsWith("http://dbpedia.org/property/") && Character.isUpperCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0));
     }
 }
