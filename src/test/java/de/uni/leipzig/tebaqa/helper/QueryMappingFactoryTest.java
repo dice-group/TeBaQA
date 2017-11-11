@@ -1,6 +1,8 @@
 package de.uni.leipzig.tebaqa.helper;
 
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
+import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import org.assertj.core.util.Lists;
 import org.junit.Test;
@@ -9,8 +11,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class QueryMappingFactoryTest {
 
@@ -183,17 +188,15 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
 
-        List<QueryTemplateMapping> templates = new ArrayList<>();
         QueryTemplateMapping template1 = new QueryTemplateMapping(2, 2);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NN2^> <^NN1^> ?uri }");
-        templates.add(template1);
 
         QueryTemplateMapping template2 = new QueryTemplateMapping(2, 2);
         template2.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NNP4^> <^NN3^> ?x }");
-        templates.add(template2);
 
-        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
-        mappings.put("", templates);
+        Map<String, QueryTemplateMapping> mappings = new HashMap<>();
+        mappings.put("1", template1);
+        mappings.put("2", template2);
 
         List<String> expected = new ArrayList<>();
         expected.add("SELECT DISTINCT ?uri WHERE { ?class_ ?property_ ?x . ?class_ ?property_ ?uri . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
@@ -217,20 +220,18 @@ public class QueryMappingFactoryTest {
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
-        List<QueryTemplateMapping> templates = new ArrayList<>();
         QueryTemplateMapping template1 = new QueryTemplateMapping(1, 1);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x }");
-        templates.add(template1);
 
         QueryTemplateMapping template2 = new QueryTemplateMapping(1, 1);
         template2.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x }");
-        templates.add(template2);
 
         List<String> expected = new ArrayList<>();
         expected.add("SELECT DISTINCT ?uri WHERE { ?class_ ?property_ ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
 
-        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
-        mappings.put("", templates);
+        Map<String, QueryTemplateMapping> mappings = new HashMap<>();
+        mappings.put("1", template1);
+        mappings.put("2", template2);
 
         assertEquals(expected, queryMappingFactory.generateQueries(mappings));
     }
@@ -249,16 +250,14 @@ public class QueryMappingFactoryTest {
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
-        List<QueryTemplateMapping> templates = new ArrayList<>();
         QueryTemplateMapping template1 = new QueryTemplateMapping(1, 0);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> a ?x }");
-        templates.add(template1);
 
         List<String> expected = new ArrayList<>();
         expected.add("SELECT DISTINCT ?uri WHERE { ?class_ a ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
 
-        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
-        mappings.put("", templates);
+        Map<String, QueryTemplateMapping> mappings = new HashMap<>();
+        mappings.put("", template1);
 
         assertEquals(expected, queryMappingFactory.generateQueries(mappings));
     }
@@ -277,16 +276,14 @@ public class QueryMappingFactoryTest {
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
-        List<QueryTemplateMapping> templates = new ArrayList<>();
         QueryTemplateMapping template1 = new QueryTemplateMapping(0, 1);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { ?x <^NN3^> ?x }");
-        templates.add(template1);
 
         List<String> expected = new ArrayList<>();
         expected.add("SELECT DISTINCT ?uri WHERE { ?x ?property_ ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
 
-        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
-        mappings.put("", templates);
+        Map<String, QueryTemplateMapping> mappings = new HashMap<>();
+        mappings.put("1", template1);
 
         assertEquals(expected, queryMappingFactory.generateQueries(mappings));
     }
@@ -305,17 +302,15 @@ public class QueryMappingFactoryTest {
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
-        List<QueryTemplateMapping> templates = new ArrayList<>();
         QueryTemplateMapping template1 = new QueryTemplateMapping(3, 3);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x. <^NNP4^> <^NN3^> ?x. <^NNP4^> <^NN3^> ?x }");
-        templates.add(template1);
 
-        QueryTemplateMapping mapping2 = new QueryTemplateMapping(3, 3);
-        mapping2.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NNP4^> <^NN3^> ?x . <^NNP4^> <^NN3^> ?x }");
-        templates.add(mapping2);
+        QueryTemplateMapping template2 = new QueryTemplateMapping(3, 3);
+        template2.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x . <^NNP4^> <^NN3^> ?x . <^NNP4^> <^NN3^> ?x }");
 
-        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
-        mappings.put("", templates);
+        Map<String, QueryTemplateMapping> mappings = new HashMap<>();
+        mappings.put("1", template1);
+        mappings.put("1", template2);
 
         List<String> expected = new ArrayList<>();
         expected.add("SELECT DISTINCT ?uri WHERE { ?class_ ?property_ ?x. ?class_ ?property_ ?x. ?class_ ?property_ ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
@@ -342,13 +337,11 @@ public class QueryMappingFactoryTest {
         expected.add("SELECT DISTINCT ?uri WHERE { ?class_ ?property_ ?x. <http://some.url> ?property_ ?x. <http://foo.bar.com> ?property_ ?x . VALUES (?class_) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/start>)}}");
 
 
-        List<QueryTemplateMapping> templates = new ArrayList<>();
         QueryTemplateMapping template1 = new QueryTemplateMapping(0, 0);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^http://foo.bar.some.thing^> <^NN3^> ?x. <http://some.url> <^NN3^> ?x. <http://foo.bar.com> <^NN3^> ?x }");
-        templates.add(template1);
 
-        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
-        mappings.put("", templates);
+        Map<String, QueryTemplateMapping> mappings = new HashMap<>();
+        mappings.put("", template1);
 
         assertEquals(expected, queryMappingFactory.generateQueries(mappings));
     }
@@ -379,5 +372,88 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . <^VAR_2^> <^VAR_3^> ?uri . }", queryMappingFactory.getQueryPattern());
+    }
+
+    @Test
+    public void testExtractResources() throws Exception {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Does Breaking Bad have more episodes than Game of Thrones?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractResources(question);
+        assertTrue(actual.contains("http://dbpedia.org/resource/Breaking_Bad"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/Game_of_Thrones"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologiesWithPlural() throws Exception {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Give me all source countries.";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractResources(question);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/sourceCountry"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologies() throws Exception {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Give me a source country.";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractResources(question);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/sourceCountry"));
+    }
+
+    @Test
+    public void testGenerateQueries() throws Exception {
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        String query = "SELECT DISTINCT ?uri WHERE {  <http://dbpedia.org/resource/San_Pedro_de_Atacama> <http://dbpedia.org/ontology/timeZone> ?uri . }";
+        String question = "What is the timezone in San Pedro de Atacama?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . }",
+                "", null, graph, new HashMap<>()));
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
+
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("SELECT DISTINCT ?num WHERE { ?class_ ?property_ ?num .  VALUES (?class_) {(<http://dbpedia.org/resource/San_Pedro>) (<http://dbpedia.org/resource/San_Pedro_de_Atacama>)} VALUES (?property_) {(<http://dbpedia.org/property/san>) (<http://dbpedia.org/property/be>) (<http://dbpedia.org/ontology/timeZone>) (<http://dbpedia.org/property/pedro>) (<http://dbpedia.org/property/timeZone>) (<http://dbpedia.org/property/timezone>)}}");
+
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph);
+
+        assertEquals(expectedQueries, actualQueries);
     }
 }

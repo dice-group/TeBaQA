@@ -4,9 +4,15 @@ import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.simple.Sentence;
+import edu.stanford.nlp.util.CoreMap;
+import joptsimple.internal.Strings;
 import org.aksw.qa.commons.datastructure.Entity;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -25,6 +31,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static de.uni.leipzig.tebaqa.helper.Utilities.ARGUMENTS_BETWEEN_SPACES;
+import static edu.stanford.nlp.ling.CoreAnnotations.*;
 import static java.lang.String.join;
 import static org.apache.commons.lang3.StringUtils.getLevenshteinDistance;
 
@@ -253,17 +260,8 @@ public class QueryMappingFactory {
         return queryPattern;
     }
 
-    public List<String> generateQueries(Map<String, List<QueryTemplateMapping>> mappings, String graph) {
-        Set<String> rdfResources = new HashSet<>();
-
-        Map<String, List<Entity>> spotlightEntities = extractSpotlightEntities(question);
-        if (spotlightEntities.size() > 0) {
-            spotlightEntities.get("en").forEach(entity -> entity.getUris().forEach(resource -> rdfResources.add(resource.getURI())));
-        }
-
-        for (String word : question.split("\\W+")) {
-            rdfResources.addAll(getResources(word));
-        }
+    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph) {
+        Set<String> rdfResources = extractResources(question);
         //log.info("Found resources: " + Strings.join(rdfResources, "; "));
 
         List<String> classes = new ArrayList<>();
@@ -298,10 +296,53 @@ public class QueryMappingFactory {
         return Lists.newArrayList(fillPatterns(rdfResources, suitableMappings));
     }
 
-    public List<String> generateQueries(Map<String, List<QueryTemplateMapping>> mappings) {
+    Set<String> extractResources(String question) {
+        Set<String> rdfResources = new HashSet<>();
+
+        Map<String, List<Entity>> spotlightEntities = extractSpotlightEntities(question);
+        if (spotlightEntities.size() > 0) {
+            spotlightEntities.get("en").forEach(entity -> entity.getUris().forEach(resource -> rdfResources.add(resource.getURI())));
+        }
+
+        for (String word : question.split("\\W+")) {
+            rdfResources.addAll(getProperties(word));
+            rdfResources.addAll(getOntologies(word));
+        }
+
+        List<String> coOccurrences = getNeighborCoOccurrencePermutations(question.split("\\W+"));
+        rdfResources.addAll(coOccurrences.stream()
+                .filter(s -> {
+                    String[] words = s.split("\\W+");
+                    String resourceCandidate = String.join("_", words);
+                    return words.length <= 5 && words.length > 1 && SPARQLUtilities.isDBpediaEntity(String.format("http://dbpedia.org/resource/%s", resourceCandidate));
+                })
+                .map(s -> String.format("http://dbpedia.org/resource/%s", String.join("_", s.split("\\W+"))))
+                .collect(Collectors.toSet()));
+
+        rdfResources.addAll(coOccurrences.stream()
+                .filter(s -> {
+                    String[] words = s.split("\\W+");
+                    String resourceCandidate = joinCapitalizedLemmas(words);
+                    return words.length <= 3 && SPARQLUtilities.isDBpediaEntity(String.format("http://dbpedia.org/ontology/%s", resourceCandidate));
+                })
+                .map(s -> String.format("http://dbpedia.org/ontology/%s", joinCapitalizedLemmas(s.split("\\W+"))))
+                .collect(Collectors.toSet()));
+
+        log.info("Resources: " + Strings.join(rdfResources, "; "));
+        return rdfResources;
+    }
+
+    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings) {
         return generateQueries(mappings, null);
     }
 
+    private String joinCapitalizedLemmas(String[] strings) {
+        final String[] result = {""};
+        List<String> list = Arrays.asList(strings);
+        list.forEach(s -> result[0] += StringUtils.capitalize(new Sentence(s).lemma(0)));
+        //The first letter needs to be lowercase
+        return StringUtils.uncapitalize(result[0]);
+    }
 
     private Set<String> fillPatterns(Set<String> rdfResources, List<String> suitableMappings) {
         Set<String> sparqlQueries = new HashSet<>();
@@ -358,12 +399,12 @@ public class QueryMappingFactory {
         return sparqlQueries;
     }
 
-    private List<String> getSuitableMappings(Map<String, List<QueryTemplateMapping>> mappings, int classCount, int propertyCount, int queryType, String graph) {
-        List<QueryTemplateMapping> templatesForGraph;
+    private List<String> getSuitableMappings(Map<String, QueryTemplateMapping> mappings, int classCount, int propertyCount, int queryType, String graph) {
+        List<QueryTemplateMapping> templatesForGraph = new ArrayList<>();
         if (graph == null) {
-            templatesForGraph = mappings.values().stream().flatMap(List::stream).collect(Collectors.toList());
+            templatesForGraph = new ArrayList<>(mappings.values());
         } else {
-            templatesForGraph = mappings.get(graph);
+            templatesForGraph.add(mappings.get(graph));
         }
         List<String> result = new ArrayList<>();
         if (queryType == SPARQLUtilities.ASK_QUERY) {
@@ -399,18 +440,48 @@ public class QueryMappingFactory {
     }
 
     //TODO Don't just check for string equality, example: birth -> birthPlace
-    //TODO use the lemma to exclude Question words (POS: WP, DT)
-    private List<String> getResources(String word) {
-        String lemma = new Sentence(word).lemma(0);
-        Set<String> collect = nodes.stream()
-                .filter(rdfNode -> rdfNode.toString().equalsIgnoreCase(String.format("http://dbpedia.org/ontology/%s", lemma)))
-                .map(RDFNode::toString)
-                .collect(Collectors.toSet());
-        Set<String> matchingProperties = properties.stream()
-                .filter(property -> property.equalsIgnoreCase(String.format("http://dbpedia.org/property/%s", lemma)))
-                .collect(Collectors.toSet());
-        collect.addAll(matchingProperties);
-        return Lists.newArrayList(collect);
+    //TODO Check for Neighbor Co-Occurrences? ethnic group -> http://dbpedia.org/ontology/ethnicGroup; same as in QueryMappingfactory.extractResources()
+    private List<String> getProperties(String word) {
+        List<String> result = new ArrayList<>();
+        final String relevantPos = "JJ.*|NN.*|VB.*";
+        Annotation document = new Annotation(word);
+        StanfordCoreNLP pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
+        pipeline.annotate(document);
+        List<CoreMap> sentences = document.get(SentencesAnnotation.class);
+        for (CoreMap sentence : sentences) {
+            for (CoreLabel token : sentence.get(TokensAnnotation.class)) {
+                String pos = token.get(PartOfSpeechAnnotation.class);
+                String lemma = token.get(LemmaAnnotation.class);
+                if (pos.matches(relevantPos)) {
+                    result.addAll(properties.stream()
+                            .filter(property -> property.equalsIgnoreCase(String.format("http://dbpedia.org/property/%s", lemma)))
+                            .collect(Collectors.toSet()));
+                }
+            }
+        }
+        return result;
+    }
+
+    private List<String> getOntologies(String word) {
+        List<String> result = new ArrayList<>();
+        final String relevantPos = "JJ.*|NN.*|VB.*";
+        Annotation document = new Annotation(word);
+        StanfordCoreNLP pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
+        pipeline.annotate(document);
+        List<CoreMap> sentences = document.get(SentencesAnnotation.class);
+        for (CoreMap sentence : sentences) {
+            for (CoreLabel token : sentence.get(TokensAnnotation.class)) {
+                String pos = token.get(PartOfSpeechAnnotation.class);
+                String lemma = token.get(LemmaAnnotation.class);
+                if (pos.matches(relevantPos)) {
+                    result.addAll(nodes.stream()
+                            .filter(rdfNode -> rdfNode.toString().equalsIgnoreCase(String.format("http://dbpedia.org/ontology/%s", lemma)))
+                            .map(RDFNode::toString)
+                            .collect(Collectors.toSet()));
+                }
+            }
+        }
+        return result;
     }
 
     public Map<String, List<String>> getUnresolvedEntities() {

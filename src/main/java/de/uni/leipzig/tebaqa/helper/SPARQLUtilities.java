@@ -57,7 +57,6 @@ public class SPARQLUtilities {
                 Query query;
                 try {
                     query = qs.asQuery();
-
                 } catch (QueryParseException e) {
                     log.error("QueryParseException: Unable to parse query: " + qs, e);
                     return Lists.emptyList();
@@ -128,5 +127,10 @@ public class SPARQLUtilities {
             }
         }
         return newArrayList(properties);
+    }
+
+    static boolean isDBpediaEntity(String s) {
+        List<String> result = executeSPARQLQuery(String.format("ASK { VALUES (?r) {(<%s>)} {?r ?p ?o} UNION {?s ?r ?o} UNION {?s ?p ?r} }", s));
+        return result.size() == 1 && Boolean.valueOf(result.get(0));
     }
 }
