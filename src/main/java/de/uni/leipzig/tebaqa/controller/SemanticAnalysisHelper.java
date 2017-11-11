@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -121,66 +120,59 @@ public class SemanticAnalysisHelper {
      * @return A list which contains SPARQL query templates, divided by their number of entities and classes and by
      * their query type (ASK or SELECT).
      */
-    Map<String, List<QueryTemplateMapping>> extractTemplates(List<CustomQuestion> questions, List<RDFNode> nodes, List<String> properties) {
-        Map<String, List<QueryTemplateMapping>> mappings = new HashMap<>();
+    public Map<String, QueryTemplateMapping> extractTemplates(List<CustomQuestion> questions, List<RDFNode> nodes, List<String> properties) {
+        Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         for (CustomQuestion question : questions) {
             String query = question.getQuery();
             QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question.getQuestionText(), query, nodes, properties);
             String queryPattern = queryMappingFactory.getQueryPattern();
 
-            // if (!queryPattern.contains("http://")) {
-            int classCnt = 0;
-            int propertyCnt = 0;
+            if (!queryPattern.contains("http://dbpedia.org/resource/")) {
+                int classCnt = 0;
+                int propertyCnt = 0;
 
-            List<String> triples = Utilities.extractTriples(queryPattern);
-            for (String triple : triples) {
-                Matcher argumentMatcher = ARGUMENTS_BETWEEN_SPACES.matcher(triple);
-                int argumentCnt = 0;
-                while (argumentMatcher.find()) {
-                    String argument = argumentMatcher.group();
-                    if (argument.startsWith("<^") && (argumentCnt == 0 || argumentCnt == 2)) {
-                        classCnt++;
-                    } else if (argument.startsWith("<^") && argumentCnt == 1) {
-                        propertyCnt++;
+                List<String> triples = Utilities.extractTriples(queryPattern);
+                for (String triple : triples) {
+                    Matcher argumentMatcher = ARGUMENTS_BETWEEN_SPACES.matcher(triple);
+                    int argumentCnt = 0;
+                    while (argumentMatcher.find()) {
+                        String argument = argumentMatcher.group();
+                        if (argument.startsWith("<^") && (argumentCnt == 0 || argumentCnt == 2)) {
+                            classCnt++;
+                        } else if (argument.startsWith("<^") && argumentCnt == 1) {
+                            propertyCnt++;
+                        }
+                        argumentCnt++;
                     }
-                    argumentCnt++;
                 }
-            }
 
-            int finalClassCnt = classCnt;
-            int finalPropertyCnt = propertyCnt;
-            String graph = question.getGraph();
-            int queryType = SPARQLUtilities.getQueryType(query);
-            if (mappings.containsKey(graph)) {
-                Optional<QueryTemplateMapping> match = mappings.get(graph).stream()
-                        .filter(mapping -> mapping.getNumberOfClasses() == finalClassCnt && mapping.getNumberOfClasses() == finalPropertyCnt)
-                        .findFirst();
-
-
-                if (match.isPresent()) {
-                    QueryTemplateMapping currentMapping = match.get();
+                int finalClassCnt = classCnt;
+                int finalPropertyCnt = propertyCnt;
+                String graph = question.getGraph();
+                int queryType = SPARQLUtilities.getQueryType(query);
+                if (mappings.containsKey(graph)) {
+                    QueryTemplateMapping mapping = mappings.get(graph);
+                    if (mapping.getNumberOfClasses() == finalClassCnt && mapping.getNumberOfClasses() == finalPropertyCnt) {
+                        if (queryType == SPARQLUtilities.SELECT_QUERY) {
+                            mapping.addSelectTemplate(queryPattern);
+                        } else if (queryType == SPARQLUtilities.ASK_QUERY) {
+                            mapping.addAskTemplate(queryPattern);
+                        } else if (queryType == SPARQLUtilities.QUERY_TYPE_UNKNOWN) {
+                            log.error("Unknown query type: " + query);
+                        }
+                    }
+                } else {
+                    QueryTemplateMapping mapping = new QueryTemplateMapping(classCnt, propertyCnt);
                     if (queryType == SPARQLUtilities.SELECT_QUERY) {
-                        currentMapping.addSelectTemplate(queryPattern);
+                        mapping.addSelectTemplate(queryPattern);
                     } else if (queryType == SPARQLUtilities.ASK_QUERY) {
-                        currentMapping.addAskTemplate(queryPattern);
-                    } else if (queryType == SPARQLUtilities.QUERY_TYPE_UNKNOWN) {
-                        log.error("Unknown query type: " + query);
+                        mapping.addAskTemplate(queryPattern);
                     }
+                    //create a new mapping class
+                    mappings.put(graph, mapping);
                 }
-            } else {
-                QueryTemplateMapping mapping = new QueryTemplateMapping(classCnt, propertyCnt);
-                if (queryType == SPARQLUtilities.SELECT_QUERY) {
-                    mapping.addSelectTemplate(queryPattern);
-                } else if (queryType == SPARQLUtilities.ASK_QUERY) {
-                    mapping.addAskTemplate(queryPattern);
-                }
-                //create a new mapping class
-                List<QueryTemplateMapping> list = new ArrayList<>();
-                list.add(mapping);
-                mappings.put(graph, list);
+                //log.info(queryPattern);
             }
-            //log.info(queryPattern);
-            //}
         }
         return mappings;
     }
@@ -248,6 +240,7 @@ public class SemanticAnalysisHelper {
         String predictedGraph = "";
         try {
             Classifier cls = (Classifier) SerializationHelper.read("./src/main/resources/multilayerPerceptron.model");
+            //TODO serialize model
             double predictedClass = cls.classifyInstance(instance);
 
             predictedGraph = instance.classAttribute().value((int) predictedClass);

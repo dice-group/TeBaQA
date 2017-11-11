@@ -114,7 +114,7 @@ public class PipelineController {
 
         List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
 
-        Map<String, List<QueryTemplateMapping>> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
         //log.info(mappings);
         //Utilities.writeToFile("./src/main/resources/mappings.json", mappings);
 
@@ -139,19 +139,20 @@ public class PipelineController {
                 queries = mappingFactory.generateQueries(mappings);
             }
 
-            List<String> currentAnswers = new ArrayList<>();
             Map<String, List<String>> goldenAnswers = question.getGoldenAnswers();
             List<String> correctAnswers = new ArrayList<>();
             goldenAnswers.forEach((s, strings) -> {
                 //log.info(String.format("Golden Answer: %s", Strings.join(strings, "; ")));
                 correctAnswers.addAll(strings);
             });
+            List<String> currentAnswers = new ArrayList<>();
             queryIteration:
             for (String s : queries) {
                 List<String> tmp = SPARQLUtilities.executeSPARQLQuery(s);
                 currentAnswers.addAll(tmp);
                 if (correctAnswers.containsAll(tmp) && tmp.containsAll(correctAnswers) && !tmp.isEmpty()) {
                     correctlyAnswered[0]++;
+                    //TODO Calculate f-measure instead of counting correct answers!
                     log.info(String.format("Found correct answer! Question: '%s'\nAnswer(s): '%s'\nQuery: %s", question.getQuestionText(), Strings.join(tmp, ";"), s));
                     answered = true;
                     break queryIteration;

@@ -118,12 +118,18 @@ public class Utilities {
                     int closingAngleBrackets = StringUtils.countMatches(possibleTriple, ">");
                     if (openingAngleBrackets == closingAngleBrackets) {
                         lastFoundTripleIndex = i;
-                        triples.add(removeDotsFromStartAndEnd(possibleTriple));
+                        String t = removeDotsFromStartAndEnd(possibleTriple);
+                        if (!t.isEmpty()) {
+                            triples.add(t);
+                        }
                     }
                 }
             }
             //Add the last triple which may not end with a .
-            triples.add(removeDotsFromStartAndEnd(group.substring(lastFoundTripleIndex, group.length())));
+            String t = removeDotsFromStartAndEnd(group.substring(lastFoundTripleIndex, group.length()));
+            if (!t.isEmpty()) {
+                triples.add(t);
+            }
         }
 
         return triples;
