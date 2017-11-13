@@ -328,7 +328,7 @@ public class QueryMappingFactory {
                 .map(s -> String.format("http://dbpedia.org/ontology/%s", joinCapitalizedLemmas(s.split("\\W+"))))
                 .collect(Collectors.toSet()));
 
-        log.info("Resources: " + Strings.join(rdfResources, "; "));
+        //log.info("Resources: " + Strings.join(rdfResources, "; "));
         return rdfResources;
     }
 
