@@ -11,13 +11,13 @@ import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryBuilder;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import joptsimple.internal.Strings;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.datastructure.Question;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
+import org.aksw.qa.commons.measure.AnswerBasedEvaluation;
 import org.apache.jena.query.QueryParseException;
 import org.apache.log4j.Logger;
 
@@ -27,13 +27,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
-
 
 
 public class PipelineController {
@@ -121,16 +121,15 @@ public class PipelineController {
 
         ArffGenerator arffGenerator = new ArffGenerator(customQuestions);
 
-        List<Map<String, List<String>>> answers = new ArrayList<>();
-        Map<String, List<String>> questionToAnswers = new HashMap<>();
         HashSet<String> graphs = new HashSet<>();
         customQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
-        final int[] correctlyAnswered = {0};
         //Generate SPARQL Queries
 
+        List<Double> fMeasures = new ArrayList<>();
+        List<Double> precisions = new ArrayList<>();
+
         //TODO enable parallelization with customQuestions.parallelStream.forEach()
-        customQuestions.forEach(question -> {
-            boolean answered = false;
+        customQuestions.parallelStream().forEach(question -> {
             String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
 
             QueryMappingFactory mappingFactory = new QueryMappingFactory(question.getQuestionText(), question.getQuery(), Lists.newArrayList(nodes), dBpediaProperties);
@@ -139,34 +138,26 @@ public class PipelineController {
                 queries = mappingFactory.generateQueries(mappings);
             }
 
-            Map<String, List<String>> goldenAnswers = question.getGoldenAnswers();
-            List<String> correctAnswers = new ArrayList<>();
-            goldenAnswers.forEach((s, strings) -> {
-                //log.info(String.format("Golden Answer: %s", Strings.join(strings, "; ")));
-                correctAnswers.addAll(strings);
-            });
-            List<String> currentAnswers = new ArrayList<>();
-            queryIteration:
+            Set<String> currentAnswers = new HashSet<>();
             for (String s : queries) {
-                List<String> tmp = SPARQLUtilities.executeSPARQLQuery(s);
-                currentAnswers.addAll(tmp);
-                if (correctAnswers.containsAll(tmp) && tmp.containsAll(correctAnswers) && !tmp.isEmpty()) {
-                    correctlyAnswered[0]++;
-                    //TODO Calculate f-measure instead of counting correct answers!
-                    log.info(String.format("Found correct answer! Question: '%s'\nAnswer(s): '%s'\nQuery: %s", question.getQuestionText(), Strings.join(tmp, ";"), s));
-                    answered = true;
-                    break queryIteration;
-                }
+                currentAnswers.addAll(SPARQLUtilities.executeSPARQLQuery(s));
             }
-            if (!answered) {
-                log.info("Unanswered: " + question.getQuestionText());
-                log.info("Correct would be: " + question.getQuery());
+            Optional<HAWKQuestion> hawkQuestion = questions.stream().filter(q -> q.getLanguageToQuestion().get("en").equals(question.getQuestionText())).findFirst();
+
+            if (hawkQuestion.isPresent()) {
+                double fMeasure = AnswerBasedEvaluation.fMeasure(currentAnswers, hawkQuestion.get());
+                fMeasures.add(fMeasure);
+                double precision = AnswerBasedEvaluation.precision(currentAnswers, hawkQuestion.get());
+                precisions.add(precision);
+                log.info(String.format("Question: '%s'; F-Measure: %.3f; Precision: %.3f", question.getQuestionText(), fMeasure, precision));
+            } else {
+                log.error("Unable to get HAWK question by question text string matching!");
             }
-            questionToAnswers.put(question.getQuestionText(), currentAnswers);
-            answers.add(questionToAnswers);
-            log.info("---------------------------------------------------------------------------------------------------------------");
         });
-        log.info("Correctly answered: " + correctlyAnswered[0] + "/" + questions.size());
+        //log.info("Correctly answered: " + correctlyAnswered[0] + "/" + questions.size());
+        log.info("Average F-Measure: " + fMeasures.stream().mapToDouble(Double::doubleValue).summaryStatistics().getAverage());
+        log.info("Average Precision: " + precisions.stream().mapToDouble(Double::doubleValue).summaryStatistics().getAverage());
+
     }
 
     private void addUnresolvedEntities(Map<String, List<String>> from, Map<String, Map<String, Integer>> to) {
