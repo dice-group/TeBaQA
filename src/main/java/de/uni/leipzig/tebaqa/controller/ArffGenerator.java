@@ -143,11 +143,11 @@ public class ArffGenerator {
         writeSetToArffFile(trainingSet, "./src/main/resources/Train.arff");
         writeSetToArffFile(testSet, "./src/main/resources/Test.arff");
 
-        MultilayerPerceptron multilayerPerceptron = new MultilayerPerceptron();
+        RandomCommittee randomCommittee = new RandomCommittee();
         try {
             trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
-            multilayerPerceptron.buildClassifier(trainingSet);
-            SerializationHelper.write("./src/main/resources/multilayerPerceptron.model", multilayerPerceptron);
+            randomCommittee.buildClassifier(trainingSet);
+            SerializationHelper.write("./src/main/resources/randomCommittee.model", randomCommittee);
         } catch (Exception e) {
             log.error("Unable to generate weka model and save it file!", e);
         }
