@@ -236,11 +236,9 @@ public class SemanticAnalysisHelper {
             i++;
         }
 
-        //TODO The class detection ratio is lower than it should! (<50%)
         String predictedGraph = "";
         try {
-            Classifier cls = (Classifier) SerializationHelper.read("./src/main/resources/multilayerPerceptron.model");
-            //TODO serialize model
+            Classifier cls = (Classifier) SerializationHelper.read("./src/main/resources/randomCommittee.model");
             double predictedClass = cls.classifyInstance(instance);
 
             predictedGraph = instance.classAttribute().value((int) predictedClass);
