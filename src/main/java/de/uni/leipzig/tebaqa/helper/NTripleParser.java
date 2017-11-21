@@ -18,16 +18,21 @@ public class NTripleParser {
     private Set<RDFNode> subjects = new HashSet<>();
 
     public NTripleParser() {
-        String fileNameOrUri = "dbpedia_2016-10.nt";
-        model = ModelFactory.createDefaultModel();
-        InputStream is = FileManager.get().open(fileNameOrUri);
-        if (is != null) {
-            model.read(is, null, "N-TRIPLE");
-        } else {
-            log.error("cannot read " + fileNameOrUri);
-        }
+        List<String> fileNames = new ArrayList<>();
+        fileNames.add("dbpedia_2016-10.nt");
+        fileNames.add("dbpedia_3Eng_class.ttl");
+        fileNames.add("dbpedia_3Eng_property.ttl");
+        fileNames.forEach(fileName -> {
+            model = ModelFactory.createDefaultModel();
+            InputStream is = FileManager.get().open(fileName);
+            if (is != null) {
+                model.read(is, null, "N-TRIPLE");
+            } else {
+                log.error("cannot read " + fileName);
+            }
+            model.listSubjects().forEachRemaining(subjects::add);
+        });
 
-        model.listSubjects().forEachRemaining(subjects::add);
     }
 
 

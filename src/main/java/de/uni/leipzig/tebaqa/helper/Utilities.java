@@ -3,12 +3,11 @@ package de.uni.leipzig.tebaqa.helper;
 import joptsimple.internal.Strings;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -43,62 +42,6 @@ public class Utilities {
             log.error("Unable to change the Spotlight API URL using reflection. Using it's default value.", e);
         }
         return spotlight;
-    }
-
-    /**
-     * Resolves all namespaces in a sparql query.
-     *
-     * @param query The query with namespaces
-     * @return The given query where all namespaces are replaced with their full URI.
-     */
-    static String resolveNamespaces(String query) {
-        Query q = QueryFactory.create(query);
-        Map<String, String> nsPrefixMap = q.getPrefixMapping().getNsPrefixMap();
-        String queryLowerCase = query.toLowerCase();
-        int startOfQuery = 0;
-        if (queryLowerCase.contains("select")) {
-            startOfQuery = queryLowerCase.indexOf("select");
-        } else if (queryLowerCase.contains("ask")) {
-            startOfQuery = queryLowerCase.indexOf("ask");
-        } else {
-            log.error("Unable to determine query type of query: " + query);
-        }
-        final String[] queryWithoutPrefix = {query.substring(startOfQuery, query.length())};
-        nsPrefixMap.forEach((s, s2) -> queryWithoutPrefix[0] = queryWithoutPrefix[0].replace(s + ":", "<" + s2));
-        int startPosition = -1;
-        int endPosition = -1;
-        for (int i = 0; i < queryWithoutPrefix[0].length(); i++) {
-            if (queryWithoutPrefix[0].charAt(i) == '<' && i + 1 < queryWithoutPrefix[0].length()
-                    && (queryWithoutPrefix[0].charAt(i + 1) != '?' && queryWithoutPrefix[0].charAt(i + 1) != ' ')) {
-                startPosition = i;
-            } else if ((queryWithoutPrefix[0].charAt(i) == ' '
-                    || queryWithoutPrefix[0].charAt(i) == ';')
-                    && (i > 0 && queryWithoutPrefix[0].charAt(i - 1) != '>')) {
-                endPosition = i;
-            } else if (queryWithoutPrefix[0].charAt(i) == '.'
-                    && i < queryWithoutPrefix[0].length()
-                    && (queryWithoutPrefix[0].charAt(i + 1) == ' '
-                    || queryWithoutPrefix[0].charAt(i + 1) == '\n'
-                    || queryWithoutPrefix[0].charAt(i + 1) == '}')) {
-                endPosition = i;
-            } else if (i > 0 && queryWithoutPrefix[0].charAt(i - 1) == '>') {
-                startPosition = -1;
-            }
-            if (startPosition > 0 && endPosition > 0 && startPosition < endPosition) {
-                queryWithoutPrefix[0] = queryWithoutPrefix[0].replace(queryWithoutPrefix[0].substring(startPosition, endPosition),
-                        queryWithoutPrefix[0].substring(startPosition, endPosition) + ">");
-                startPosition = -1;
-                endPosition = -1;
-            }
-        }
-
-        String[] split = queryWithoutPrefix[0].replaceAll("\\s+", " ").split(" ");
-        for (int i = 0; i < split.length; i++) {
-            if (split[0].startsWith("http://") || split[0].startsWith("https://")) {
-                split[0] = "<" + split[0] + ">";
-            }
-        }
-        return String.join(" ", split).trim();
     }
 
     public static List<String> extractTriples(String query) {
@@ -155,6 +98,9 @@ public class Utilities {
     public static String fillPattern(String pattern, List<String> classResources, List<String> propertyResources) {
         List<String> triples = extractTriples(pattern);
         //TODO At the moment every placeholder is filled with every class/property. Check which replacement fits (with the POS tags)
+        int classReplacementCount = 0;
+        int propertyReplacementCount = 0;
+        Map<String, String> replacements = new HashMap<>();
         for (String triple : triples) {
             Matcher m = ARGUMENTS_BETWEEN_SPACES.matcher(triple);
             int position = 0;
@@ -162,9 +108,15 @@ public class Utilities {
                 String argument = m.group();
                 if (argument.startsWith("<^")) {
                     if (position == 0 || position == 2) {
-                        pattern = pattern.replace(argument, "?class_");
+                        String replacement = "?class_" + classReplacementCount;
+                        pattern = pattern.replace(argument, replacement);
+                        replacements.put(argument, replacement);
+                        classReplacementCount++;
                     } else if (position == 1) {
-                        pattern = pattern.replace(argument, "?property_");
+                        String replacement = "?property_" + propertyReplacementCount;
+                        pattern = pattern.replace(argument, replacement);
+                        replacements.put(argument, replacement);
+                        propertyReplacementCount++;
                     } else {
                         log.error("Invalid position in triple:" + triple);
                     }
@@ -172,11 +124,34 @@ public class Utilities {
                 position++;
             }
         }
-
-        String classValues = " VALUES (?class_) {(<" + Strings.join(classResources, ">) (<") + ">)}";
-        String propertyValues = " VALUES (?property_) {(<" + Strings.join(propertyResources, ">) (<") + ">)}";
-
-        return addToLastTriple(pattern, classValues + propertyValues);
+        StringBuilder classValues = new StringBuilder();
+        for (int i = 0; i < classResources.size(); i++) {
+            classValues.append(String.format(" VALUES (?class_%d) {(<", i)).append(Strings.join(classResources, ">) (<")).append(">)}");
+        }
+        StringBuilder propertyValues = new StringBuilder();
+        for (int i = 0; i < propertyResources.size(); i++) {
+            propertyValues.append(String.format(" VALUES (?property_%d) {(<", i)).append(Strings.join(propertyResources, ">) (<")).append(">)}");
+        }
+        StringBuilder filterClauses = new StringBuilder();
+        for (int i = 0; i < triples.size() - 1; i++) {
+            String triple = triples.get(i);
+            String[] currentTripleSplitted = triple.split(" ");
+            for (int j = 0; j < currentTripleSplitted.length; j++) {
+                if(replacements.containsKey(currentTripleSplitted[j])){
+                    currentTripleSplitted[j] = replacements.get(currentTripleSplitted[j]);
+                }
+            }
+            String[] nextTripleSplitted = triples.get(i + 1).split(" ");
+            for (int j = 0; j < nextTripleSplitted.length; j++) {
+                if(replacements.containsKey(nextTripleSplitted[j])){
+                    nextTripleSplitted[j] = replacements.get(nextTripleSplitted[j]);
+                }
+            }
+            filterClauses.append(String.format(" FILTER (CONCAT(%s, %s, %s ) != CONCAT(%s, %s, %s ))",
+                    currentTripleSplitted[0], currentTripleSplitted[1], currentTripleSplitted[2],
+                    nextTripleSplitted[0], nextTripleSplitted[1], currentTripleSplitted[2]));
+        }
+        return addToLastTriple(pattern, classValues.append(propertyValues.toString()).append(filterClauses.toString()).toString());
     }
 
     private static String addToLastTriple(String pattern, String s) {

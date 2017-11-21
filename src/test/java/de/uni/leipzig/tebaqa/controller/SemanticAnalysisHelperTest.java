@@ -83,5 +83,4 @@ public class SemanticAnalysisHelperTest {
         assertTrue(mappings.size() == 1);
         assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
     }
-
 }
