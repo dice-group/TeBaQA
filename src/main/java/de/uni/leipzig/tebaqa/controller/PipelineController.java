@@ -45,8 +45,8 @@ public class PipelineController {
     private List<Dataset> datasets = new ArrayList<>();
     private static SemanticAnalysisHelper semanticAnalysisHelper;
     static StanfordCoreNLP pipeline;
-    private boolean mockTemplates = false;
-    private boolean mockVariables = false;
+    private boolean mockTemplates = true;
+    private boolean mockVariables = true;
 
 
     public static void main(String args[]) {

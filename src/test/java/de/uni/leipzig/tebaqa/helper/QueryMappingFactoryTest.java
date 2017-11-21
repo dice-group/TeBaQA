@@ -609,18 +609,43 @@ public class QueryMappingFactoryTest {
 
         List<String> expectedQueries = new ArrayList<>();
         expectedQueries.add("SELECT DISTINCT ?uri WHERE { " +
-                "    ?uri ?property_0 ?class_1 . " +
-                "    ?uri ?property_1 ?class_2 . " +
-                "    ?uri ?property_2 ?class_3 .  " +
-                "    VALUES (?class_0) {(<http://dbpedia.org/resource/Julia_Roberts>) (<http://dbpedia.org/resource/Richard_Gere>) (<http://dbpedia.org/ontology/Film>)} " +
-                "    VALUES (?class_1) {(<http://dbpedia.org/resource/Julia_Roberts>) (<http://dbpedia.org/resource/Richard_Gere>) (<http://dbpedia.org/ontology/Film>)} " +
-                "    VALUES (?class_2) {(<http://dbpedia.org/resource/Julia_Roberts>) (<http://dbpedia.org/resource/Richard_Gere>) (<http://dbpedia.org/ontology/Film>)} " +
-                "    VALUES (?property_0) {(<http://dbpedia.org/ontology/starring>) (<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)}" +
-                "    VALUES (?property_1) {(<http://dbpedia.org/ontology/starring>) (<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)}" +
-                "    VALUES (?property_2) {(<http://dbpedia.org/ontology/starring>) (<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)}" +
-                "    FILTER (CONCAT(?uri, ?property_0, ?class_0 ) != CONCAT(?uri, ?property_1, ?class_1 ))" +
-                "    FILTER (CONCAT(?uri, ?property_1, ?class_1 ) != CONCAT(?uri, ?property_2, ?class_2 ))" +
+                "?uri ?property_0 ?class_0 . " +
+                "?uri ?property_1 ?class_1 . " +
+                "?uri ?property_2 ?class_2 .  " +
+                "VALUES (?class_0) {(<http://dbpedia.org/resource/Julia_Roberts>) (<http://dbpedia.org/resource/Richard_Gere>) (<http://dbpedia.org/ontology/Film>)} " +
+                "VALUES (?class_1) {(<http://dbpedia.org/resource/Julia_Roberts>) (<http://dbpedia.org/resource/Richard_Gere>) (<http://dbpedia.org/ontology/Film>)} " +
+                "VALUES (?class_2) {(<http://dbpedia.org/resource/Julia_Roberts>) (<http://dbpedia.org/resource/Richard_Gere>) (<http://dbpedia.org/ontology/Film>)} " +
+                "VALUES (?property_0) {(<http://dbpedia.org/ontology/starring>) (<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)}" +
+                "VALUES (?property_1) {(<http://dbpedia.org/ontology/starring>) (<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)}" +
+                "VALUES (?property_2) {(<http://dbpedia.org/ontology/starring>) (<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)}" +
+                "FILTER (CONCAT(?uri, ?property_0, ?class_0 ) != CONCAT(?uri, ?property_1, ?class_1 ))" +
+                "FILTER (CONCAT(?uri, ?property_1, ?class_1 ) != CONCAT(?uri, ?property_2, ?class_2 ))" +
                 "}\n");
+
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>());
+
+        assertEquals(expectedQueries, actualQueries);
+    }
+
+    @Test
+    public void testGenerateQueriesWithFilterInQueryTemplate() throws Exception {
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX dbp: <http://dbpedia.org/property/> PREFIX res: <http://dbpedia.org/resource/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?uri  WHERE {  ?uri rdf:type dbo:City .         ?uri dbo:isPartOf res:New_Jersey .         ?uri dbp:populationTotal ?inhabitants .         FILTER (?inhabitants > 100000) . }";
+        String question = "Give me all cities in New Jersey with more than 100000 inhabitants.";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX dbp: <http://dbpedia.org/property/> PREFIX res: <http://dbpedia.org/resource/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?uri  WHERE {  ?uri rdf:type dbo:City .         ?uri dbo:isPartOf res:New_Jersey .         ?uri dbp:populationTotal ?inhabitants .         FILTER (?inhabitants > 100000) . }",
+                "", null, graph, new HashMap<>()));
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
+
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("SELECT DISTINCT ?uri  WHERE {  ?uri <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/City> .         ?uri <http://dbpedia.org/ontology/isPartOf> <http://dbpedia.org/resource/New_Jersey> .         ?uri <http://dbpedia.org/property/populationTotal> ?inhabitants .         FILTER (?inhabitants > 100000) . }");
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>());
 

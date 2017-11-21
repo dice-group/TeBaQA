@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Utilities {
 
@@ -97,11 +98,14 @@ public class Utilities {
 
     public static String fillPattern(String pattern, List<String> classResources, List<String> propertyResources) {
         List<String> triples = extractTriples(pattern);
+        List<String> triplesWithoutFilters = triples.stream()
+                .filter(s -> !s.toLowerCase().contains("filter") && !s.toLowerCase().contains("optional"))
+                .collect(Collectors.toList());
         //TODO At the moment every placeholder is filled with every class/property. Check which replacement fits (with the POS tags)
         int classReplacementCount = 0;
         int propertyReplacementCount = 0;
         Map<String, String> replacements = new HashMap<>();
-        for (String triple : triples) {
+        for (String triple : triplesWithoutFilters) {
             Matcher m = ARGUMENTS_BETWEEN_SPACES.matcher(triple);
             int position = 0;
             while (m.find()) {
@@ -125,25 +129,25 @@ public class Utilities {
             }
         }
         StringBuilder classValues = new StringBuilder();
-        for (int i = 0; i < classResources.size(); i++) {
+        for (int i = 0; i < triplesWithoutFilters.size(); i++) {
             classValues.append(String.format(" VALUES (?class_%d) {(<", i)).append(Strings.join(classResources, ">) (<")).append(">)}");
         }
         StringBuilder propertyValues = new StringBuilder();
-        for (int i = 0; i < propertyResources.size(); i++) {
+        for (int i = 0; i < triplesWithoutFilters.size(); i++) {
             propertyValues.append(String.format(" VALUES (?property_%d) {(<", i)).append(Strings.join(propertyResources, ">) (<")).append(">)}");
         }
         StringBuilder filterClauses = new StringBuilder();
-        for (int i = 0; i < triples.size() - 1; i++) {
-            String triple = triples.get(i);
+        for (int i = 0; i < triplesWithoutFilters.size() - 1; i++) {
+            String triple = triplesWithoutFilters.get(i);
             String[] currentTripleSplitted = triple.split(" ");
             for (int j = 0; j < currentTripleSplitted.length; j++) {
-                if(replacements.containsKey(currentTripleSplitted[j])){
+                if (replacements.containsKey(currentTripleSplitted[j])) {
                     currentTripleSplitted[j] = replacements.get(currentTripleSplitted[j]);
                 }
             }
-            String[] nextTripleSplitted = triples.get(i + 1).split(" ");
+            String[] nextTripleSplitted = triplesWithoutFilters.get(i + 1).split(" ");
             for (int j = 0; j < nextTripleSplitted.length; j++) {
-                if(replacements.containsKey(nextTripleSplitted[j])){
+                if (replacements.containsKey(nextTripleSplitted[j])) {
                     nextTripleSplitted[j] = replacements.get(nextTripleSplitted[j]);
                 }
             }
