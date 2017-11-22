@@ -129,33 +129,22 @@ public class Utilities {
             }
         }
         StringBuilder classValues = new StringBuilder();
-        for (int i = 0; i < triplesWithoutFilters.size(); i++) {
-            classValues.append(String.format(" VALUES (?class_%d) {(<", i)).append(Strings.join(classResources, ">) (<")).append(">)}");
+        if (classReplacementCount > 0) {
+            for (int i = 0; i < triplesWithoutFilters.size(); i++) {
+                classValues.append(String.format(" VALUES (?class_%d) {(<", i)).append(Strings.join(classResources, ">) (<")).append(">)}");
+            }
         }
+
         StringBuilder propertyValues = new StringBuilder();
-        for (int i = 0; i < triplesWithoutFilters.size(); i++) {
-            propertyValues.append(String.format(" VALUES (?property_%d) {(<", i)).append(Strings.join(propertyResources, ">) (<")).append(">)}");
-        }
-        StringBuilder filterClauses = new StringBuilder();
-        for (int i = 0; i < triplesWithoutFilters.size() - 1; i++) {
-            String triple = triplesWithoutFilters.get(i);
-            String[] currentTripleSplitted = triple.split(" ");
-            for (int j = 0; j < currentTripleSplitted.length; j++) {
-                if (replacements.containsKey(currentTripleSplitted[j])) {
-                    currentTripleSplitted[j] = replacements.get(currentTripleSplitted[j]);
-                }
+        if (propertyReplacementCount > 0) {
+            for (int i = 0; i < triplesWithoutFilters.size(); i++) {
+                propertyValues.append(String.format(" VALUES (?property_%d) {(<", i)).append(Strings.join(propertyResources, ">) (<")).append(">)}");
             }
-            String[] nextTripleSplitted = triplesWithoutFilters.get(i + 1).split(" ");
-            for (int j = 0; j < nextTripleSplitted.length; j++) {
-                if (replacements.containsKey(nextTripleSplitted[j])) {
-                    nextTripleSplitted[j] = replacements.get(nextTripleSplitted[j]);
-                }
-            }
-            filterClauses.append(String.format(" FILTER (CONCAT(%s, %s, %s ) != CONCAT(%s, %s, %s ))",
-                    currentTripleSplitted[0], currentTripleSplitted[1], currentTripleSplitted[2],
-                    nextTripleSplitted[0], nextTripleSplitted[1], currentTripleSplitted[2]));
         }
-        return addToLastTriple(pattern, classValues.append(propertyValues.toString()).append(filterClauses.toString()).toString());
+
+        String filterClauses = SPARQLUtilities.createFilterClauses(triplesWithoutFilters, replacements);
+
+        return addToLastTriple(pattern, classValues.append(propertyValues.toString()).append(filterClauses).toString());
     }
 
     private static String addToLastTriple(String pattern, String s) {

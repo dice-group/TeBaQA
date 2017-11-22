@@ -335,12 +335,8 @@ public class QueryMappingFactory {
             rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined));
             String wordsJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, false);
             rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized));
+            //TODO Only use Co-Occurrences with more than 1 word
             Set<String> collect = searchInDBOIndex(coOccurrence);
-            collect.forEach(s -> {
-                if (!rdfResources.contains(s)) {
-                    log.info("Found in DBOIndex: " + s);
-                }
-            });
             rdfResources.addAll(collect);
         });
 
@@ -374,6 +370,7 @@ public class QueryMappingFactory {
                     String baseResourceName = split[split.length - 1];
                     int lfd = StringUtils.getLevenshteinDistance(baseResourceName, coOccurrence);
                     double ratio = ((double) lfd) / (Math.max(baseResourceName.length(), coOccurrence.length()));
+                    //TODO instead of using string similarity use the shortest one (e.g. Television instead of TelevisionShow) if it exists
                     return ratio < 0.5;
                 })
                 .collect(Collectors.toSet());

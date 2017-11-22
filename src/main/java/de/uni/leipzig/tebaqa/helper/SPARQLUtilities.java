@@ -13,16 +13,20 @@ import org.apache.log4j.Logger;
 import org.assertj.core.util.Lists;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.google.common.collect.Lists.newArrayList;
 
 public class SPARQLUtilities {
+    public static Pattern SPLIT_TRIPLE_PATTERN = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
     private static Logger log = Logger.getLogger(SPARQLUtilities.class);
     public static int QUERY_TYPE_UNKNOWN = -1;
     public static int ASK_QUERY = 0;
@@ -63,7 +67,7 @@ public class SPARQLUtilities {
                     return Lists.emptyList();
                 }
                 QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
-                qe.setTimeout(5000);
+                qe.setTimeout(-1);
                 boolean isAskType = query.isAskType();
                 boolean isSelectType = query.isSelectType();
 
@@ -193,5 +197,53 @@ public class SPARQLUtilities {
             }
             return String.join(" ", split).trim();
         }
+    }
+
+    static String createFilterClauses(List<String> triples, Map<String, String> replacements) {
+        StringBuilder result = new StringBuilder();
+        List<List<String>> triplesSplitted = new ArrayList<>();
+        triples.forEach(s -> {
+                    Matcher matcher = SPLIT_TRIPLE_PATTERN.matcher(s);
+                    List<String> currentTriple = new ArrayList<>();
+                    while (matcher.find()) {
+                        String group = matcher.group();
+                        if (!group.toLowerCase().startsWith("?") && !group.toLowerCase().startsWith("<")
+                                && !group.toLowerCase().startsWith("'") && !group.toLowerCase().startsWith("\"")) {
+                            group = "'" + group + "'";
+                        }
+                        currentTriple.add(replacements.getOrDefault(group, group));
+                    }
+                    triplesSplitted.add(currentTriple);
+                }
+        );
+
+        List<Map<List<String>, List<String>>> filterClauses = new ArrayList<>();
+        triplesSplitted.forEach(currentTriple -> triplesSplitted.forEach(otherTriple -> {
+            if (!currentTriple.equals(otherTriple)) {
+                Map<List<String>, List<String>> filterClause = new HashMap<>();
+                filterClause.put(currentTriple, otherTriple);
+                filterClauses.add(filterClause);
+            }
+        }));
+
+        filterClauses.forEach((filterMap) -> {
+
+            Optional<Map.Entry<List<String>, List<String>>> any = filterMap.entrySet().stream().findAny();
+            if (any.isPresent()) {
+                Map.Entry<List<String>, List<String>> filterMapping = any.get();
+                List<String> triple1 = filterMapping.getKey();
+                List<String> triple2 = filterMapping.getValue();
+
+                if (triple1.size() == 3 && triple2.size() == 3) {
+                    result.append(String.format(" FILTER (CONCAT( %s, %s, %s ) != CONCAT( %s, %s, %s )) ",
+                            triple1.get(0), triple1.get(1), triple1.get(2), triple2.get(0), triple2.get(1), triple2.get(2)));
+                } else {
+                    log.error(String.format("ERROR: Unable to generate FILTER statements because the triples don't have " +
+                            "exactly 3 parts! current triple: {%s}; next triple: {%s}", String.join(" ", triple1), String.join(" ", triple2)));
+                }
+            }
+        });
+        return result.toString();
+
     }
 }
