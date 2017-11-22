@@ -9,12 +9,15 @@ import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.simple.Sentence;
 import edu.stanford.nlp.util.CoreMap;
-import joptsimple.internal.Strings;
+import org.aksw.hawk.index.DBOIndex;
+import org.aksw.qa.annotation.index.IndexDBO_classes;
+import org.aksw.qa.annotation.index.IndexDBO_properties;
 import org.aksw.qa.commons.datastructure.Entity;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.log4j.Logger;
+import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -66,8 +69,9 @@ public class QueryMappingFactory {
     private String queryPattern = "";
     private Map<String, List<String>> unresolvedEntities = new HashMap<>();
     private String question = "";
-    private List<RDFNode> nodes = new ArrayList<>();
+    private List<RDFNode> ontologyNodes = new ArrayList<>();
     private List<String> properties = new ArrayList<>();
+    private Set<String> rdfEntities = new HashSet<>();
 
     /**
      * Default constructor. Tries to create a mapping between a word or group of words and a resource in it's SPARQL
@@ -75,14 +79,14 @@ public class QueryMappingFactory {
      *  @param dependencySequencePos A map which contains every relevant word as key and its part-of-speech tag as value.
      *                              Like this: "Airlines" -> "NNP"
      * @param sparqlQuery           The SPARQL query with a query pattern. The latter is used to replace resources with their
-     * @param nodes                 A list with all RDF nodes from DBpedia's ontology.
+     * @param ontologyNodes                 A list with all RDF nodes from DBpedia's ontology.
      */
-    public QueryMappingFactory(String question, Map<String, String> dependencySequencePos, String sparqlQuery, List<RDFNode> nodes) {
-        this.nodes = nodes;
+    public QueryMappingFactory(String question, Map<String, String> dependencySequencePos, String sparqlQuery, List<RDFNode> ontologyNodes) {
+        this.ontologyNodes = ontologyNodes;
         this.queryType = SemanticAnalysisHelper.determineQueryType(question);
 
         this.question = question;
-        String queryString = Utilities.resolveNamespaces(sparqlQuery);
+        String queryString = SPARQLUtilities.resolveNamespaces(sparqlQuery);
         List<String> permutations = getNeighborCoOccurrencePermutations(question.split(" "));
         //final String[] tmpQueryPatternString = replaceOntologyResources(question, dependencySequencePos, queryString);
         String tmpQueryPatternString = queryString;
@@ -121,13 +125,13 @@ public class QueryMappingFactory {
                 .replaceAll("\\s+", " ");
     }
 
-    public QueryMappingFactory(String question, String sparqlQuery, List<RDFNode> nodes, List<String> properties) {
-        this.nodes = nodes;
+    public QueryMappingFactory(String question, String sparqlQuery, List<RDFNode> ontologyNodes, List<String> properties) {
+        this.ontologyNodes = ontologyNodes;
         this.properties = properties;
         this.queryType = SemanticAnalysisHelper.determineQueryType(question);
 
         this.question = question;
-        String queryString = Utilities.resolveNamespaces(sparqlQuery);
+        String queryString = SPARQLUtilities.resolveNamespaces(sparqlQuery);
 
         // queryString.replaceAll("<(.*?)>", )
         int i = 0;
@@ -260,22 +264,24 @@ public class QueryMappingFactory {
         return queryPattern;
     }
 
-    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph) {
-        Set<String> rdfResources = extractResources(question);
+    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph, List<String> injectedVariables) {
+        Set<String> rdfResources;
+        if (!injectedVariables.isEmpty()) {
+            rdfResources = Sets.newHashSet(injectedVariables);
+        } else {
+            rdfResources = extractResources(question);
+        }
         //log.info("Found resources: " + Strings.join(rdfResources, "; "));
 
         List<String> classes = new ArrayList<>();
         List<String> properties = new ArrayList<>();
         for (String resource : rdfResources) {
-            if (isClass(resource)) {
-                classes.add(resource);
-            } else if (isProperty(resource)) {
+            if (resourceStartsLowercase(resource)) {
                 properties.add(resource);
             } else {
-                log.error("First char of resource is no valid character: " + resource);
+                classes.add(resource);
             }
         }
-
 
         int classCount = classes.size();
         int propertyCount = properties.size();
@@ -304,44 +310,117 @@ public class QueryMappingFactory {
             spotlightEntities.get("en").forEach(entity -> entity.getUris().forEach(resource -> rdfResources.add(resource.getURI())));
         }
 
-        for (String word : question.split("\\W+")) {
+        String[] wordsFromQuestion = question.split("\\W+");
+        for (String word : wordsFromQuestion) {
             rdfResources.addAll(getProperties(word));
             rdfResources.addAll(getOntologies(word));
         }
 
-        List<String> coOccurrences = getNeighborCoOccurrencePermutations(question.split("\\W+"));
-        rdfResources.addAll(coOccurrences.stream()
-                .filter(s -> {
-                    String[] words = s.split("\\W+");
-                    String resourceCandidate = String.join("_", words);
-                    return words.length <= 5 && words.length > 1 && SPARQLUtilities.isDBpediaEntity(String.format("http://dbpedia.org/resource/%s", resourceCandidate));
-                })
-                .map(s -> String.format("http://dbpedia.org/resource/%s", String.join("_", s.split("\\W+"))))
-                .collect(Collectors.toSet()));
+        List<String> coOccurrences = getNeighborCoOccurrencePermutations(wordsFromQuestion);
+        coOccurrences = coOccurrences.stream()
+                .filter(s -> s.split("\\W+").length < 5)
+                .collect(Collectors.toList());
 
-        rdfResources.addAll(coOccurrences.stream()
-                .filter(s -> {
-                    String[] words = s.split("\\W+");
-                    String resourceCandidate = joinCapitalizedLemmas(words);
-                    return words.length <= 3 && SPARQLUtilities.isDBpediaEntity(String.format("http://dbpedia.org/ontology/%s", resourceCandidate));
-                })
-                .map(s -> String.format("http://dbpedia.org/ontology/%s", joinCapitalizedLemmas(s.split("\\W+"))))
-                .collect(Collectors.toSet()));
+        Set<String> ontologyURIs = new HashSet<>();
+        ontologyNodes.forEach(rdfNode -> ontologyURIs.add(rdfNode.toString()));
+
+        //TODO enable parallelization with coOccurrences.parallelStream().forEach
+        coOccurrences.forEach(coOccurrence -> {
+            String[] coOccurrenceSplitted = coOccurrence.split("\\W+");
+            String lemmasJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, true);
+            rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoined));
+            String lemmasJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, true);
+            rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoinedCapitalized));
+            String wordsJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, false);
+            rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined));
+            String wordsJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, false);
+            rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized));
+            //TODO Only use Co-Occurrences with more than 1 word
+            Set<String> collect = searchInDBOIndex(coOccurrence);
+            rdfResources.addAll(collect);
+        });
+
+        //Set<String> coOccurrenceEntities = new HashSet<>();
+        //coOccurrences.parallelStream().forEach(string -> coOccurrenceEntities.addAll(SPARQLUtilities.findDBpediaEntities(string)));
+
 
         //log.info("Resources: " + Strings.join(rdfResources, "; "));
+        this.rdfEntities = rdfResources;
         return rdfResources;
     }
 
-    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings) {
-        return generateQueries(mappings, null);
+    private Set<String> searchInDBOIndex(String coOccurrence) {
+        DBOIndex dboIndex = new DBOIndex();
+        List<String> search = dboIndex.search(coOccurrence);
+        Set<String> resultsInDBOIndex = search.stream()
+                .filter(s -> {
+                    String[] split = s.split("/");
+                    String baseResourceName = split[split.length - 1];
+                    int lfd = StringUtils.getLevenshteinDistance(baseResourceName, coOccurrence);
+                    double ratio = ((double) lfd) / (Math.max(baseResourceName.length(), coOccurrence.length()));
+                    return ratio <= 0.5;
+                })
+                .collect(Collectors.toSet());
+
+        IndexDBO_classes indexDBO_classes = new IndexDBO_classes();
+        List<String> indexDBO_classesSearch = indexDBO_classes.search(coOccurrence);
+        Set<String> resultsInDBOIndexClass = indexDBO_classesSearch.stream()
+                .filter(s -> {
+                    String[] split = s.split("/");
+                    String baseResourceName = split[split.length - 1];
+                    int lfd = StringUtils.getLevenshteinDistance(baseResourceName, coOccurrence);
+                    double ratio = ((double) lfd) / (Math.max(baseResourceName.length(), coOccurrence.length()));
+                    //TODO instead of using string similarity use the shortest one (e.g. Television instead of TelevisionShow) if it exists
+                    return ratio < 0.5;
+                })
+                .collect(Collectors.toSet());
+
+        IndexDBO_properties indexDBO_properties = new IndexDBO_properties();
+        List<String> indexDBO_propertySearch = indexDBO_properties.search(coOccurrence);
+        Set<String> resultsInDBOIndexProperty = indexDBO_propertySearch.stream()
+                .filter(s -> {
+                    String[] split = s.split("/");
+                    String baseResourceName = split[split.length - 1];
+                    int lfd = StringUtils.getLevenshteinDistance(baseResourceName, coOccurrence);
+                    double ratio = ((double) lfd) / (Math.max(baseResourceName.length(), coOccurrence.length()));
+                    return ratio < 0.5;
+                })
+                .collect(Collectors.toSet());
+
+        resultsInDBOIndex.addAll(resultsInDBOIndexClass);
+        resultsInDBOIndex.addAll(resultsInDBOIndexProperty);
+        return resultsInDBOIndex;
     }
 
-    private String joinCapitalizedLemmas(String[] strings) {
+    private List<String> tryDBpediaResourceNamingCombinations(Set<String> ontologyURIs, String[] words, String lemmasJoined) {
+        List<String> addToResult = new ArrayList<>();
+        if (words.length > 1 && SPARQLUtilities.isDBpediaEntity(String.format("http://dbpedia.org/resource/%s", lemmasJoined))) {
+            addToResult.add(String.format("http://dbpedia.org/resource/%s", String.join("_", words)));
+        }
+        if (words.length <= 3 && ontologyURIs.contains(String.format("http://dbpedia.org/ontology/%s", lemmasJoined))) {
+            addToResult.add(String.format("http://dbpedia.org/ontology/%s", lemmasJoined));
+        }
+        return addToResult;
+    }
+
+    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings) {
+        return generateQueries(mappings, null, new ArrayList<>());
+    }
+
+    private String joinCapitalizedLemmas(String[] strings, boolean capitalizeFirstLetter, boolean useLemma) {
         final String[] result = {""};
         List<String> list = Arrays.asList(strings);
-        list.forEach(s -> result[0] += StringUtils.capitalize(new Sentence(s).lemma(0)));
-        //The first letter needs to be lowercase
-        return StringUtils.uncapitalize(result[0]);
+        if (useLemma) {
+            list.forEach(s -> result[0] += StringUtils.capitalize(new Sentence(s).lemma(0)));
+        } else {
+            list.forEach(s -> result[0] += StringUtils.capitalize(s));
+        }
+        //The first letter is lowercase sometimes
+        if (capitalizeFirstLetter) {
+            return StringUtils.uncapitalize(result[0]);
+        } else {
+            return result[0];
+        }
     }
 
     private Set<String> fillPatterns(Set<String> rdfResources, List<String> suitableMappings) {
@@ -366,7 +445,7 @@ public class QueryMappingFactory {
                 }
                 for (String placeholder : toReplaceClasses) {
                     for (String rdfResource : rdfResources) {
-                        if (isClass(rdfResource)) {
+                        if (!resourceStartsLowercase(rdfResource)) {
                             Map<String, String> mapping = new HashMap<>();
                             mapping.put(placeholder, rdfResource);
                             replacements.add(mapping);
@@ -375,7 +454,7 @@ public class QueryMappingFactory {
                 }
                 for (String placeholder : toReplaceProperties) {
                     for (String rdfResource : rdfResources) {
-                        if (isProperty(rdfResource)) {
+                        if (resourceStartsLowercase(rdfResource)) {
                             Map<String, String> mapping = new HashMap<>();
                             mapping.put(placeholder, rdfResource);
                             replacements.add(mapping);
@@ -387,9 +466,9 @@ public class QueryMappingFactory {
             List<String> classResources = new ArrayList<>();
             List<String> propertyResources = new ArrayList<>();
             for (String resource : rdfResources) {
-                if (isClass(resource)) {
+                if (!resourceStartsLowercase(resource)) {
                     classResources.add(resource);
-                } else if (isProperty(resource)) {
+                } else if (resourceStartsLowercase(resource)) {
                     propertyResources.add(resource);
                 }
             }
@@ -474,7 +553,7 @@ public class QueryMappingFactory {
                 String pos = token.get(PartOfSpeechAnnotation.class);
                 String lemma = token.get(LemmaAnnotation.class);
                 if (pos.matches(relevantPos)) {
-                    result.addAll(nodes.stream()
+                    result.addAll(ontologyNodes.stream()
                             .filter(rdfNode -> rdfNode.toString().equalsIgnoreCase(String.format("http://dbpedia.org/ontology/%s", lemma)))
                             .map(RDFNode::toString)
                             .collect(Collectors.toSet()));
@@ -488,11 +567,13 @@ public class QueryMappingFactory {
         return unresolvedEntities;
     }
 
-    private boolean isProperty(String rdfResource) {
-        return rdfResource.startsWith("http://dbpedia.org/property/") || Character.isLowerCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0));
+    private boolean resourceStartsLowercase(String rdfResource) {
+        return rdfResource.startsWith("http://dbpedia.org/property/")
+                || rdfResource.startsWith("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+                || (rdfResource.contains("/") && rdfResource.charAt(rdfResource.length() - 1) != '/' && Character.isLowerCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0)));
     }
 
-    private boolean isClass(String rdfResource) {
-        return !rdfResource.startsWith("http://dbpedia.org/property/") && Character.isUpperCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0));
+    public Set<String> getRdfEntities() {
+        return rdfEntities;
     }
 }
