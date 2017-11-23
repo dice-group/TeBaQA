@@ -20,20 +20,13 @@ import org.apache.log4j.Logger;
 import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static de.uni.leipzig.tebaqa.helper.Utilities.ARGUMENTS_BETWEEN_SPACES;
+import static de.uni.leipzig.tebaqa.helper.Utilities.getLevenshteinRatio;
 import static edu.stanford.nlp.ling.CoreAnnotations.*;
 import static java.lang.String.join;
 import static org.apache.commons.lang3.StringUtils.getLevenshteinDistance;
@@ -326,18 +319,66 @@ public class QueryMappingFactory {
 
         //TODO enable parallelization with coOccurrences.parallelStream().forEach
         coOccurrences.forEach(coOccurrence -> {
+            Map<String, Double> currentResources = new HashMap<>();
+            Map<String, Double> currentOntologies = new HashMap<>();
+
             String[] coOccurrenceSplitted = coOccurrence.split("\\W+");
             String lemmasJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, true);
-            rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoined));
+            tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoined).forEach(s -> {
+                if (isResource(s)) {
+                    currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                } else if (isOntology(s)) {
+                    currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                } else {
+                    log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
+                }
+            });
+
             String lemmasJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, true);
-            rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoinedCapitalized));
+            tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoinedCapitalized).forEach(s -> {
+                if (isResource(s)) {
+                    currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                } else if (isOntology(s)) {
+                    currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                } else {
+                    log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
+                }
+            });
+
             String wordsJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, false);
-            rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined));
+            tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined).forEach(s -> {
+                if (isResource(s)) {
+                    currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                } else if (isOntology(s)) {
+                    currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                } else {
+                    log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
+                }
+            });
+
             String wordsJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, false);
-            rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized));
-            //TODO Only use Co-Occurrences with more than 1 word
-            Set<String> collect = searchInDBOIndex(coOccurrence);
-            rdfResources.addAll(collect);
+            tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized).forEach(s -> {
+                if (isResource(s)) {
+                    currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                } else if (isOntology(s)) {
+                    currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                } else {
+                    log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
+                }
+            });
+            searchInDBOIndex(coOccurrence).forEach(s -> {
+                if (isResource(s)) {
+                    currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                } else if (isOntology(s)) {
+                    currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                } else {
+                    log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
+                }
+            });
+            List<String> bestOntologies = getKeyByLowestValue(currentOntologies);
+            rdfResources.addAll(bestOntologies);
+            List<String> bestResources = getKeyByLowestValue(currentResources);
+            rdfResources.addAll(bestResources);
         });
 
         //Set<String> coOccurrenceEntities = new HashSet<>();
@@ -349,6 +390,30 @@ public class QueryMappingFactory {
         return rdfResources;
     }
 
+    private boolean isResource(String s) {
+        return s.startsWith("http://dbpedia.org/resource/");
+    }
+
+    private boolean isOntology(String s) {
+        return s.startsWith("http://dbpedia.org/ontology/") || s.startsWith("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")|| s.startsWith("'http://dbpedia.org/datatype/");
+    }
+
+    private List<String> getKeyByLowestValue(Map<String, Double> map) {
+        if (map.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Optional<Double> maxOptional = map.values().stream().min(Comparator.naturalOrder());
+        double min = Double.MAX_VALUE;
+        if (maxOptional.isPresent()) {
+            min = maxOptional.get();
+        }
+        double finalMin = min;
+        return map.entrySet().stream()
+                .filter(e -> e.getValue() == finalMin)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
     private Set<String> searchInDBOIndex(String coOccurrence) {
         DBOIndex dboIndex = new DBOIndex();
         List<String> search = dboIndex.search(coOccurrence);
@@ -356,9 +421,8 @@ public class QueryMappingFactory {
                 .filter(s -> {
                     String[] split = s.split("/");
                     String baseResourceName = split[split.length - 1];
-                    int lfd = StringUtils.getLevenshteinDistance(baseResourceName, coOccurrence);
-                    double ratio = ((double) lfd) / (Math.max(baseResourceName.length(), coOccurrence.length()));
-                    return ratio <= 0.5;
+                    double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
+                    return ratio <= 0.7;
                 })
                 .collect(Collectors.toSet());
 
@@ -368,8 +432,7 @@ public class QueryMappingFactory {
                 .filter(s -> {
                     String[] split = s.split("/");
                     String baseResourceName = split[split.length - 1];
-                    int lfd = StringUtils.getLevenshteinDistance(baseResourceName, coOccurrence);
-                    double ratio = ((double) lfd) / (Math.max(baseResourceName.length(), coOccurrence.length()));
+                    double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
                     //TODO instead of using string similarity use the shortest one (e.g. Television instead of TelevisionShow) if it exists
                     return ratio < 0.5;
                 })
@@ -381,8 +444,7 @@ public class QueryMappingFactory {
                 .filter(s -> {
                     String[] split = s.split("/");
                     String baseResourceName = split[split.length - 1];
-                    int lfd = StringUtils.getLevenshteinDistance(baseResourceName, coOccurrence);
-                    double ratio = ((double) lfd) / (Math.max(baseResourceName.length(), coOccurrence.length()));
+                    double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
                     return ratio < 0.5;
                 })
                 .collect(Collectors.toSet());

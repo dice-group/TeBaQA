@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Source: https://github.com/AKSW/NLIWOD/blob/master/qa.hawk/src/main/java/org/aksw/hawk/experiment/QueryIsomorphism.java
  */
-class QueryIsomorphism {
+public class QueryIsomorphism {
     private static Logger log = Logger.getLogger(QueryIsomorphism.class);
 
     private List<Cluster> clusters;
@@ -37,60 +37,60 @@ class QueryIsomorphism {
         HashMap<Graph, Integer> graphs = new HashMap<Graph, Integer>();
         HashMap<String, List<String>> graphsWithQuestion = new HashMap<String, List<String>>();
         for (String s : queries.keySet()) {
-                //build the graph associated to the query
-                final Graph g = GraphFactory.createDefaultGraph();
-                Query query = new Query();
-                try {
-                    ParameterizedSparqlString pss = new ParameterizedSparqlString();
-                    pss.append(s);
-                    query = pss.asQuery();
-                } catch (QueryParseException e) {
-                    log.warn(e.toString(), e);
-                }
-                try {
-                    ElementWalker.walk(query.getQueryPattern(), new ElementVisitorBase() {
-                        public void visit(ElementPathBlock el) {
-                            PathBlock path = el.getPattern();
-                            HashMap<Node, Node> dict = new HashMap<Node, Node>();
-                            int i = 1;
-                            for (TriplePath t : path.getList()) {
-                                Node s = t.getSubject();
-                                Node o = t.getObject();
-                                Node p = NodeFactory.createLiteral("p");
-                                if (!dict.containsKey(s)) {
-                                    dict.put(s, NodeFactory.createLiteral(String.valueOf(i)));
-                                    i++;
-                                }
-                                if (!dict.containsKey(o)) {
-                                    dict.put(o, NodeFactory.createLiteral(String.valueOf(i)));
-                                    i++;
-                                }
-                                Triple tmp = Triple.create(dict.get(s), p, dict.get(o));
-                                g.add(tmp);
+            //build the graph associated to the query
+            final Graph g = GraphFactory.createDefaultGraph();
+            Query query = new Query();
+            try {
+                ParameterizedSparqlString pss = new ParameterizedSparqlString();
+                pss.append(s);
+                query = pss.asQuery();
+            } catch (QueryParseException e) {
+                log.warn(e.toString(), e);
+            }
+            try {
+                ElementWalker.walk(query.getQueryPattern(), new ElementVisitorBase() {
+                    public void visit(ElementPathBlock el) {
+                        PathBlock path = el.getPattern();
+                        HashMap<Node, Node> dict = new HashMap<Node, Node>();
+                        int i = 1;
+                        for (TriplePath t : path.getList()) {
+                            Node s = t.getSubject();
+                            Node o = t.getObject();
+                            Node p = NodeFactory.createLiteral("p");
+                            if (!dict.containsKey(s)) {
+                                dict.put(s, NodeFactory.createLiteral(String.valueOf(i)));
+                                i++;
                             }
+                            if (!dict.containsKey(o)) {
+                                dict.put(o, NodeFactory.createLiteral(String.valueOf(i)));
+                                i++;
+                            }
+                            Triple tmp = Triple.create(dict.get(s), p, dict.get(o));
+                            g.add(tmp);
                         }
-                    });
-                    //if the Graph is not isomorphic to previously seen graphs add it to the List
+                    }
+                });
+                //if the Graph is not isomorphic to previously seen graphs add it to the List
 
-                    Boolean present = false;
-                    for (Graph g_present : graphs.keySet()) {
-                        if (g.isIsomorphicWith(g_present)) {
-                            present = true;
-                            int i = graphs.get(g_present) + 1;
-                            graphs.put(g_present, i);
-                            List<String> currGraphQuestions = graphsWithQuestion.get(g.toString());
-                            currGraphQuestions.add(queries.get(s));
-                        }
+                Boolean present = false;
+                for (Graph g_present : graphs.keySet()) {
+                    if (g.isIsomorphicWith(g_present)) {
+                        present = true;
+                        int i = graphs.get(g_present) + 1;
+                        graphs.put(g_present, i);
+                        List<String> currGraphQuestions = graphsWithQuestion.get(g.toString());
+                        currGraphQuestions.add(queries.get(s));
                     }
-                    if (!present) {
-                        graphs.put(g, 1);
-                        List<String> currGraph = new ArrayList<String>();
-                        currGraph.add(queries.get(s));
-                        graphsWithQuestion.put(g.toString(), currGraph);
-                    }
-                } catch (NullPointerException e) {
-                    log.warn(e.toString(), e);
                 }
+                if (!present) {
+                    graphs.put(g, 1);
+                    List<String> currGraph = new ArrayList<String>();
+                    currGraph.add(queries.get(s));
+                    graphsWithQuestion.put(g.toString(), currGraph);
+                }
+            } catch (NullPointerException e) {
+                log.warn(e.toString(), e);
+            }
 
         }
         //look at some properties
@@ -120,6 +120,65 @@ class QueryIsomorphism {
             }
             clusters.add(cluster);
         }
+    }
+
+    public static boolean areIsomorph(String q1, String q2) {
+        List<String> queries = new ArrayList<>();
+        queries.add(q1);
+        queries.add(q2);
+        HashMap<Graph, Integer> graphs = new HashMap<Graph, Integer>();
+        for (String s : queries) {
+            //build the graph associated to the query
+            final Graph g = GraphFactory.createDefaultGraph();
+            Query query = new Query();
+            try {
+                ParameterizedSparqlString pss = new ParameterizedSparqlString();
+                pss.append(s);
+                query = pss.asQuery();
+            } catch (QueryParseException e) {
+                log.warn(e.toString(), e);
+            }
+            try {
+                ElementWalker.walk(query.getQueryPattern(), new ElementVisitorBase() {
+                    public void visit(ElementPathBlock el) {
+                        PathBlock path = el.getPattern();
+                        HashMap<Node, Node> dict = new HashMap<Node, Node>();
+                        int i = 1;
+                        for (TriplePath t : path.getList()) {
+                            Node s = t.getSubject();
+                            Node o = t.getObject();
+                            Node p = NodeFactory.createLiteral("p");
+                            if (!dict.containsKey(s)) {
+                                dict.put(s, NodeFactory.createLiteral(String.valueOf(i)));
+                                i++;
+                            }
+                            if (!dict.containsKey(o)) {
+                                dict.put(o, NodeFactory.createLiteral(String.valueOf(i)));
+                                i++;
+                            }
+                            Triple tmp = Triple.create(dict.get(s), p, dict.get(o));
+                            g.add(tmp);
+                        }
+                    }
+                });
+                //if the Graph is not isomorphic to previously seen graphs add it to the List
+
+                Boolean present = false;
+                for (Graph g_present : graphs.keySet()) {
+                    if (g.isIsomorphicWith(g_present)) {
+                        present = true;
+                        int i = graphs.get(g_present) + 1;
+                        graphs.put(g_present, i);
+                    }
+                }
+                if (!present) {
+                    graphs.put(g, 1);
+                }
+            } catch (NullPointerException e) {
+                log.warn(e.toString(), e);
+            }
+        }
+        return graphs.size() == 1;
     }
 
     List<Cluster> getClusters() {

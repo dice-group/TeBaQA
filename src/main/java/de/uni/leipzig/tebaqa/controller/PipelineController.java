@@ -9,6 +9,7 @@ import de.uni.leipzig.tebaqa.model.Cluster;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryBuilder;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
+import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import joptsimple.internal.Strings;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
@@ -115,7 +116,8 @@ public class PipelineController {
                 String sparqlQuery = question.getSparqlQuery();
                 List<String> simpleModifiers = getSimpleModifiers(sparqlQuery);
                 Map<String, List<String>> goldenAnswers = new HashMap<>();
-                goldenAnswers.put(sparqlQuery, SPARQLUtilities.executeSPARQLQuery(sparqlQuery));
+                SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(sparqlQuery);
+                goldenAnswers.put(sparqlQuery, sparqlResultSet.getResultSet());
                 customQuestions.add(new CustomQuestion(sparqlQuery, questionText, simpleModifiers, graph, goldenAnswers));
                 semanticAnalysisHelper.annotate(questionText);
             }
@@ -138,6 +140,7 @@ public class PipelineController {
 
         //TODO enable parallelization with customQuestions.parallelStream().forEach()
         customQuestions.parallelStream().forEach(question -> {
+            List<Map<Integer, List<String>>> results = new ArrayList<>();
             StringBuilder logMessage = new StringBuilder();
             String additionalLogMessages = "";
             String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
@@ -157,8 +160,8 @@ public class PipelineController {
                 Map<String, QueryTemplateMapping> mockedMapping = new HashMap<>();
                 QueryTemplateMapping queryTemplateMapping = new QueryTemplateMapping(0, 0);
                 String originalQuery = idealQueryPatterns.get(question.getQuestionText());
-                queryTemplateMapping.addSelectTemplate(originalQuery);
-                queryTemplateMapping.addAskTemplate(originalQuery);
+                queryTemplateMapping.addSelectTemplate(originalQuery, question.getQuery());
+                queryTemplateMapping.addAskTemplate(originalQuery, question.getQuery());
                 mockedMapping.put(graphPattern, queryTemplateMapping);
                 queries = mappingFactory.generateQueries(mockedMapping, graphPattern, originalVariables);
                 additionalLogMessages += "Mocked Query: " + Strings.join(queries, "\n");
@@ -169,10 +172,14 @@ public class PipelineController {
                 queries = mappingFactory.generateQueries(mappings);
             }
 
-            Set<String> currentAnswers = new HashSet<>();
             for (String s : queries) {
-                List<String> result = SPARQLUtilities.executeSPARQLQuery(s);
-                currentAnswers.addAll(result);
+                SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(s);
+                List<String> result = sparqlResultSet.getResultSet();
+                if (!result.isEmpty()) {
+                    Map<Integer, List<String>> classifiedResult = new HashMap<>();
+                    classifiedResult.put(sparqlResultSet.getType(), result);
+                    results.add(classifiedResult);
+                }
                 logMessage.append(s).append("\n").append(String.join("; ", result)).append("\n");
             }
             Optional<HAWKQuestion> hawkQuestionOptional = questions.stream()
@@ -182,9 +189,11 @@ public class PipelineController {
             if (hawkQuestionOptional.isPresent()) {
                 HAWKQuestion hawkQuestion = hawkQuestionOptional.get();
                 if (!hawkQuestion.getAggregation() && hawkQuestion.getOnlydbo() && Objects.equals(hawkQuestion.getAnswerType(), "resource")) {
-                    double fMeasure = AnswerBasedEvaluation.fMeasure(currentAnswers, hawkQuestion);
+                    final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question.getQuestionText());
+                    HashSet<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType);
+                    double fMeasure = AnswerBasedEvaluation.fMeasure(bestAnswer, hawkQuestion);
                     fMeasures.add(fMeasure);
-                    double precision = AnswerBasedEvaluation.precision(currentAnswers, hawkQuestion);
+                    double precision = AnswerBasedEvaluation.precision(bestAnswer, hawkQuestion);
                     precisions.add(precision);
                     logMessage.append(String.format("Question: '%s'; F-Measure: %.3f; Precision: %.3f; Missed Entities (from golden answer):", question.getQuestionText(), fMeasure, precision));
 

@@ -1,5 +1,7 @@
 package de.uni.leipzig.tebaqa.helper;
 
+import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
+import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
@@ -10,7 +12,6 @@ import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;
 import org.apache.log4j.Logger;
-import org.assertj.core.util.Lists;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,70 +51,81 @@ public class SPARQLUtilities {
         }
     }
 
-    public static List<String> executeSPARQLQuery(String sparlQuery) {
+    public static SPARQLResultSet executeSPARQLQuery(String sparlQuery) {
+        int resultType = SemanticAnalysisHelper.UNKNOWN_ANSWER_TYPE;
         List<String> result = new ArrayList<>();
-        Matcher m = Utilities.SPARQL_VARIABLE.matcher(sparlQuery);
-        if (m.find()) {
-            ParameterizedSparqlString qs = new ParameterizedSparqlString(sparlQuery);
-            if (sparlQuery.contains("<^")) {
-                log.error("ERROR: Invalid SPARQL Query: " + sparlQuery);
-                return Lists.emptyList();
-            } else {
-                Query query;
-                try {
-                    query = qs.asQuery();
-                } catch (QueryParseException e) {
-                    log.error("QueryParseException: Unable to parse query: " + qs, e);
-                    return Lists.emptyList();
-                }
-                QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
-                qe.setTimeout(-1);
-                boolean isAskType = query.isAskType();
-                boolean isSelectType = query.isSelectType();
+        ParameterizedSparqlString qs = new ParameterizedSparqlString(sparlQuery);
+        if (sparlQuery.contains("<^")) {
+            log.error("ERROR: Invalid SPARQL Query: " + sparlQuery);
+            return new SPARQLResultSet();
+        } else {
+            Query query;
+            try {
+                query = qs.asQuery();
+            } catch (QueryParseException e) {
+                log.error("QueryParseException: Unable to parse query: " + qs, e);
+                return new SPARQLResultSet();
+            }
+            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            qe.setTimeout(20000, 20000);
+            boolean isAskType = query.isAskType();
+            boolean isSelectType = query.isSelectType();
 
-                if (isSelectType) {
-                    ResultSet rs;
+            if (isSelectType) {
+                ResultSet rs;
+                try {
+                    rs = qe.execSelect();
+                } catch (QueryExceptionHTTP e) {
+                    log.error("HTTP Exception while executing SPARQL query: " + sparlQuery, e);
+                    return new SPARQLResultSet();
+                }
+                while (rs.hasNext()) {
+                    QuerySolution s = rs.nextSolution();
+                    //String message;
                     try {
-                        rs = qe.execSelect();
-                    } catch (QueryExceptionHTTP e) {
-                        log.error("HTTP Exception while executing SPARQL query: " + sparlQuery, e);
-                        return Lists.emptyList();
-                    }
-                    while (rs.hasNext()) {
-                        QuerySolution s = rs.nextSolution();
-                        //String message;
-                        try {
-                            Iterator<String> varNames = s.varNames();
-                            for (Iterator<String> it = varNames; it.hasNext(); ) {
-                                String varName = it.next();
-                                result.add(s.get(varName).toString());
-                            }
-                            //message = String.valueOf(s.getResource(resultVariableName));
-                        } catch (ClassCastException e) {
-                            log.error("Unable to parse response! SPARQL: " + sparlQuery, e);
-                            return Lists.emptyList();
+                        Iterator<String> varNames = s.varNames();
+                        for (Iterator<String> it = varNames; it.hasNext(); ) {
+                            String varName = it.next();
+                            result.add(s.get(varName).toString());
                         }
-                        //log.info(String.join("; ", message));
-                        //result.add(message);
+                        //message = String.valueOf(s.getResource(resultVariableName));
+                    } catch (ClassCastException e) {
+                        log.error("Unable to parse response! SPARQL: " + sparlQuery, e);
+                        return new SPARQLResultSet();
                     }
-                } else if (isAskType) {
-                    try {
-                        boolean rs = qe.execAsk();
-                        result.add(String.valueOf(rs));
-                    } catch (Exception e) {
-                        log.error("HTTP Exception while creating query: " + sparlQuery, e);
-                        //throw e;
+                    //log.info(String.join("; ", message));
+                    //result.add(message);
+                }
+                if (result.size() > 1) {
+                    resultType = SemanticAnalysisHelper.LIST_ANSWER_TYPE;
+                } else if (result.size() == 1) {
+                    String s = result.get(0);
+                    if (s.endsWith("^^http://www.w3.org/2001/XMLSchema#integer")) {
+                        resultType = SemanticAnalysisHelper.NUMBER_ANSWER_TYPE;
+                    } else {
+                        resultType = SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE;
                     }
                 } else {
-                    log.error("Unknown query type: " + sparlQuery);
+                    resultType = SemanticAnalysisHelper.UNKNOWN_ANSWER_TYPE;
                 }
+            } else if (isAskType) {
+                try {
+                    boolean rs = qe.execAsk();
+                    result.add(String.valueOf(rs));
+                    resultType = SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE;
+                } catch (Exception e) {
+                    log.error("HTTP Exception while creating query: " + sparlQuery, e);
+                    //throw e;
+                }
+            } else {
+                log.error("Unknown query type: " + sparlQuery);
             }
+        }
 
-        }
-        if (!result.isEmpty()) {
-            //log.info("Result: " + Strings.join(result, "; "));
-        }
-        return result;
+        //if (!result.isEmpty()) {
+        //log.info("Result: " + Strings.join(result, "; "));
+        //}
+        return new SPARQLResultSet(result, resultType);
     }
 
     public static List<String> getDBpediaProperties() {
@@ -123,7 +135,7 @@ public class SPARQLUtilities {
         int offset = 0;
         while (gotResult) {
             String format = String.format(query, offset);
-            List<String> result = SPARQLUtilities.executeSPARQLQuery(format);
+            List<String> result = SPARQLUtilities.executeSPARQLQuery(format).getResultSet();
             if (!result.isEmpty()) {
                 properties.addAll(result);
                 offset += 10000;
@@ -135,7 +147,7 @@ public class SPARQLUtilities {
     }
 
     static boolean isDBpediaEntity(String s) {
-        List<String> result = executeSPARQLQuery(String.format("ASK { VALUES (?r) {(<%s>)} {?r ?p ?o} UNION {?s ?r ?o} UNION {?s ?p ?r} }", s));
+        List<String> result = executeSPARQLQuery(String.format("ASK { VALUES (?r) {(<%s>)} {?r ?p ?o} UNION {?s ?r ?o} UNION {?s ?p ?r} }", s)).getResultSet();
         return result.size() == 1 && Boolean.valueOf(result.get(0));
     }
 

@@ -192,4 +192,9 @@ public class Utilities {
     private static boolean isClass(String rdfResource) {
         return Character.isUpperCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0));
     }
+
+    static double getLevenshteinRatio(String s, String s2) {
+        int lfd = StringUtils.getLevenshteinDistance(s2, s);
+        return ((double) lfd) / (Math.max(s2.length(), s.length()));
+    }
 }
