@@ -9,6 +9,7 @@ import de.uni.leipzig.tebaqa.helper.Utilities;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.semgraph.SemanticGraph;
@@ -17,6 +18,7 @@ import edu.stanford.nlp.util.CoreMap;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
+import org.assertj.core.util.Sets;
 import weka.classifiers.Classifier;
 import weka.core.Attribute;
 import weka.core.Instance;
@@ -30,15 +32,22 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static de.uni.leipzig.tebaqa.helper.Utilities.ARGUMENTS_BETWEEN_SPACES;
 
 public class SemanticAnalysisHelper {
     private static Logger log = Logger.getLogger(SemanticAnalysisHelper.class);
-    StanfordCoreNLP pipeline;
+    private StanfordCoreNLP pipeline;
 
+    public static int UNKNOWN_ANSWER_TYPE = -1;
+    public static int BOOLEAN_ANSWER_TYPE = 0;
+    public static int LIST_ANSWER_TYPE = 1;
+    public static int SINGLE_RESOURCE_TYPE = 2;
+    public static int NUMBER_ANSWER_TYPE = 3;
 
     public SemanticAnalysisHelper() {
         this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
@@ -154,9 +163,9 @@ public class SemanticAnalysisHelper {
                     QueryTemplateMapping mapping = mappings.get(graph);
                     if (mapping.getNumberOfClasses() == finalClassCnt && mapping.getNumberOfClasses() == finalPropertyCnt) {
                         if (queryType == SPARQLUtilities.SELECT_QUERY) {
-                            mapping.addSelectTemplate(queryPattern);
+                            mapping.addSelectTemplate(queryPattern, question.getQuery());
                         } else if (queryType == SPARQLUtilities.ASK_QUERY) {
-                            mapping.addAskTemplate(queryPattern);
+                            mapping.addAskTemplate(queryPattern, question.getQuery());
                         } else if (queryType == SPARQLUtilities.QUERY_TYPE_UNKNOWN) {
                             log.error("Unknown query type: " + query);
                         }
@@ -164,9 +173,9 @@ public class SemanticAnalysisHelper {
                 } else {
                     QueryTemplateMapping mapping = new QueryTemplateMapping(classCnt, propertyCnt);
                     if (queryType == SPARQLUtilities.SELECT_QUERY) {
-                        mapping.addSelectTemplate(queryPattern);
+                        mapping.addSelectTemplate(queryPattern, question.getQuery());
                     } else if (queryType == SPARQLUtilities.ASK_QUERY) {
-                        mapping.addAskTemplate(queryPattern);
+                        mapping.addAskTemplate(queryPattern, question.getQuery());
                     }
                     //create a new mapping class
                     mappings.put(graph, mapping);
@@ -299,5 +308,102 @@ public class SemanticAnalysisHelper {
                 .replaceAll("(?i)(select|ask|where|distinct)", " ")
                 //remove every consecutive spaces
                 .replaceAll("\\s+", " ");
+    }
+
+    public List<IndexedWord> getDependencySequence(SemanticGraph semanticGraph) {
+        IndexedWord firstRoot = semanticGraph.getFirstRoot();
+        List<IndexedWord> sequence = getDependenciesFromEdge(firstRoot, semanticGraph);
+        log.debug(sequence);
+        return sequence;
+    }
+
+    private static List<IndexedWord> getDependenciesFromEdge(IndexedWord root, SemanticGraph semanticGraph) {
+        final String posExclusion = "DT|IN|WDT|W.*|\\.";
+        final String lemmaExclusion = "have|do|be|many|much|give|call|list";
+        List<IndexedWord> sequence = new ArrayList<>();
+        String rootPos = root.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+        String rootLemma = root.get(CoreAnnotations.LemmaAnnotation.class);
+        if (!rootPos.matches(posExclusion) && !rootLemma.matches(lemmaExclusion)) {
+            sequence.add(root);
+        }
+        Set<IndexedWord> childrenFromRoot = semanticGraph.getChildren(root);
+
+        for (IndexedWord word : childrenFromRoot) {
+            String wordPos = word.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+            String wordLemma = word.get(CoreAnnotations.LemmaAnnotation.class);
+            if (!wordPos.matches(posExclusion) && !wordLemma.matches(lemmaExclusion)) {
+                sequence.add(word);
+            }
+            List<IndexedWord> children = semanticGraph.getChildList(word);
+            //In some cases a leaf has itself as children which results in endless recursion.
+            if (children.contains(root)) {
+                children.remove(root);
+            }
+            for (IndexedWord child : children) {
+                sequence.addAll(getDependenciesFromEdge(child, semanticGraph));
+            }
+        }
+        return sequence;
+    }
+
+    public static int detectQuestionAnswerType(String question) {
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        SemanticGraph semanticGraph = semanticAnalysisHelper.extractDependencyGraph(question);
+        List<IndexedWord> sequence = semanticAnalysisHelper.getDependencySequence(semanticGraph);
+        Pattern pattern = Pattern.compile("\\w+");
+        Matcher m = pattern.matcher(question);
+        if (m.find()) {
+            if (m.group().toLowerCase().matches("is|are|did|was|does")) {
+                return BOOLEAN_ANSWER_TYPE;
+            }
+        }
+        if (question.toLowerCase().startsWith("how many") || question.toLowerCase().startsWith("how much")) {
+            return NUMBER_ANSWER_TYPE;
+        }
+        for (IndexedWord word : sequence) {
+            String posTag = word.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+            String lemma = word.get(CoreAnnotations.LemmaAnnotation.class);
+            if (posTag.equalsIgnoreCase("NNS") || posTag.equalsIgnoreCase("NNPS")) {
+                return LIST_ANSWER_TYPE;
+            } else if (posTag.equalsIgnoreCase("NN") || posTag.equalsIgnoreCase("NNP")) {
+                return SINGLE_RESOURCE_TYPE;
+            }
+        }
+        return UNKNOWN_ANSWER_TYPE;
+    }
+
+    HashSet<String> getBestAnswer(List<Map<Integer, List<String>>> results, StringBuilder logMessage, int expectedAnswerType) {
+        List<List<String>> bestAnswers = new ArrayList<>();
+        List<String> bestAnswer = new ArrayList<>();
+
+        results.forEach(result -> {
+            if (result.containsKey(expectedAnswerType)) {
+                List<String> resultWithMatchingType = result.get(expectedAnswerType);
+                if (!resultWithMatchingType.isEmpty()) {
+                    bestAnswers.add(resultWithMatchingType);
+                }
+            }
+        });
+
+        //If there is no suitable result use all the results combined
+        if (bestAnswers.isEmpty()) {
+            List<String> finalBestAnswer = bestAnswer;
+            results.stream()
+                    .map(Map::values)
+                    .forEach(values -> finalBestAnswer.addAll(values.stream()
+                            .flatMap(List::stream)
+                            .collect(Collectors.toList())));
+            bestAnswer = finalBestAnswer;
+        } else if (bestAnswers.size() == 1) {
+            bestAnswer = bestAnswers.get(0);
+        } else {
+            //TODO Check the average page rank if there are multiple results
+            //TODO if there are multiple result lists, take the smallest list?
+            logMessage.append("\nWARNING: Found multiple answers with same correct answer type!\n");
+            List<String> finalBestAnswer = bestAnswer;
+            bestAnswers.forEach(values -> finalBestAnswer.addAll(new ArrayList<>(values)));
+            bestAnswer = finalBestAnswer;
+        }
+        return Sets.newHashSet(bestAnswer);
     }
 }
