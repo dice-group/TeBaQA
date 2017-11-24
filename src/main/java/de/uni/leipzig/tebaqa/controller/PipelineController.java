@@ -172,25 +172,24 @@ public class PipelineController {
                 queries = mappingFactory.generateQueries(mappings);
             }
 
-            for (String s : queries) {
-                SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(s);
-                List<String> result = sparqlResultSet.getResultSet();
-                if (!result.isEmpty()) {
-                    Map<Integer, List<String>> classifiedResult = new HashMap<>();
-                    classifiedResult.put(sparqlResultSet.getType(), result);
-                    results.add(classifiedResult);
-                }
-                logMessage.append(s).append("\n").append(String.join("; ", result)).append("\n");
-            }
+            results.addAll(executeQueries(queries, logMessage));
             Optional<HAWKQuestion> hawkQuestionOptional = questions.stream()
                     .filter(q -> q.getLanguageToQuestion().get("en").equals(question.getQuestionText()))
                     .findFirst();
 
+            final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question.getQuestionText());
+            HashSet<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType);
+
+            //If the template from the predicted graph won't find results, try all other templates
+            if (bestAnswer.isEmpty()) {
+                queries = mappingFactory.generateQueries(mappings);
+                results.addAll(executeQueries(queries, logMessage));
+                bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType);
+            }
+
             if (hawkQuestionOptional.isPresent()) {
                 HAWKQuestion hawkQuestion = hawkQuestionOptional.get();
                 if (!hawkQuestion.getAggregation() && hawkQuestion.getOnlydbo() && Objects.equals(hawkQuestion.getAnswerType(), "resource")) {
-                    final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question.getQuestionText());
-                    HashSet<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType);
                     double fMeasure = AnswerBasedEvaluation.fMeasure(bestAnswer, hawkQuestion);
                     fMeasures.add(fMeasure);
                     double precision = AnswerBasedEvaluation.precision(bestAnswer, hawkQuestion);
@@ -221,6 +220,21 @@ public class PipelineController {
         log.info("Average F-Measure: " + fMeasures.stream().mapToDouble(Double::doubleValue).summaryStatistics().getAverage());
         log.info("Average Precision: " + precisions.stream().mapToDouble(Double::doubleValue).summaryStatistics().getAverage());
 
+    }
+
+    private List<Map<Integer, List<String>>> executeQueries(List<String> queries, StringBuilder logMessage) {
+        List<Map<Integer, List<String>>> results2 = new ArrayList<>();
+        for (String s : queries) {
+            SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(s);
+            List<String> result = sparqlResultSet.getResultSet();
+            if (!result.isEmpty()) {
+                Map<Integer, List<String>> classifiedResult = new HashMap<>();
+                classifiedResult.put(sparqlResultSet.getType(), result);
+                results2.add(classifiedResult);
+            }
+            logMessage.append(s).append("\n").append(String.join("; ", result)).append("\n");
+        }
+        return results2;
     }
 
     private void addUnresolvedEntities(Map<String, List<String>> from, Map<String, Map<String, Integer>> to) {

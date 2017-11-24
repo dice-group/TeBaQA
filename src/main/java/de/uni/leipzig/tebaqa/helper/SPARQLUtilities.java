@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -219,11 +220,16 @@ public class SPARQLUtilities {
                     List<String> currentTriple = new ArrayList<>();
                     while (matcher.find()) {
                         String group = matcher.group();
-                        if (!group.toLowerCase().startsWith("?") && !group.toLowerCase().startsWith("<")
-                                && !group.toLowerCase().startsWith("'") && !group.toLowerCase().startsWith("\"")) {
-                            group = "'" + group + "'";
+                        if (group.startsWith("@")) {
+                            String element = currentTriple.get(currentTriple.size() - 1) + group;
+                            currentTriple.set(currentTriple.size() - 1, element);
+                        } else {
+                            if (!group.toLowerCase().startsWith("?") && !group.toLowerCase().startsWith("<")
+                                    && !group.toLowerCase().startsWith("'") && !group.toLowerCase().startsWith("\"")) {
+                                group = "'" + group + "'";
+                            }
+                            currentTriple.add(replacements.getOrDefault(group, group));
                         }
-                        currentTriple.add(replacements.getOrDefault(group, group));
                     }
                     triplesSplitted.add(currentTriple);
                 }
@@ -239,10 +245,9 @@ public class SPARQLUtilities {
         }));
 
         filterClauses.forEach((filterMap) -> {
-
-            Optional<Map.Entry<List<String>, List<String>>> any = filterMap.entrySet().stream().findAny();
+            Optional<Entry<List<String>, List<String>>> any = filterMap.entrySet().stream().findAny();
             if (any.isPresent()) {
-                Map.Entry<List<String>, List<String>> filterMapping = any.get();
+                Entry<List<String>, List<String>> filterMapping = any.get();
                 List<String> triple1 = filterMapping.getKey();
                 List<String> triple2 = filterMapping.getValue();
 

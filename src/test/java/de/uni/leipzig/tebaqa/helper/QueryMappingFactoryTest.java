@@ -557,6 +557,25 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
+    public void testExtractResourcesDetectsSynonyms() throws Exception {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Whom did Lance Bass marry?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractResources(question);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/espouse"));
+    }
+
+    @Test
     public void testGenerateQueries() throws Exception {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "SELECT DISTINCT ?uri WHERE {  <http://dbpedia.org/resource/San_Pedro_de_Atacama> <http://dbpedia.org/ontology/timeZone> ?uri . }";
@@ -687,5 +706,45 @@ public class QueryMappingFactoryTest {
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>());
 
         assertEquals(expectedQueries, actualQueries);
+    }
+
+    @Test
+    public void testGenerateQueriesStringLiteralInQuery2() throws Exception {
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> ASK  WHERE {  ?uri rdf:type dbo:VideoGame .         ?uri rdfs:label 'Battle Chess'@en . }";
+        String question = "Is there a video game called Battle Chess?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> ASK  WHERE {  ?uri rdf:type dbo:VideoGame .         ?uri rdfs:label 'Battle Chess'@en . }",
+                "", null, graph, new HashMap<>()));
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
+
+        List<String> expectedQueries = new ArrayList<>();
+        expectedQueries.add("ASK WHERE { ?uri ?property_0 ?class_0 . ?uri ?property_1 'Battle Chess'@en .  VALUES (?class_0) {(<http://dbpedia.org/ontology/TelevisionSeason>) (<http://dbpedia.org/ontology/MobilePhone>) (<http://dbpedia.org/ontology/ChessPlayer>) (<http://dbpedia.org/resource/Battle_Chess>) (<http://dbpedia.org/ontology/MilitaryConflict>) (<http://dbpedia.org/ontology/CardGame>) (<http://dbpedia.org/ontology/TelevisionDirector>) (<http://dbpedia.org/ontology/BoardGame>) (<http://dbpedia.org/resource/Video_game>) (<http://dbpedia.org/ontology/GivenName>) (<http://dbpedia.org/ontology/TelevisionStation>) (<http://dbpedia.org/ontology/Surname>) (<http://dbpedia.org/ontology/TelevisionHost>) (<http://dbpedia.org/ontology/ProtectedArea>) (<http://dbpedia.org/ontology/TelevisionPersonality>) (<http://dbpedia.org/ontology/Game>) (<http://dbpedia.org/ontology/Name>) (<http://dbpedia.org/ontology/VideoGame>) (<http://dbpedia.org/ontology/TelevisionEpisode>) (<http://dbpedia.org/ontology/TelevisionShow>)} VALUES (?class_1) {(<http://dbpedia.org/ontology/TelevisionSeason>) (<http://dbpedia.org/ontology/MobilePhone>) (<http://dbpedia.org/ontology/ChessPlayer>) (<http://dbpedia.org/resource/Battle_Chess>) (<http://dbpedia.org/ontology/MilitaryConflict>) (<http://dbpedia.org/ontology/CardGame>) (<http://dbpedia.org/ontology/TelevisionDirector>) (<http://dbpedia.org/ontology/BoardGame>) (<http://dbpedia.org/resource/Video_game>) (<http://dbpedia.org/ontology/GivenName>) (<http://dbpedia.org/ontology/TelevisionStation>) (<http://dbpedia.org/ontology/Surname>) (<http://dbpedia.org/ontology/TelevisionHost>) (<http://dbpedia.org/ontology/ProtectedArea>) (<http://dbpedia.org/ontology/TelevisionPersonality>) (<http://dbpedia.org/ontology/Game>) (<http://dbpedia.org/ontology/Name>) (<http://dbpedia.org/ontology/VideoGame>) (<http://dbpedia.org/ontology/TelevisionEpisode>) (<http://dbpedia.org/ontology/TelevisionShow>)} VALUES (?property_0) {(<http://dbpedia.org/ontology/otherName>) (<http://dbpedia.org/ontology/pictureFormat>) (<http://dbpedia.org/ontology/phonePrefix>) (<http://dbpedia.org/ontology/ngcName>) (<http://dbpedia.org/ontology/formerName>) (<http://dbpedia.org/ontology/addressInRoad>) (<http://dbpedia.org/ontology/battleHonours>) (<http://dbpedia.org/ontology/latinName>) (<http://dbpedia.org/ontology/cost>) (<http://dbpedia.org/ontology/colonialName>) (<http://dbpedia.org/ontology/teamName>) (<http://dbpedia.org/ontology/iupacName>) (<http://dbpedia.org/resource/video_game>) (<http://dbpedia.org/property/be>) (<http://dbpedia.org/ontology/leaderName>) (<http://dbpedia.org/ontology/peopleName>) (<http://dbpedia.org/ontology/conflict>) (<http://dbpedia.org/ontology/sameName>) (<http://dbpedia.org/ontology/areaCode>) (<http://dbpedia.org/ontology/oldName>) (<http://dbpedia.org/ontology/originalName>) (<http://dbpedia.org/ontology/policeName>) (<http://dbpedia.org/property/video>) (<http://dbpedia.org/ontology/gameModus>) (<http://dbpedia.org/ontology/commonName>) (<http://dbpedia.org/ontology/address>) (<http://dbpedia.org/ontology/battle>) (<http://dbpedia.org/ontology/picture>) (<http://dbpedia.org/ontology/nameDay>) (<http://dbpedia.org/property/game>) (<http://dbpedia.org/ontology/meshName>) (<http://dbpedia.org/ontology/birthName>) (<http://dbpedia.org/ontology/amateurFight>) (<http://dbpedia.org/ontology/fight>) (<http://dbpedia.org/ontology/name>) (<http://dbpedia.org/ontology/televisionSeries>) (<http://dbpedia.org/ontology/map>) (<http://dbpedia.org/ontology/reignName>) (<http://dbpedia.org/ontology/firstGame>) (<http://dbpedia.org/ontology/phonePrefixLabel>) (<http://dbpedia.org/property/battle>) (<http://dbpedia.org/ontology/presentName>) (<http://dbpedia.org/ontology/gameEngine>) (<http://dbpedia.org/ontology/statName>) (<http://dbpedia.org/ontology/greekName>) (<http://dbpedia.org/ontology/spouseName>) (<http://dbpedia.org/ontology/signName>) (<http://dbpedia.org/ontology/callSign>) (<http://dbpedia.org/property/call>) (<http://dbpedia.org/ontology/gameArtist>) (<http://dbpedia.org/ontology/unitCost>) (<http://dbpedia.org/ontology/pictureDescription>) (<http://dbpedia.org/ontology/colourName>)} VALUES (?property_1) {(<http://dbpedia.org/ontology/otherName>) (<http://dbpedia.org/ontology/pictureFormat>) (<http://dbpedia.org/ontology/phonePrefix>) (<http://dbpedia.org/ontology/ngcName>) (<http://dbpedia.org/ontology/formerName>) (<http://dbpedia.org/ontology/addressInRoad>) (<http://dbpedia.org/ontology/battleHonours>) (<http://dbpedia.org/ontology/latinName>) (<http://dbpedia.org/ontology/cost>) (<http://dbpedia.org/ontology/colonialName>) (<http://dbpedia.org/ontology/teamName>) (<http://dbpedia.org/ontology/iupacName>) (<http://dbpedia.org/resource/video_game>) (<http://dbpedia.org/property/be>) (<http://dbpedia.org/ontology/leaderName>) (<http://dbpedia.org/ontology/peopleName>) (<http://dbpedia.org/ontology/conflict>) (<http://dbpedia.org/ontology/sameName>) (<http://dbpedia.org/ontology/areaCode>) (<http://dbpedia.org/ontology/oldName>) (<http://dbpedia.org/ontology/originalName>) (<http://dbpedia.org/ontology/policeName>) (<http://dbpedia.org/property/video>) (<http://dbpedia.org/ontology/gameModus>) (<http://dbpedia.org/ontology/commonName>) (<http://dbpedia.org/ontology/address>) (<http://dbpedia.org/ontology/battle>) (<http://dbpedia.org/ontology/picture>) (<http://dbpedia.org/ontology/nameDay>) (<http://dbpedia.org/property/game>) (<http://dbpedia.org/ontology/meshName>) (<http://dbpedia.org/ontology/birthName>) (<http://dbpedia.org/ontology/amateurFight>) (<http://dbpedia.org/ontology/fight>) (<http://dbpedia.org/ontology/name>) (<http://dbpedia.org/ontology/televisionSeries>) (<http://dbpedia.org/ontology/map>) (<http://dbpedia.org/ontology/reignName>) (<http://dbpedia.org/ontology/firstGame>) (<http://dbpedia.org/ontology/phonePrefixLabel>) (<http://dbpedia.org/property/battle>) (<http://dbpedia.org/ontology/presentName>) (<http://dbpedia.org/ontology/gameEngine>) (<http://dbpedia.org/ontology/statName>) (<http://dbpedia.org/ontology/greekName>) (<http://dbpedia.org/ontology/spouseName>) (<http://dbpedia.org/ontology/signName>) (<http://dbpedia.org/ontology/callSign>) (<http://dbpedia.org/property/call>) (<http://dbpedia.org/ontology/gameArtist>) (<http://dbpedia.org/ontology/unitCost>) (<http://dbpedia.org/ontology/pictureDescription>) (<http://dbpedia.org/ontology/colourName>)} FILTER (CONCAT( ?uri, ?property_0, ?class_0 ) != CONCAT( ?uri, ?property_1, 'Battle Chess'@en ))  FILTER (CONCAT( ?uri, ?property_1, 'Battle Chess'@en ) != CONCAT( ?uri, ?property_0, ?class_0 )) }");
+
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>());
+
+        assertEquals(expectedQueries, actualQueries);
+    }
+
+    @Test
+    public void testGenerateQueriesRemovesCount() throws Exception {
+        String query = "SELECT (COUNT(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . }";
+        String question = "Who was the 16th president of the United States?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        String expected = "SELECT (COUNT(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . }";
+        String actual = queryMappingFactory.getQueryPattern();
+
+        assertEquals(expected, actual);
     }
 }
