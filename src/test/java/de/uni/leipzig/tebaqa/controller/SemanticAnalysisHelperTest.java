@@ -231,11 +231,11 @@ public class SemanticAnalysisHelperTest {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
-        customQuestions.add(new CustomQuestion("SELECT (FILTER(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x)) }",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
                 "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
-        customQuestions.add(new CustomQuestion("SELECT (FILTER(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x)) }",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
         NTripleParser nTripleParser = new NTripleParser();
@@ -255,11 +255,11 @@ public class SemanticAnalysisHelperTest {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
-        customQuestions.add(new CustomQuestion("SELECT (BOUND(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x))}",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
                 "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
-        customQuestions.add(new CustomQuestion("SELECT (BOUND(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x))}",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
         NTripleParser nTripleParser = new NTripleParser();

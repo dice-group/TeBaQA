@@ -41,8 +41,8 @@ public class WordNetWrapper {
             List<IWordID> wordIDs = iIndexWord.getWordIDs();
             wordIDs.forEach(iWordID -> {
                 IWord word = dictionary.getWord(iWordID);
-                ISynset synset = word.getSynset();
-                for (IWord w : synset.getWords()) {
+                List<IWord> words = word.getSynset().getWords();
+                for (IWord w : words) {
                     synonyms.add(w.getLemma().replace("_", " "));
                 }
             });
