@@ -4,11 +4,13 @@ import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
+import de.uni.leipzig.tebaqa.model.WordNetWrapper;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.simple.Sentence;
 import edu.stanford.nlp.util.CoreMap;
+import joptsimple.internal.Strings;
 import org.aksw.hawk.index.DBOIndex;
 import org.aksw.qa.annotation.index.IndexDBO_classes;
 import org.aksw.qa.annotation.index.IndexDBO_properties;
@@ -381,11 +383,20 @@ public class QueryMappingFactory {
             rdfResources.addAll(bestResources);
         });
 
-        //Set<String> coOccurrenceEntities = new HashSet<>();
-        //coOccurrences.parallelStream().forEach(string -> coOccurrenceEntities.addAll(SPARQLUtilities.findDBpediaEntities(string)));
-
-
-        //log.info("Resources: " + Strings.join(rdfResources, "; "));
+        WordNetWrapper wordNet = new WordNetWrapper();
+        Set<String> synonyms = wordNet.lookUpWords(question);
+        synonyms.forEach(synonym -> {
+            if (synonym.contains(" ")) {
+                String[] words = synonym.split("\\W+");
+                String wordsJoined = joinCapitalizedLemmas(words, false, true);
+                rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, words, wordsJoined));
+                String wordsJoinedCapitalized = joinCapitalizedLemmas(words, true, true);
+                rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, words, wordsJoinedCapitalized));
+                rdfResources.addAll(searchInDBOIndex(Strings.join(words, " ")));
+            } else {
+                rdfResources.addAll(searchInDBOIndex(synonym));
+            }
+        });
         this.rdfEntities = rdfResources;
         return rdfResources;
     }
@@ -395,7 +406,7 @@ public class QueryMappingFactory {
     }
 
     private boolean isOntology(String s) {
-        return s.startsWith("http://dbpedia.org/ontology/") || s.startsWith("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")|| s.startsWith("'http://dbpedia.org/datatype/");
+        return s.startsWith("http://dbpedia.org/ontology/") || s.startsWith("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") || s.startsWith("http://dbpedia.org/datatype/");
     }
 
     private List<String> getKeyByLowestValue(Map<String, Double> map) {
@@ -545,14 +556,17 @@ public class QueryMappingFactory {
         if (graph == null) {
             templatesForGraph = new ArrayList<>(mappings.values());
         } else {
-            templatesForGraph.add(mappings.get(graph));
+            QueryTemplateMapping mapping = mappings.get(graph);
+            if (mapping != null) {
+                templatesForGraph.add(mapping);
+            }
         }
         List<String> result = new ArrayList<>();
         if (queryType == SPARQLUtilities.ASK_QUERY) {
-
             result = templatesForGraph.stream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getAskTemplates)
+                    .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
 
             //templatesForGraph.forEach(queryTemplateMapping -> result.addAll(queryTemplateMapping.getAskTemplates()));
@@ -561,6 +575,7 @@ public class QueryMappingFactory {
             result = templatesForGraph.stream()
                     // .filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectTemplates)
+                    .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
 
             //templatesForGraph.forEach(queryTemplateMapping -> result.addAll(queryTemplateMapping.getSelectTemplates()));
@@ -568,10 +583,12 @@ public class QueryMappingFactory {
             result.addAll(templatesForGraph.stream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getAskTemplates)
+                    .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList()));
             result.addAll(templatesForGraph.stream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectTemplates)
+                    .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList()));
 
             // templatesForGraph.forEach(queryTemplateMapping -> result.addAll(queryTemplateMapping.getAskTemplates()));

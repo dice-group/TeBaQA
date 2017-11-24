@@ -54,22 +54,19 @@ public class SemanticAnalysisHelper {
     }
 
     public static int determineQueryType(String q) {
-        String selectIndicators = "Give|Show|Who|When|Were|What|Why|Whose|How|Where|Which";
-        String askIndicators = "Is|Are|Did|Was|Does";
+        List<String> selectIndicatorsList = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which".split("\\|"));
+        List<String> askIndicatorsList = Arrays.asList("is|are|did|was|does".split("\\|"));
         log.debug("String question: " + q);
         String[] split = q.split("\\s+");
         List<String> firstThreeWords = new ArrayList<>();
         if (split.length > 3) {
-            firstThreeWords.addAll(Arrays.asList(split));
+            firstThreeWords.addAll(Arrays.asList(split).subList(0, 3));
         } else {
             firstThreeWords.addAll(Arrays.asList(split));
         }
-        Pattern selectPattern = Pattern.compile(".*" + selectIndicators + ".*", Pattern.CASE_INSENSITIVE);
-        Pattern askPattern = Pattern.compile(".*" + askIndicators + ".*", Pattern.CASE_INSENSITIVE);
-
-        if (firstThreeWords.stream().anyMatch(s -> selectPattern.matcher(s).find())) {
+        if (firstThreeWords.stream().anyMatch(s -> selectIndicatorsList.contains(s.toLowerCase()))) {
             return SPARQLUtilities.SELECT_QUERY;
-        } else if (firstThreeWords.stream().anyMatch(s -> askPattern.matcher(s).find())) {
+        } else if (firstThreeWords.stream().anyMatch(s -> askIndicatorsList.contains(s.toLowerCase()))) {
             return SPARQLUtilities.ASK_QUERY;
         } else {
             return SPARQLUtilities.QUERY_TYPE_UNKNOWN;
@@ -136,7 +133,11 @@ public class SemanticAnalysisHelper {
             QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question.getQuestionText(), query, nodes, properties);
             String queryPattern = queryMappingFactory.getQueryPattern();
 
-            if (!queryPattern.contains("http://dbpedia.org/resource/")) {
+            if (!queryPattern.contains("http://dbpedia.org/resource/") && !queryPattern.toLowerCase().contains("count")
+                    && !queryPattern.toLowerCase().contains("sum") && !queryPattern.toLowerCase().contains("avg")
+                    && !queryPattern.toLowerCase().contains("min") && !queryPattern.toLowerCase().contains("max")
+                    && !queryPattern.toLowerCase().contains("filter") && !queryPattern.toLowerCase().contains("bound")
+                    && !queryPattern.toLowerCase().contains("limit")) {
                 int classCnt = 0;
                 int propertyCnt = 0;
 

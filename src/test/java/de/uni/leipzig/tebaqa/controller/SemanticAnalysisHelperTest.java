@@ -107,6 +107,199 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
+    public void testExtractTemplatesIgnoresCount() throws Exception {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("SELECT (COUNT(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
+                "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT (COUNT(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+        NTripleParser nTripleParser = new NTripleParser();
+        Set<RDFNode> nodes = nTripleParser.getNodes();
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
+    }
+
+    @Test
+    public void testExtractTemplatesIgnoresSum() throws Exception {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("SELECT (SUM(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
+                "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT (SUM(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+        NTripleParser nTripleParser = new NTripleParser();
+        Set<RDFNode> nodes = nTripleParser.getNodes();
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
+    }
+
+    @Test
+    public void testExtractTemplatesIgnoresAvg() throws Exception {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("SELECT (AVG(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
+                "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT (AVG(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+        NTripleParser nTripleParser = new NTripleParser();
+        Set<RDFNode> nodes = nTripleParser.getNodes();
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
+    }
+
+    @Test
+    public void testExtractTemplatesIgnoresMin() throws Exception {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("SELECT (MIN(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
+                "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT (MIN(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+        NTripleParser nTripleParser = new NTripleParser();
+        Set<RDFNode> nodes = nTripleParser.getNodes();
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
+    }
+
+    @Test
+    public void testExtractTemplatesIgnoresMax() throws Exception {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("SELECT (MAX(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
+                "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT (MAX(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+        NTripleParser nTripleParser = new NTripleParser();
+        Set<RDFNode> nodes = nTripleParser.getNodes();
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
+    }
+
+    @Test
+    public void testExtractTemplatesIgnoresFilter() throws Exception {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x)) }",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
+                "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x)) }",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+        NTripleParser nTripleParser = new NTripleParser();
+        Set<RDFNode> nodes = nTripleParser.getNodes();
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
+    }
+
+    @Test
+    public void testExtractTemplatesIgnoresBound() throws Exception {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x))}",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
+                "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x))}",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+        NTripleParser nTripleParser = new NTripleParser();
+        Set<RDFNode> nodes = nTripleParser.getNodes();
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
+    }
+
+
+    @Test
+    public void testExtractTemplatesIgnoresLimit() throws Exception {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } LIMIT 1 ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
+                "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } LIMIT 1 ",
+                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+        NTripleParser nTripleParser = new NTripleParser();
+        Set<RDFNode> nodes = nTripleParser.getNodes();
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
+    }
+
+    @Test
     public void testDetectQuestionAnswerTypeNumberAnswer() throws Exception {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("How many cities exist?");
         assertEquals(SemanticAnalysisHelper.NUMBER_ANSWER_TYPE, answerType);
@@ -145,6 +338,12 @@ public class SemanticAnalysisHelperTest {
     @Test
     public void testDetectQuestionAnswerTypeListAnswer2() throws Exception {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Which ingredients do I need for carrot cake?");
+        assertEquals(SemanticAnalysisHelper.LIST_ANSWER_TYPE, answerType);
+    }
+
+    @Test
+    public void testDetectQuestionAnswerTypeListAnswer3() throws Exception {
+        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("List all episodes of the first season of the HBO television series The Sopranos.");
         assertEquals(SemanticAnalysisHelper.LIST_ANSWER_TYPE, answerType);
     }
 
