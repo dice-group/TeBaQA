@@ -3,6 +3,7 @@ package de.uni.leipzig.tebaqa.helper;
 import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
+import de.uni.leipzig.tebaqa.model.CoOccurrenceEntityMapping;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.model.WordNetWrapper;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -67,6 +68,7 @@ public class QueryMappingFactory {
     private List<RDFNode> ontologyNodes = new ArrayList<>();
     private List<String> properties = new ArrayList<>();
     private Set<String> rdfEntities = new HashSet<>();
+    private Set<String> ontologyURIs;
 
     /**
      * Default constructor. Tries to create a mapping between a word or group of words and a resource in it's SPARQL
@@ -78,6 +80,8 @@ public class QueryMappingFactory {
      */
     public QueryMappingFactory(String question, Map<String, String> dependencySequencePos, String sparqlQuery, List<RDFNode> ontologyNodes) {
         this.ontologyNodes = ontologyNodes;
+        ontologyURIs = new HashSet<>();
+        ontologyNodes.forEach(rdfNode -> ontologyURIs.add(rdfNode.toString()));
         this.queryType = SemanticAnalysisHelper.determineQueryType(question);
 
         this.question = question;
@@ -122,6 +126,8 @@ public class QueryMappingFactory {
 
     public QueryMappingFactory(String question, String sparqlQuery, List<RDFNode> ontologyNodes, List<String> properties) {
         this.ontologyNodes = ontologyNodes;
+        ontologyURIs = new HashSet<>();
+        ontologyNodes.forEach(rdfNode -> ontologyURIs.add(rdfNode.toString()));
         this.properties = properties;
         this.queryType = SemanticAnalysisHelper.determineQueryType(question);
 
@@ -259,12 +265,12 @@ public class QueryMappingFactory {
         return queryPattern;
     }
 
-    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph, List<String> injectedVariables) {
+    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph, List<String> injectedEntities, boolean useSynonyms) {
         Set<String> rdfResources;
-        if (!injectedVariables.isEmpty()) {
-            rdfResources = Sets.newHashSet(injectedVariables);
+        if (!injectedEntities.isEmpty()) {
+            rdfResources = Sets.newHashSet(injectedEntities);
         } else {
-            rdfResources = extractResources(question);
+            rdfResources = extractResources(question, useSynonyms);
         }
         //log.info("Found resources: " + Strings.join(rdfResources, "; "));
 
@@ -297,7 +303,7 @@ public class QueryMappingFactory {
         return Lists.newArrayList(fillPatterns(rdfResources, suitableMappings));
     }
 
-    Set<String> extractResources(String question) {
+    Set<String> extractResources(String question, boolean useSynonyms) {
         Set<String> rdfResources = new HashSet<>();
 
         Map<String, List<Entity>> spotlightEntities = extractSpotlightEntities(question);
@@ -307,17 +313,19 @@ public class QueryMappingFactory {
 
         String[] wordsFromQuestion = question.split("\\W+");
         for (String word : wordsFromQuestion) {
-            rdfResources.addAll(getProperties(word));
-            rdfResources.addAll(getOntologies(word));
+            Map<String, String> lemmas = SemanticAnalysisHelper.getLemmas(word);
+            if (!lemmas.containsKey(word) || !lemmas.get(word).toLowerCase().equals("be")) {
+                List<String> properties = getProperties(word);
+                rdfResources.addAll(properties);
+                List<String> ontologies = getOntologies(word);
+                rdfResources.addAll(ontologies);
+            }
         }
 
         List<String> coOccurrences = getNeighborCoOccurrencePermutations(wordsFromQuestion);
         coOccurrences = coOccurrences.stream()
                 .filter(s -> s.split("\\W+").length < 5)
                 .collect(Collectors.toList());
-
-        Set<String> ontologyURIs = new HashSet<>();
-        ontologyNodes.forEach(rdfNode -> ontologyURIs.add(rdfNode.toString()));
 
         //TODO enable parallelization with coOccurrences.parallelStream().forEach
         coOccurrences.forEach(coOccurrence -> {
@@ -383,22 +391,54 @@ public class QueryMappingFactory {
             rdfResources.addAll(bestResources);
         });
 
+        if (useSynonyms) {
+            rdfResources.addAll(findResourcesBySynonyms(question));
+        }
+
+        this.rdfEntities = rdfResources;
+        return this.rdfEntities;
+    }
+
+    public Set<String> findResourcesBySynonyms(String question) {
+        Set<String> rdfResources = new HashSet<>();
+
         WordNetWrapper wordNet = new WordNetWrapper();
         Set<String> synonyms = wordNet.lookUpWords(question);
         synonyms.forEach(synonym -> {
+            // List<CoOccurrenceEntityMapping> coOccurrenceEntityMappings = new ArrayList<>();
             if (synonym.contains(" ")) {
                 String[] words = synonym.split("\\W+");
                 String wordsJoined = joinCapitalizedLemmas(words, false, true);
+                //tryDBpediaResourceNamingCombinations(ontologyURIs, words, wordsJoined).forEach(s -> coOccurrenceEntityMappings.add(new CoOccurrenceEntityMapping(question, s)));
                 rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, words, wordsJoined));
                 String wordsJoinedCapitalized = joinCapitalizedLemmas(words, true, true);
                 rdfResources.addAll(tryDBpediaResourceNamingCombinations(ontologyURIs, words, wordsJoinedCapitalized));
+                //tryDBpediaResourceNamingCombinations(ontologyURIs, words, wordsJoinedCapitalized).forEach(s -> coOccurrenceEntityMappings.add(new CoOccurrenceEntityMapping(question, s)));
                 rdfResources.addAll(searchInDBOIndex(Strings.join(words, " ")));
+                Arrays.asList(words).forEach(s -> rdfResources.addAll(searchInDBOIndex(s)));
+                //searchInDBOIndex(Strings.join(words, " ")).forEach(s -> coOccurrenceEntityMappings.add(new CoOccurrenceEntityMapping(question, s)));
             } else {
+                //searchInDBOIndex(synonym).forEach(s -> coOccurrenceEntityMappings.add(new CoOccurrenceEntityMapping(question, s)));
                 rdfResources.addAll(searchInDBOIndex(synonym));
             }
+            //rdfResources.addAll(getBestSynonymMatches(coOccurrenceEntityMappings));
         });
-        this.rdfEntities = rdfResources;
         return rdfResources;
+    }
+
+    private Set<String> getBestSynonymMatches(List<CoOccurrenceEntityMapping> coOccurrenceEntityMappings) {
+        Set<String> result = new HashSet<>();
+        Set<List<String>> matchingWords = new HashSet<>();
+        coOccurrenceEntityMappings.forEach(mapping -> matchingWords.add(mapping.getMatchingWords()));
+        //All all entities who have no direct match in the question
+        result.addAll(coOccurrenceEntityMappings.stream().filter(mapping -> mapping.getSize() == 0).map(CoOccurrenceEntityMapping::getEntity).collect(Collectors.toList()));
+
+        //Add only the match with the highest similarity with the question
+        for (List<String> words : matchingWords) {
+            int maxSize = coOccurrenceEntityMappings.stream().max(Comparator.comparingInt(CoOccurrenceEntityMapping::getSize)).get().getSize();
+            result.addAll(coOccurrenceEntityMappings.stream().filter(mapping -> mapping.getSize() == maxSize && !Collections.disjoint(mapping.getMatchingWords(), words)).map(CoOccurrenceEntityMapping::getEntity).collect(Collectors.toList()));
+        }
+        return result;
     }
 
     private boolean isResource(String s) {
@@ -427,42 +467,50 @@ public class QueryMappingFactory {
 
     private Set<String> searchInDBOIndex(String coOccurrence) {
         DBOIndex dboIndex = new DBOIndex();
-        List<String> search = dboIndex.search(coOccurrence);
-        Set<String> resultsInDBOIndex = search.stream()
-                .filter(s -> {
-                    String[] split = s.split("/");
-                    String baseResourceName = split[split.length - 1];
-                    double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
-                    return ratio <= 0.7;
-                })
-                .collect(Collectors.toSet());
+        //The DBOIndex Class throws a NullPointerException when you search for a number
+        if (StringUtils.isNumeric(coOccurrence)) {
+            return new HashSet<>();
+        } else if (coOccurrence.length() < 2) {
+            //Don't use words like 'a'
+            return new HashSet<>();
+        } else {
+            List<String> search = dboIndex.search(coOccurrence);
+            Set<String> resultsInDBOIndex = search.stream()
+                    .filter(s -> {
+                        String[] split = s.split("/");
+                        String baseResourceName = split[split.length - 1];
+                        double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
+                        return ratio <= 0.7;
+                    })
+                    .collect(Collectors.toSet());
 
-        IndexDBO_classes indexDBO_classes = new IndexDBO_classes();
-        List<String> indexDBO_classesSearch = indexDBO_classes.search(coOccurrence);
-        Set<String> resultsInDBOIndexClass = indexDBO_classesSearch.stream()
-                .filter(s -> {
-                    String[] split = s.split("/");
-                    String baseResourceName = split[split.length - 1];
-                    double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
-                    //TODO instead of using string similarity use the shortest one (e.g. Television instead of TelevisionShow) if it exists
-                    return ratio < 0.5;
-                })
-                .collect(Collectors.toSet());
+            IndexDBO_classes indexDBO_classes = new IndexDBO_classes();
+            List<String> indexDBO_classesSearch = indexDBO_classes.search(coOccurrence);
+            Set<String> resultsInDBOIndexClass = indexDBO_classesSearch.stream()
+                    .filter(s -> {
+                        String[] split = s.split("/");
+                        String baseResourceName = split[split.length - 1];
+                        double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
+                        //TODO instead of using string similarity use the shortest one (e.g. Television instead of TelevisionShow) if it exists
+                        return ratio < 0.5;
+                    })
+                    .collect(Collectors.toSet());
 
-        IndexDBO_properties indexDBO_properties = new IndexDBO_properties();
-        List<String> indexDBO_propertySearch = indexDBO_properties.search(coOccurrence);
-        Set<String> resultsInDBOIndexProperty = indexDBO_propertySearch.stream()
-                .filter(s -> {
-                    String[] split = s.split("/");
-                    String baseResourceName = split[split.length - 1];
-                    double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
-                    return ratio < 0.5;
-                })
-                .collect(Collectors.toSet());
+            IndexDBO_properties indexDBO_properties = new IndexDBO_properties();
+            List<String> indexDBO_propertySearch = indexDBO_properties.search(coOccurrence);
+            Set<String> resultsInDBOIndexProperty = indexDBO_propertySearch.stream()
+                    .filter(s -> {
+                        String[] split = s.split("/");
+                        String baseResourceName = split[split.length - 1];
+                        double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
+                        return ratio < 0.5;
+                    })
+                    .collect(Collectors.toSet());
 
-        resultsInDBOIndex.addAll(resultsInDBOIndexClass);
-        resultsInDBOIndex.addAll(resultsInDBOIndexProperty);
-        return resultsInDBOIndex;
+            resultsInDBOIndex.addAll(resultsInDBOIndexClass);
+            resultsInDBOIndex.addAll(resultsInDBOIndexProperty);
+            return resultsInDBOIndex;
+        }
     }
 
     private List<String> tryDBpediaResourceNamingCombinations(Set<String> ontologyURIs, String[] words, String lemmasJoined) {
@@ -476,8 +524,8 @@ public class QueryMappingFactory {
         return addToResult;
     }
 
-    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings) {
-        return generateQueries(mappings, null, new ArrayList<>());
+    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, boolean useSynonyms) {
+        return generateQueries(mappings, null, new ArrayList<>(), useSynonyms);
     }
 
     private String joinCapitalizedLemmas(String[] strings, boolean capitalizeFirstLetter, boolean useLemma) {

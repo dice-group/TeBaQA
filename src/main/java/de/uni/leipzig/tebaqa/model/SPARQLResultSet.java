@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SPARQLResultSet {
     private int type;
@@ -14,12 +15,12 @@ public class SPARQLResultSet {
 
     public SPARQLResultSet(List<String> resultSet) {
         this.type = -1;
-        this.resultSet = resultSet;
+        this.resultSet = resultSet.stream().map(s -> s.contains("^^") ? s.split("\\^\\^")[0] : s).collect(Collectors.toList());
     }
 
     public SPARQLResultSet(List<String> resultSet, int type) {
         this.type = type;
-        this.resultSet = resultSet;
+        this.resultSet = resultSet.stream().map(s -> s.contains("^^") ? s.split("\\^\\^")[0] : s).collect(Collectors.toList());
     }
 
     public int getType() {
@@ -32,9 +33,5 @@ public class SPARQLResultSet {
 
     public List<String> getResultSet() {
         return resultSet;
-    }
-
-    public void setResultSet(List<String> resultSet) {
-        this.resultSet = resultSet;
     }
 }

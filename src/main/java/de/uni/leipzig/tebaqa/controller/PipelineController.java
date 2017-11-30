@@ -146,14 +146,14 @@ public class PipelineController {
             String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
             List<String> queries;
             QueryMappingFactory mappingFactory = new QueryMappingFactory(question.getQuestionText(), question.getQuery(), Lists.newArrayList(ontologyNodes), dBpediaProperties);
-            List<String> originalVariables = new ArrayList<>();
+            List<String> mockedEntities = new ArrayList<>();
             if (mockVariables) {
                 String originalQuery = idealQueries.get(question.getQuestionText());
                 String regex = "<(.+?)>";
                 Pattern pattern = Pattern.compile(regex);
                 Matcher m = pattern.matcher(originalQuery);
                 while (m.find()) {
-                    originalVariables.add(m.group().replace("<", "").replace(">", ""));
+                    mockedEntities.add(m.group().replace("<", "").replace(">", ""));
                 }
             }
             if (mockTemplates) {
@@ -163,30 +163,41 @@ public class PipelineController {
                 queryTemplateMapping.addSelectTemplate(originalQuery, question.getQuery());
                 queryTemplateMapping.addAskTemplate(originalQuery, question.getQuery());
                 mockedMapping.put(graphPattern, queryTemplateMapping);
-                queries = mappingFactory.generateQueries(mockedMapping, graphPattern, originalVariables);
+                queries = mappingFactory.generateQueries(mockedMapping, graphPattern, mockedEntities, false);
                 additionalLogMessages += "Mocked Query: " + Strings.join(queries, "\n");
             } else {
-                queries = mappingFactory.generateQueries(mappings, graphPattern, originalVariables);
+                queries = mappingFactory.generateQueries(mappings, graphPattern, mockedEntities, false);
             }
+
+            //If the template from the predicted graph won't find suitable templates, try all other templates
             if (queries.isEmpty()) {
-                queries = mappingFactory.generateQueries(mappings);
+                logMessage.append("There is no suitable query template for this graph, using all templates now...\n");
+                queries = mappingFactory.generateQueries(mappings, false);
             }
 
             results.addAll(executeQueries(queries, logMessage));
+
+            final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question.getQuestionText());
+            Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, false);
+
+            //If there still is no suitable answer, use all query templates to find one
+            if (bestAnswer.isEmpty()) {
+                queries = mappingFactory.generateQueries(mappings, false);
+                results.addAll(executeQueries(queries, logMessage));
+                bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, false);
+            }
+
+            //If there still is no suitable answer, use synonyms to find one
+            if (bestAnswer.isEmpty()) {
+                logMessage.append("There is no suitable answer, using synonyms to find one...\n");
+                queries = mappingFactory.generateQueries(mappings, true);
+                results.addAll(executeQueries(queries, logMessage));
+                bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, true);
+            }
+
             Optional<HAWKQuestion> hawkQuestionOptional = questions.stream()
                     .filter(q -> q.getLanguageToQuestion().get("en").equals(question.getQuestionText()))
                     .findFirst();
-
-            final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question.getQuestionText());
-            HashSet<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType);
-
-            //If the template from the predicted graph won't find results, try all other templates
-            if (bestAnswer.isEmpty()) {
-                queries = mappingFactory.generateQueries(mappings);
-                results.addAll(executeQueries(queries, logMessage));
-                bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType);
-            }
-
             if (hawkQuestionOptional.isPresent()) {
                 HAWKQuestion hawkQuestion = hawkQuestionOptional.get();
                 if (!hawkQuestion.getAggregation() && hawkQuestion.getOnlydbo() && Objects.equals(hawkQuestion.getAnswerType(), "resource")) {
@@ -219,22 +230,21 @@ public class PipelineController {
         //log.info("Correctly answered: " + correctlyAnswered[0] + "/" + questions.size());
         log.info("Average F-Measure: " + fMeasures.stream().mapToDouble(Double::doubleValue).summaryStatistics().getAverage());
         log.info("Average Precision: " + precisions.stream().mapToDouble(Double::doubleValue).summaryStatistics().getAverage());
-
     }
 
     private List<Map<Integer, List<String>>> executeQueries(List<String> queries, StringBuilder logMessage) {
-        List<Map<Integer, List<String>>> results2 = new ArrayList<>();
+        List<Map<Integer, List<String>>> results = new ArrayList<>();
         for (String s : queries) {
             SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(s);
             List<String> result = sparqlResultSet.getResultSet();
             if (!result.isEmpty()) {
                 Map<Integer, List<String>> classifiedResult = new HashMap<>();
                 classifiedResult.put(sparqlResultSet.getType(), result);
-                results2.add(classifiedResult);
+                results.add(classifiedResult);
             }
             logMessage.append(s).append("\n").append(String.join("; ", result)).append("\n");
         }
-        return results2;
+        return results;
     }
 
     private void addUnresolvedEntities(Map<String, List<String>> from, Map<String, Map<String, Integer>> to) {

@@ -141,4 +141,16 @@ public class SPARQLUtilitiesTest {
         SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE {  ?x <http://dbpedia.org/ontology/fooBar> <http://dbpedia.org/resource/William_Shatner> .  ?x <http://dbpedia.org/ontology/starring> ?uri . } ");
         assertEquals(SemanticAnalysisHelper.UNKNOWN_ANSWER_TYPE, sparqlResultSet.getType());
     }
+
+    @Test
+    public void testGetPageRankWithResource() {
+        Double pageRank = SPARQLUtilities.getPageRank("http://dbpedia.org/resource/William_Shatner");
+        assertEquals(26.3249, pageRank, 5);
+    }
+
+    @Test
+    public void testGetPageRankWithOntology() {
+        Double pageRank = SPARQLUtilities.getPageRank("http://dbpedia.org/ontology/Bird");
+        assertEquals(Double.MAX_VALUE, pageRank, 0);
+    }
 }
