@@ -4,7 +4,6 @@ import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
 import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.IIndexWord;
-import edu.mit.jwi.item.ISynset;
 import edu.mit.jwi.item.IWord;
 import edu.mit.jwi.item.IWordID;
 import edu.mit.jwi.item.POS;
@@ -43,7 +42,8 @@ public class WordNetWrapper {
                 IWord word = dictionary.getWord(iWordID);
                 List<IWord> words = word.getSynset().getWords();
                 for (IWord w : words) {
-                    synonyms.add(w.getLemma().replace("_", " "));
+                    String replace = w.getLemma().replace("_", " ");
+                    synonyms.add(replace);
                 }
             });
 
@@ -70,8 +70,10 @@ public class WordNetWrapper {
                 String pos = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
                 String ner = token.get(CoreAnnotations.NamedEntityTagAnnotation.class);
                 String lemma = token.get(CoreAnnotations.LemmaAnnotation.class);
-                if (lemma != null && pos != null && pos.length() > 0 && ner != null && !ner.equals("PERSON")
-                        && !ner.equals("ORGANIZATION") && !ner.equals("LOCATION")) {
+                if (lemma != null && pos != null && pos.length() > 0 && ner != null
+                        && !ner.equals("PERSON") && !ner.equals("ORGANIZATION") && !ner.equals("LOCATION")
+                        && !lemma.toLowerCase().equals("be")
+                        && !pos.equals("WP") && !pos.equals("WRB") && !pos.equals(".")) {
                     char posTag = Character.toUpperCase(pos.charAt(0));
                     if (Character.compare(posTag, 'N') == 0 || Character.compare(posTag, 'V') == 0
                             || Character.compare(posTag, 'R') == 0 || Character.compare(posTag, 'S') == 0

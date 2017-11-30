@@ -101,8 +101,10 @@ public class SPARQLUtilities {
                     resultType = SemanticAnalysisHelper.LIST_ANSWER_TYPE;
                 } else if (result.size() == 1) {
                     String s = result.get(0);
-                    if (s.endsWith("^^http://www.w3.org/2001/XMLSchema#integer")) {
+                    if (s.endsWith("^^http://www.w3.org/2001/XMLSchema#integer") || s.endsWith("http://www.w3.org/2001/XMLSchema#positiveInteger")) {
                         resultType = SemanticAnalysisHelper.NUMBER_ANSWER_TYPE;
+                    } else if (s.endsWith("^^http://www.w3.org/2001/XMLSchema#date")) {
+                        resultType = SemanticAnalysisHelper.DATE_ANSWER_TYPE;
                     } else {
                         resultType = SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE;
                     }
@@ -262,5 +264,42 @@ public class SPARQLUtilities {
         });
         return result.toString();
 
+    }
+
+    /**
+     * Fetches the page rank for a given resource. If the resource isn't valid (e.g. if it's a ontology instead), {@link Double}.MAX_VALUE is returned instead.
+     *
+     * @param uri The resource which page rank is returned.
+     * @return The page rank of the resource.
+     */
+    public static Double getPageRank(String uri) {
+        if (uri.startsWith("http://dbpedia.org/resource/")) {
+            SPARQLResultSet sparqlResultSet = executeSPARQLQuery(String.format("PREFIX vrank:<http://purl.org/voc/vrank#> SELECT ?v FROM <http://people.aifb.kit.edu/ath/#DBpedia_PageRank> WHERE { <%s> vrank:hasRank/vrank:rankValue ?v. }", uri));
+            List<String> resultSet = sparqlResultSet.getResultSet();
+            if (resultSet.size() == 1) {
+                return Double.valueOf(resultSet.get(0).split("\\^")[0]);
+            } else {
+                return Double.MAX_VALUE;
+            }
+        } else {
+            return Double.MAX_VALUE;
+        }
+
+    }
+
+    public static Double countOntologyUsage(String uri) {
+        String[] split = uri.split("/");
+        String entity = split[split.length - 1];
+        if (uri.startsWith("http://dbpedia.org/ontology/") && Character.isUpperCase(entity.charAt(0))) {
+            SPARQLResultSet sparqlResultSet = executeSPARQLQuery(String.format("SELECT DISTINCT (COUNT(DISTINCT ?uri) as ?c) WHERE {  ?uri a <%s> . } ", uri));
+            List<String> resultSet = sparqlResultSet.getResultSet();
+            if (resultSet.size() == 1) {
+                return Double.valueOf(resultSet.get(0).split("\\^")[0]);
+            } else {
+                return Double.MAX_VALUE;
+            }
+        } else {
+            return Double.MAX_VALUE;
+        }
     }
 }

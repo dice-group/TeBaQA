@@ -9,6 +9,7 @@ import de.uni.leipzig.tebaqa.helper.Utilities;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
@@ -25,14 +26,8 @@ import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -48,6 +43,7 @@ public class SemanticAnalysisHelper {
     public static int LIST_ANSWER_TYPE = 1;
     public static int SINGLE_RESOURCE_TYPE = 2;
     public static int NUMBER_ANSWER_TYPE = 3;
+    public static int DATE_ANSWER_TYPE = 4;
 
     public SemanticAnalysisHelper() {
         this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
@@ -187,6 +183,23 @@ public class SemanticAnalysisHelper {
         return mappings;
     }
 
+    public static Map<String, String> getLemmas(String q) {
+        Map<String, String> lemmas = new HashMap<>();
+        Annotation annotation = new Annotation(q);
+        StanfordCoreNLP pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
+        pipeline.annotate(annotation);
+        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+        for (CoreMap sentence : sentences) {
+            List<CoreLabel> labels = sentence.get(CoreAnnotations.TokensAnnotation.class);
+            for (CoreLabel token : labels) {
+                String word = token.get(CoreAnnotations.TextAnnotation.class);
+                String lemma = token.get(CoreAnnotations.LemmaAnnotation.class);
+                lemmas.put(word, lemma);
+            }
+        }
+        return lemmas;
+    }
+
     /**
      * Classifies a question and tries to find the best matching graph pattern for it's SPARQL query.
      *
@@ -275,7 +288,7 @@ public class SemanticAnalysisHelper {
      */
     boolean containsQuestionText(Map<String, String> map, String text) {
         boolean isInside = false;
-        for (Map.Entry<String, String> entry : map.entrySet()) {
+        for (Entry<String, String> entry : map.entrySet()) {
             if (entry.getValue().equals(text)) {
                 isInside = true;
                 break;
@@ -361,9 +374,11 @@ public class SemanticAnalysisHelper {
         if (question.toLowerCase().startsWith("how many") || question.toLowerCase().startsWith("how much")) {
             return NUMBER_ANSWER_TYPE;
         }
+        if (question.toLowerCase().startsWith("when")) {
+            return DATE_ANSWER_TYPE;
+        }
         for (IndexedWord word : sequence) {
             String posTag = word.get(CoreAnnotations.PartOfSpeechAnnotation.class);
-            String lemma = word.get(CoreAnnotations.LemmaAnnotation.class);
             if (posTag.equalsIgnoreCase("NNS") || posTag.equalsIgnoreCase("NNPS")) {
                 return LIST_ANSWER_TYPE;
             } else if (posTag.equalsIgnoreCase("NN") || posTag.equalsIgnoreCase("NNP")) {
@@ -373,21 +388,44 @@ public class SemanticAnalysisHelper {
         return UNKNOWN_ANSWER_TYPE;
     }
 
-    HashSet<String> getBestAnswer(List<Map<Integer, List<String>>> results, StringBuilder logMessage, int expectedAnswerType) {
-        List<List<String>> bestAnswers = new ArrayList<>();
+    Set<String> getBestAnswer(List<Map<Integer, List<String>>> results, StringBuilder logMessage, int expectedAnswerType, boolean forceResult) {
+        List<List<String>> suitableAnswers = new ArrayList<>();
         List<String> bestAnswer = new ArrayList<>();
+
+        if (expectedAnswerType == SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE) {
+            //A list might contain the correct answer too
+            results.forEach(result -> {
+                if (result.containsKey(SemanticAnalysisHelper.LIST_ANSWER_TYPE)) {
+                    List<String> resultWithMatchingType = result.get(SemanticAnalysisHelper.LIST_ANSWER_TYPE);
+                    if (!resultWithMatchingType.isEmpty()) {
+                        suitableAnswers.add(resultWithMatchingType);
+                    }
+                }
+            });
+        } else if (expectedAnswerType == SemanticAnalysisHelper.LIST_ANSWER_TYPE) {
+            //A single answer might be a partly correct answer
+            results.forEach(result -> {
+                if (result.containsKey(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE)) {
+                    List<String> resultWithMatchingType = result.get(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE);
+                    if (!resultWithMatchingType.isEmpty()) {
+                        suitableAnswers.add(resultWithMatchingType);
+                    }
+                }
+            });
+        }
 
         results.forEach(result -> {
             if (result.containsKey(expectedAnswerType)) {
                 List<String> resultWithMatchingType = result.get(expectedAnswerType);
                 if (!resultWithMatchingType.isEmpty()) {
-                    bestAnswers.add(resultWithMatchingType);
+                    suitableAnswers.add(resultWithMatchingType);
                 }
             }
         });
-
-        //If there is no suitable result use all the results combined
-        if (bestAnswers.isEmpty()) {
+        if (suitableAnswers.size() == 1) {
+            return Sets.newHashSet(suitableAnswers.get(0));
+        } else if (suitableAnswers.isEmpty() && forceResult) {
+            //If there is no suitable result fallback to the other results
             List<String> finalBestAnswer = bestAnswer;
             results.stream()
                     .map(Map::values)
@@ -395,16 +433,28 @@ public class SemanticAnalysisHelper {
                             .flatMap(List::stream)
                             .collect(Collectors.toList())));
             bestAnswer = finalBestAnswer;
-        } else if (bestAnswers.size() == 1) {
-            bestAnswer = bestAnswers.get(0);
-        } else {
-            //TODO Check the average page rank if there are multiple results
-            //TODO if there are multiple result lists, take the smallest list?
-            logMessage.append("\nWARNING: Found multiple answers with same correct answer type!\n");
-            List<String> finalBestAnswer = bestAnswer;
-            bestAnswers.forEach(values -> finalBestAnswer.addAll(new ArrayList<>(values)));
-            bestAnswer = finalBestAnswer;
+        } else if (suitableAnswers.size() > 1) {
+            //Uncomment the following lines to use the pagerank
+            //return getBestAnswerByPageRank(suitableAnswers);
+            return suitableAnswers.stream().flatMap(Collection::stream).collect(Collectors.toSet());
         }
         return Sets.newHashSet(bestAnswer);
+    }
+
+    private Set<String> getBestAnswerByPageRank(List<List<String>> suitableAnswers) {
+        Set<String> bestAnswer = new HashSet<>();
+        //If there are multiple suitable answers, use the one(s) with the best avg page rank
+        final Double[] bestAvgPageRank = {0.0};
+        suitableAnswers.forEach(values -> {
+            List<Double> pageRanks = new ArrayList<>();
+            values.forEach(s -> pageRanks.add(SPARQLUtilities.getPageRank(s)));
+            OptionalDouble average = pageRanks.stream().mapToDouble(value -> value).average();
+            Double avgPageRank = average.isPresent() ? average.getAsDouble() : 0.0;
+            if (avgPageRank >= bestAvgPageRank[0]) {
+                bestAnswer.addAll(new ArrayList<>(values));
+                bestAvgPageRank[0] = avgPageRank;
+            }
+        });
+        return bestAnswer;
     }
 }

@@ -6,6 +6,7 @@ import de.uni.leipzig.tebaqa.helper.NTripleParser;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -312,6 +313,12 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
+    public void testDetectQuestionAnswerTypeDateAnswer() throws Exception {
+        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("When was the Titanic completed?");
+        assertEquals(SemanticAnalysisHelper.DATE_ANSWER_TYPE, answerType);
+    }
+
+    @Test
     public void testDetectQuestionAnswerTypeBooleanAnswer() throws Exception {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Is there a god?");
         assertEquals(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, answerType);
@@ -380,10 +387,73 @@ public class SemanticAnalysisHelperTest {
         result2.put(answerType, resultSet2);
         results.add(result2);
 
-        HashSet<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), answerType);
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), answerType, false);
         assertEquals(3, bestAnswer.size());
         assertTrue(bestAnswer.contains("http://dbpedia.org/resource/On_the_Road"));
         assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Atop_an_Underwood:_Early_Stories_and_Other_Writings"));
         assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Door_Wide_Open"));
+    }
+
+    @Test
+    @Ignore
+    public void testGetBestAnswerWithSingleResultExpectedWith3Answers() throws Exception {
+        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("To which party does the mayor of Paris belong?");
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<Map<Integer, List<String>>> results = new ArrayList<>();
+        Map<Integer, List<String>> result1 = new HashMap<>();
+        List<String> resultSet1 = new ArrayList<>();
+        resultSet1.add("http://dbpedia.org/resource/Socialist_Party_(France)");
+        resultSet1.add("http://dbpedia.org/resource/Feuillant_(political_group)");
+        resultSet1.add("http://dbpedia.org/resource/Colorado_Party_(Uruguay)");
+        result1.put(answerType, resultSet1);
+        results.add(result1);
+
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), answerType, false);
+        assertEquals(1, bestAnswer.size());
+        assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Socialist_Party_(France)"));
+    }
+
+    @Test
+    @Ignore
+    public void testGetBestAnswerWithSingleResultExpectedWithSingleAnswer() throws Exception {
+        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("To which party does the mayor of Paris belong?");
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<Map<Integer, List<String>>> results = new ArrayList<>();
+        Map<Integer, List<String>> result1 = new HashMap<>();
+        List<String> resultSet1 = new ArrayList<>();
+        resultSet1.add("http://dbpedia.org/resource/Socialist_Party_(France)");
+        result1.put(answerType, resultSet1);
+        results.add(result1);
+
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), answerType, false);
+        assertEquals(1, bestAnswer.size());
+        assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Socialist_Party_(France)"));
+    }
+
+    @Test
+    @Ignore
+    public void testGetBestAnswerWithSingleResultExpectedWith11Answers() throws Exception {
+        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("To which party does the mayor of Paris belong?");
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<Map<Integer, List<String>>> results = new ArrayList<>();
+        Map<Integer, List<String>> result1 = new HashMap<>();
+        List<String> resultSet1 = new ArrayList<>();
+        resultSet1.add("http://dbpedia.org/resource/Socialist_Party_(France)");
+        resultSet1.add("http://dbpedia.org/resource/Feuillant_(political_group)");
+        resultSet1.add("http://dbpedia.org/resource/Colorado_Party_(Uruguay)");
+        resultSet1.add("http://dbpedia.org/resource/Socialist_Destourian_Party");
+        resultSet1.add("http://dbpedia.org/resource/Union_of_Democrats_for_the_Republic");
+        resultSet1.add("http://dbpedia.org/resource/Italian_Socialist_Party");
+        resultSet1.add("http://dbpedia.org/resource/Republican-Socialist_Party");
+        resultSet1.add("http://dbpedia.org/resource/The_Plain");
+        resultSet1.add("http://dbpedia.org/resource/United_Socialist_Party_(Italy,_1922–30)");
+        resultSet1.add("http://dbpedia.org/resource/Social_Progressive_Party");
+        resultSet1.add("http://dbpedia.org/resource/Union_for_the_New_Republic");
+        result1.put(answerType, resultSet1);
+        results.add(result1);
+
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), answerType, false);
+        assertEquals(1, bestAnswer.size());
+        assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Socialist_Party_(France)"));
     }
 }
