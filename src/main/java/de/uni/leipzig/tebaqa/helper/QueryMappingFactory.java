@@ -5,6 +5,7 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.CoOccurrenceEntityMapping;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
+import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import de.uni.leipzig.tebaqa.model.WordNetWrapper;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -389,6 +390,8 @@ public class QueryMappingFactory {
             rdfResources.addAll(bestOntologies);
             List<String> bestResources = getKeyByLowestValue(currentResources);
             rdfResources.addAll(bestResources);
+            Set<String> resourcesFoundInFullText = findResourcesInFullText(coOccurrence);
+            rdfResources.addAll(resourcesFoundInFullText);
         });
 
         if (useSynonyms) {
@@ -397,6 +400,25 @@ public class QueryMappingFactory {
 
         this.rdfEntities = rdfResources;
         return this.rdfEntities;
+    }
+
+    Set<String> findResourcesInFullText(String s) {
+        Set<String> result = new HashSet<>();
+        SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(String.format("select distinct ?s { ?s ?p ?o. ?s <http://www.w3.org/2000/01/rdf-schema#label> ?l. filter(langmatches(lang(?l), 'en')) ?l <bif:contains> \"'%s'\" }", s));
+        List<String> resultSet = sparqlResultSet.getResultSet();
+        resultSet.forEach(uri -> {
+            String[] split = uri.split("/");
+            String resourceName = split[split.length - 1];
+            double levenshteinRatio = Utilities.getLevenshteinRatio(s, resourceName.replace("_", " ")
+                    .replace("(", " ")
+                    .replace(")", " ")
+                    .replaceAll("\\s+", " ")
+                    .trim());
+            if (levenshteinRatio < 0.2) {
+                result.add(uri);
+            }
+        });
+        return result;
     }
 
     public Set<String> findResourcesBySynonyms(String question) {
