@@ -200,6 +200,23 @@ public class SemanticAnalysisHelper {
         return lemmas;
     }
 
+    public static Map<String, String> getPOS(String q) {
+        Map<String, String> pos = new HashMap<>();
+        Annotation annotation = new Annotation(q);
+        StanfordCoreNLP pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
+        pipeline.annotate(annotation);
+        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+        for (CoreMap sentence : sentences) {
+            List<CoreLabel> labels = sentence.get(CoreAnnotations.TokensAnnotation.class);
+            for (CoreLabel token : labels) {
+                String word = token.get(CoreAnnotations.TextAnnotation.class);
+                String posAnnotation = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+                pos.put(word, posAnnotation);
+            }
+        }
+        return pos;
+    }
+
     /**
      * Classifies a question and tries to find the best matching graph pattern for it's SPARQL query.
      *

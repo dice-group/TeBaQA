@@ -205,8 +205,8 @@ public class PipelineController {
                     fMeasures.add(fMeasure);
                     double precision = AnswerBasedEvaluation.precision(bestAnswer, hawkQuestion);
                     precisions.add(precision);
-                    logMessage.append(String.format("Question: '%s'; F-Measure: %.3f; Precision: %.3f; Missed Entities (from golden answer):", question.getQuestionText(), fMeasure, precision));
-
+                    logMessage.append(String.format("Question: '%s'\nF-Measure: %.3f; Precision: %.3f\nUndetected Entities:", question.getQuestionText(), fMeasure, precision));
+                    logMessage.append("\nBest result: ").append(Strings.join(bestAnswer, "; "));
                     Pattern betweenLaceBraces = Pattern.compile("<(.*?)>");
                     Matcher matcher = betweenLaceBraces.matcher(SPARQLUtilities.resolveNamespaces(hawkQuestion.getSparqlQuery()));
                     Set<String> requiredDBpediaEntites = new HashSet<>();

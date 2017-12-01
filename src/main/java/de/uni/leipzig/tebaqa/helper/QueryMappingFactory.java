@@ -323,6 +323,7 @@ public class QueryMappingFactory {
             }
         }
 
+        Map<String, String> wordPosMap = SemanticAnalysisHelper.getPOS(question);
         List<String> coOccurrences = getNeighborCoOccurrencePermutations(wordsFromQuestion);
         coOccurrences = coOccurrences.stream()
                 .filter(s -> s.split("\\W+").length < 5)
@@ -330,68 +331,70 @@ public class QueryMappingFactory {
 
         //TODO enable parallelization with coOccurrences.parallelStream().forEach
         coOccurrences.forEach(coOccurrence -> {
-            Map<String, Double> currentResources = new HashMap<>();
-            Map<String, Double> currentOntologies = new HashMap<>();
-
             String[] coOccurrenceSplitted = coOccurrence.split("\\W+");
-            String lemmasJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, true);
-            tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoined).forEach(s -> {
-                if (isResource(s)) {
-                    currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
-                } else if (isOntology(s)) {
-                    currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
-                } else {
-                    log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
-                }
-            });
+            if (coOccurrenceSplitted.length > 0 && (coOccurrenceSplitted.length > 1 || (!wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("DT") && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("WP")))) {
+                Map<String, Double> currentResources = new HashMap<>();
+                Map<String, Double> currentOntologies = new HashMap<>();
 
-            String lemmasJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, true);
-            tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoinedCapitalized).forEach(s -> {
-                if (isResource(s)) {
-                    currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
-                } else if (isOntology(s)) {
-                    currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
-                } else {
-                    log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
-                }
-            });
+                String lemmasJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, true);
+                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoined).forEach(s -> {
+                    if (isResource(s)) {
+                        currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                    } else if (isOntology(s)) {
+                        currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                    } else {
+                        log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
+                    }
+                });
 
-            String wordsJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, false);
-            tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined).forEach(s -> {
-                if (isResource(s)) {
-                    currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
-                } else if (isOntology(s)) {
-                    currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
-                } else {
-                    log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
-                }
-            });
+                String lemmasJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, true);
+                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoinedCapitalized).forEach(s -> {
+                    if (isResource(s)) {
+                        currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                    } else if (isOntology(s)) {
+                        currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                    } else {
+                        log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
+                    }
+                });
 
-            String wordsJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, false);
-            tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized).forEach(s -> {
-                if (isResource(s)) {
-                    currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
-                } else if (isOntology(s)) {
-                    currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
-                } else {
-                    log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
-                }
-            });
-            searchInDBOIndex(coOccurrence).forEach(s -> {
-                if (isResource(s)) {
-                    currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
-                } else if (isOntology(s)) {
-                    currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
-                } else {
-                    log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
-                }
-            });
-            List<String> bestOntologies = getKeyByLowestValue(currentOntologies);
-            rdfResources.addAll(bestOntologies);
-            List<String> bestResources = getKeyByLowestValue(currentResources);
-            rdfResources.addAll(bestResources);
-            Set<String> resourcesFoundInFullText = findResourcesInFullText(coOccurrence);
-            rdfResources.addAll(resourcesFoundInFullText);
+                String wordsJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, false);
+                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined).forEach(s -> {
+                    if (isResource(s)) {
+                        currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                    } else if (isOntology(s)) {
+                        currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                    } else {
+                        log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
+                    }
+                });
+
+                String wordsJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, false);
+                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized).forEach(s -> {
+                    if (isResource(s)) {
+                        currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                    } else if (isOntology(s)) {
+                        currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                    } else {
+                        log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
+                    }
+                });
+                searchInDBOIndex(coOccurrence).forEach(s -> {
+                    if (isResource(s)) {
+                        currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                    } else if (isOntology(s)) {
+                        currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                    } else {
+                        log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
+                    }
+                });
+                List<String> bestOntologies = getKeyByLowestValue(currentOntologies);
+                rdfResources.addAll(bestOntologies);
+                List<String> bestResources = getKeyByLowestValue(currentResources);
+                rdfResources.addAll(bestResources);
+                Set<String> resourcesFoundInFullText = findResourcesInFullText(coOccurrence);
+                rdfResources.addAll(resourcesFoundInFullText);
+            }
         });
 
         if (useSynonyms) {
@@ -403,19 +406,22 @@ public class QueryMappingFactory {
     }
 
     Set<String> findResourcesInFullText(String s) {
+        List<String> questionWords = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which|is|are|did|was|does|a".split("\\|"));
         Set<String> result = new HashSet<>();
         SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(String.format("select distinct ?s { ?s ?p ?o. ?s <http://www.w3.org/2000/01/rdf-schema#label> ?l. filter(langmatches(lang(?l), 'en')) ?l <bif:contains> \"'%s'\" }", s));
         List<String> resultSet = sparqlResultSet.getResultSet();
         resultSet.forEach(uri -> {
             String[] split = uri.split("/");
             String resourceName = split[split.length - 1];
-            double levenshteinRatio = Utilities.getLevenshteinRatio(s, resourceName.replace("_", " ")
-                    .replace("(", " ")
-                    .replace(")", " ")
-                    .replaceAll("\\s+", " ")
-                    .trim());
-            if (levenshteinRatio < 0.2) {
-                result.add(uri);
+            if (!questionWords.contains(resourceName.toLowerCase())) {
+                double levenshteinRatio = Utilities.getLevenshteinRatio(s, resourceName.replace("_", " ")
+                        .replace("(", " ")
+                        .replace(")", " ")
+                        .replaceAll("\\s+", " ")
+                        .trim());
+                if (levenshteinRatio < 0.2) {
+                    result.add(uri);
+                }
             }
         });
         return result;
