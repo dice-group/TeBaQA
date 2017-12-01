@@ -284,7 +284,6 @@ public class SPARQLUtilities {
         } else {
             return Double.MAX_VALUE;
         }
-
     }
 
     public static Double countOntologyUsage(String uri) {

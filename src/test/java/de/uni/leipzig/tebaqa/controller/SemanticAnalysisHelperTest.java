@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 
 public class SemanticAnalysisHelperTest {
     @Test
-    public void testExtractTemplatesMapsGraph() throws Exception {
+    public void testExtractTemplatesMapsGraph() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -42,7 +42,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testExtractTemplatesContainsSelectQueryPattern() throws Exception {
+    public void testExtractTemplatesContainsSelectQueryPattern() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -66,7 +66,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testExtractTemplatesContainsSelectQueryPattern2() throws Exception {
+    public void testExtractTemplatesContainsSelectQueryPattern2() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -86,7 +86,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testExtractTemplatesDetectsIsomorphTemplates() throws Exception {
+    public void testExtractTemplatesDetectsIsomorphTemplates() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -108,7 +108,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testExtractTemplatesIgnoresCount() throws Exception {
+    public void testExtractTemplatesIgnoresCount() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -132,7 +132,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testExtractTemplatesIgnoresSum() throws Exception {
+    public void testExtractTemplatesIgnoresSum() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -156,7 +156,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testExtractTemplatesIgnoresAvg() throws Exception {
+    public void testExtractTemplatesIgnoresAvg() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -180,7 +180,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testExtractTemplatesIgnoresMin() throws Exception {
+    public void testExtractTemplatesIgnoresMin() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -204,7 +204,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testExtractTemplatesIgnoresMax() throws Exception {
+    public void testExtractTemplatesIgnoresMax() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -228,7 +228,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testExtractTemplatesIgnoresFilter() throws Exception {
+    public void testExtractTemplatesIgnoresFilter() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -252,7 +252,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testExtractTemplatesIgnoresBound() throws Exception {
+    public void testExtractTemplatesIgnoresBound() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -277,7 +277,7 @@ public class SemanticAnalysisHelperTest {
 
 
     @Test
-    public void testExtractTemplatesIgnoresLimit() throws Exception {
+    public void testExtractTemplatesIgnoresLimit() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
@@ -301,73 +301,73 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeNumberAnswer() throws Exception {
+    public void testDetectQuestionAnswerTypeNumberAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("How many cities exist?");
         assertEquals(SemanticAnalysisHelper.NUMBER_ANSWER_TYPE, answerType);
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeNumberAnswer2() throws Exception {
+    public void testDetectQuestionAnswerTypeNumberAnswer2() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("How many companies were founded in the same year as Google?");
         assertEquals(SemanticAnalysisHelper.NUMBER_ANSWER_TYPE, answerType);
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeDateAnswer() throws Exception {
+    public void testDetectQuestionAnswerTypeDateAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("When was the Titanic completed?");
         assertEquals(SemanticAnalysisHelper.DATE_ANSWER_TYPE, answerType);
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeBooleanAnswer() throws Exception {
+    public void testDetectQuestionAnswerTypeBooleanAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Is there a god?");
         assertEquals(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, answerType);
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeBooleanAnswer2() throws Exception {
+    public void testDetectQuestionAnswerTypeBooleanAnswer2() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Does Neymar play for Real Madrid?");
         assertEquals(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, answerType);
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeBooleanAnswer3() throws Exception {
+    public void testDetectQuestionAnswerTypeBooleanAnswer3() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Was the Cuban Missile Crisis earlier than the Bay of Pigs Invasion?");
         assertEquals(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, answerType);
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeListAnswer() throws Exception {
+    public void testDetectQuestionAnswerTypeListAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Give me all professional skateboarders from Sweden.");
         assertEquals(SemanticAnalysisHelper.LIST_ANSWER_TYPE, answerType);
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeListAnswer2() throws Exception {
+    public void testDetectQuestionAnswerTypeListAnswer2() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Which ingredients do I need for carrot cake?");
         assertEquals(SemanticAnalysisHelper.LIST_ANSWER_TYPE, answerType);
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeListAnswer3() throws Exception {
+    public void testDetectQuestionAnswerTypeListAnswer3() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("List all episodes of the first season of the HBO television series The Sopranos.");
         assertEquals(SemanticAnalysisHelper.LIST_ANSWER_TYPE, answerType);
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeSingleAnswer() throws Exception {
+    public void testDetectQuestionAnswerTypeSingleAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Which computer scientist won an oscar?");
         assertEquals(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, answerType);
     }
 
     @Test
-    public void testDetectQuestionAnswerTypeSingleAnswer2() throws Exception {
+    public void testDetectQuestionAnswerTypeSingleAnswer2() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("In which UK city are the headquarters of the MI6?");
         assertEquals(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, answerType);
     }
 
     @Test
-    public void testGetBestAnswerWithSameResult() throws Exception {
+    public void testGetBestAnswerWithSameResult() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Which books by Kerouac were published by Viking Press?");
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<Map<Integer, List<String>>> results = new ArrayList<>();
@@ -396,7 +396,7 @@ public class SemanticAnalysisHelperTest {
 
     @Test
     @Ignore
-    public void testGetBestAnswerWithSingleResultExpectedWith3Answers() throws Exception {
+    public void testGetBestAnswerWithSingleResultExpectedWith3Answers() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("To which party does the mayor of Paris belong?");
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<Map<Integer, List<String>>> results = new ArrayList<>();
@@ -415,7 +415,7 @@ public class SemanticAnalysisHelperTest {
 
     @Test
     @Ignore
-    public void testGetBestAnswerWithSingleResultExpectedWithSingleAnswer() throws Exception {
+    public void testGetBestAnswerWithSingleResultExpectedWithSingleAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("To which party does the mayor of Paris belong?");
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<Map<Integer, List<String>>> results = new ArrayList<>();
@@ -432,7 +432,7 @@ public class SemanticAnalysisHelperTest {
 
     @Test
     @Ignore
-    public void testGetBestAnswerWithSingleResultExpectedWith11Answers() throws Exception {
+    public void testGetBestAnswerWithSingleResultExpectedWith11Answers() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("To which party does the mayor of Paris belong?");
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<Map<Integer, List<String>>> results = new ArrayList<>();

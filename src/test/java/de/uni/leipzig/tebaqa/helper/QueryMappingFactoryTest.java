@@ -4,6 +4,7 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
+import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import org.assertj.core.util.Lists;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -22,12 +23,12 @@ import static org.junit.Assert.assertTrue;
 public class QueryMappingFactoryTest {
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         StanfordPipelineProvider.getSingletonPipelineInstance();
     }
 
     @Test
-    public void testCreateQueryPattern() throws Exception {
+    public void testCreateQueryPattern() {
         String question = "In which country does the Nile start?";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -44,7 +45,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testCreateQueryPatternUriMismatch() throws Exception {
+    public void testCreateQueryPatternUriMismatch() {
         String question = "In which country does the Nile start?";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -61,7 +62,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testCreateQueryPatternTestsForCompleteResourceString() throws Exception {
+    public void testCreateQueryPatternTestsForCompleteResourceString() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . }";
@@ -79,7 +80,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testCreateQueryPatternWithEntityFromSpotlight() throws Exception {
+    public void testCreateQueryPatternWithEntityFromSpotlight() {
         String query = "SELECT DISTINCT ?uri WHERE {  <http://dbpedia.org/resource/Yeti_Airlines>" +
                 " <http://dbpedia.org/resource/Airport> ?uri . }";
         String question = "Which airport does Yeti Airlines serve?";
@@ -98,7 +99,7 @@ public class QueryMappingFactoryTest {
 
 
     @Test
-    public void testCreateQueryPatternWithUnknownSpotlightEntity() throws Exception {
+    public void testCreateQueryPatternWithUnknownSpotlightEntity() {
         String query = "SELECT DISTINCT ?uri WHERE {  <http://dbpedia.org/resource/Yeti_Airlines>" +
                 " <http://dbpedia.org/resource/Airport> ?uri . }";
         String question = "Which airports does Yeti Airlines serve?";
@@ -117,7 +118,7 @@ public class QueryMappingFactoryTest {
 
 
     @Test
-    public void testCreateQueryPatternWithMultiWordEntity() throws Exception {
+    public void testCreateQueryPatternWithMultiWordEntity() {
         String query = "SELECT DISTINCT ?uri WHERE {  " +
                 "<http://dbpedia.org/resource/San_Pedro_de_Atacama> <http://dbpedia.org/ontology/timeZone> ?uri . } ";
         String question = "What is the timezone in San Pedro de Atacama?";
@@ -136,7 +137,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testQueryWithNamespaces() throws Exception {
+    public void testQueryWithNamespaces() {
         String question = "In which country does the Nile start?";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -155,7 +156,7 @@ public class QueryMappingFactoryTest {
     //TODO Fix test
     @Test
     @Ignore
-    public void testQuery2() throws Exception {
+    public void testQuery2() {
         String question = "Give me all launch pads operated by NASA.";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> \n" +
                 "PREFIX res: <http://dbpedia.org/resource/> \n" +
@@ -181,7 +182,7 @@ public class QueryMappingFactoryTest {
 
 
     @Test
-    public void testGetQueryMappingsWithMatchingArguments() throws Exception {
+    public void testGetQueryMappingsWithMatchingArguments() {
         String question = "In which country does the Nile start?";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -209,7 +210,7 @@ public class QueryMappingFactoryTest {
 
 
     @Test
-    public void testGetQueryMappingsWithTooFewArguments() throws Exception {
+    public void testGetQueryMappingsWithTooFewArguments() {
         String question = "In which country does the Nile start?";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -233,11 +234,13 @@ public class QueryMappingFactoryTest {
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         mappings.put("1", template1);
 
-        assertEquals(expected, queryMappingFactory.generateQueries(mappings, false));
+        List<String> actual = queryMappingFactory.generateQueries(mappings, false);
+        assertTrue(actual.size() == 1);
+        assertTrue(actual.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?class_0 ?property_0 ?x . VALUES (?class_0) {("));
     }
 
     @Test
-    public void testGetQueryMappingsWithTooMuchProperties() throws Exception {
+    public void testGetQueryMappingsWithTooMuchProperties() {
         String question = "In which country does the Nile start?";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -256,7 +259,7 @@ public class QueryMappingFactoryTest {
                 "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . }");
 
         List<String> expected = new ArrayList<>();
-        expected.add("SELECT DISTINCT ?uri WHERE { ?class_0 a ?x . VALUES (?class_0) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)}}");
+        expected.add("SELECT DISTINCT ?uri WHERE { ?class_0 a ?x . VALUES (?class_0) {(<http://dbpedia.org/resource/Country>) (<http://dbpedia.org/resource/The_Nile>) (<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)}}");
 
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         mappings.put("", template1);
@@ -265,7 +268,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testGetQueryMappingsWithTooMuchClasses() throws Exception {
+    public void testGetQueryMappingsWithTooMuchClasses() {
         String question = "In which country does the Nile start?";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -290,7 +293,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testGetQueryMappingsWithTooMuchArguments() throws Exception {
+    public void testGetQueryMappingsWithTooMuchArguments() {
         String question = "In which country does the Nile start?";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -315,7 +318,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testGetQueryMappingsWithEscapedDot() throws Exception {
+    public void testGetQueryMappingsWithEscapedDot() {
         String question = "In which country does the Nile start?";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -343,7 +346,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testCreateQueryPatternEccentricMethod() throws Exception {
+    public void testCreateQueryPatternEccentricMethod() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . }";
@@ -357,7 +360,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testCreateQueryPatternEccentricMethodTwoTriples() throws Exception {
+    public void testCreateQueryPatternEccentricMethodTwoTriples() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . res:Nile dbo:city ?uri . }";
@@ -373,7 +376,7 @@ public class QueryMappingFactoryTest {
     @Test
     @Ignore
     //TODO Implement the recognition of multi-word entities like "http://dbpedia.org/resource/Game_of_Thrones
-    public void testExtractResources() throws Exception {
+    public void testExtractResources() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "ASK WHERE { " +
@@ -395,7 +398,7 @@ public class QueryMappingFactoryTest {
     @Test
     @Ignore
     //TODO Implement the recognition of multi-word entities like "http://dbpedia.org/resource/Game_of_Thrones
-    public void testExtractResourcesIgnoresCase() throws Exception {
+    public void testExtractResourcesIgnoresCase() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "ASK WHERE { " +
@@ -414,7 +417,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesDetectsOntologiesWithPlural() throws Exception {
+    public void testExtractResourcesDetectsOntologiesWithPlural() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "ASK WHERE { " +
@@ -433,7 +436,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesDetectsOntologies() throws Exception {
+    public void testExtractResourcesDetectsOntologies() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "ASK WHERE { " +
@@ -452,7 +455,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesDetectsOntologiesFirstLetterCapitalized() throws Exception {
+    public void testExtractResourcesDetectsOntologiesFirstLetterCapitalized() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "ASK WHERE { " +
@@ -471,7 +474,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesDetectsOntologies2() throws Exception {
+    public void testExtractResourcesDetectsOntologies2() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "ASK WHERE { " +
@@ -491,7 +494,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesDetectsOntologiesDetectsOriginalForm() throws Exception {
+    public void testExtractResourcesDetectsOntologiesDetectsOriginalForm() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "ASK WHERE { " +
@@ -510,7 +513,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesDetectsOntologiesDetectsOriginalForm2() throws Exception {
+    public void testExtractResourcesDetectsOntologiesDetectsOriginalForm2() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "ASK WHERE { " +
@@ -529,9 +532,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    @Ignore
-    //TODO Implement
-    public void testExtractResourcesDetectsResourcesWithMultipleWords() throws Exception {
+    public void testExtractResourcesDetectsResourcesWithMultipleWords() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "ASK WHERE { " +
@@ -550,7 +551,46 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesOnlyUsesBiggestMatchBetweenWordgroupAndOntology() throws Exception {
+    public void testFindResourceInFullTextDetectsResourcesWithMultipleWords() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Who developed the video game World of Warcraft?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.findResourcesInFullText("World of Warcraft");
+        //assertTrue(actual.size() == 1);
+        assertTrue(actual.contains("http://dbpedia.org/resource/World_of_Warcraft"));
+    }
+
+    @Test
+    public void testFindResourceInFullTextDetectsResourcesWithMultipleWords2() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Who developed the video game World of Warcraft?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.findResourcesInFullText("Game of Thrones");
+        assertTrue(actual.contains("http://dbpedia.org/resource/Game_of_Thrones"));
+    }
+
+    @Test
+    public void testExtractResourcesOnlyUsesBiggestMatchBetweenWordgroupAndOntology() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT DISTINCT ?uri WHERE {          res:Suriname dbo:officialLanguage ?uri . }";
         String question = "What is the official language of Suriname?";
         NTripleParser nTripleParser = new NTripleParser();
@@ -572,7 +612,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesWithoutSynonyms() throws Exception {
+    public void testExtractResourcesWithoutSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Which awards did Douglas Hofstadter win?";
         NTripleParser nTripleParser = new NTripleParser();
@@ -586,7 +626,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesWontUseBe() throws Exception {
+    public void testExtractResourcesWontUseBe() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "What is Batman's real name?";
         NTripleParser nTripleParser = new NTripleParser();
@@ -599,7 +639,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesWontUseBeWithSynonyms() throws Exception {
+    public void testExtractResourcesWontUseBeWithSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "What is Batman's real name?";
         NTripleParser nTripleParser = new NTripleParser();
@@ -612,7 +652,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesWontUseCost() throws Exception {
+    public void testExtractResourcesWontUseCost() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Who was Vincent van Gogh inspired by?";
         NTripleParser nTripleParser = new NTripleParser();
@@ -625,7 +665,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesWontUseCostWithSynonyms() throws Exception {
+    public void testExtractResourcesWontUseCostWithSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Who was Vincent van Gogh inspired by?";
         NTripleParser nTripleParser = new NTripleParser();
@@ -638,7 +678,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testExtractResourcesWontUseMapWithSynonyms() throws Exception {
+    public void testExtractResourcesWontUseMapWithSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Where was Bach born?";
         NTripleParser nTripleParser = new NTripleParser();
@@ -651,7 +691,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testGenerateQueries() throws Exception {
+    public void testGenerateQueries() {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "SELECT DISTINCT ?uri WHERE {  <http://dbpedia.org/resource/San_Pedro_de_Atacama> <http://dbpedia.org/ontology/timeZone> ?uri . }";
         String question = "What is the timezone in San Pedro de Atacama?";
@@ -667,16 +707,16 @@ public class QueryMappingFactoryTest {
         List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
-        List<String> expectedQueries = new ArrayList<>();
-        expectedQueries.add("SELECT DISTINCT ?num WHERE { ?class_0 ?property_0 ?num .  VALUES (?class_0) {(<http://dbpedia.org/resource/San_Pedro_de_Atacama>)} VALUES (?property_0) {(<http://dbpedia.org/property/san>) (<http://dbpedia.org/ontology/deathPlace>) (<http://dbpedia.org/ontology/timeZone>) (<http://dbpedia.org/property/pedro>) (<http://dbpedia.org/ontology/birthPlace>) (<http://dbpedia.org/ontology/ruling>) (<http://dbpedia.org/property/timeZone>) (<http://dbpedia.org/property/timezone>)}}");
-
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+        SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(actualQueries.get(0));
 
-        assertEquals(expectedQueries, actualQueries);
+        assertTrue(actualQueries.size() == 1);
+        assertTrue(sparqlResultSet.getResultSet().size() == 1);
+        assertTrue(sparqlResultSet.getResultSet().get(0).equals("http://dbpedia.org/resource/Time_in_Chile"));
     }
 
     @Test
-    public void testGenerateQueriesWithMultipleTriples() throws Exception {
+    public void testGenerateQueriesWithMultipleTriples() {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "SELECT DISTINCT ?uri WHERE {  \n" +
                 "    ?uri <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/Film> .  " +
@@ -707,7 +747,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testGenerateQueriesWithFilterInQueryTemplate() throws Exception {
+    public void testGenerateQueriesWithFilterInQueryTemplate() {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX dbp: <http://dbpedia.org/property/> PREFIX res: <http://dbpedia.org/resource/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?uri  WHERE {  ?uri rdf:type dbo:City .         ?uri dbo:isPartOf res:New_Jersey .         ?uri dbp:populationTotal ?inhabitants .         FILTER (?inhabitants > 100000) . }";
         String question = "Give me all cities in New Jersey with more than 100000 inhabitants.";
@@ -728,11 +768,12 @@ public class QueryMappingFactoryTest {
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
 
-        assertEquals(expectedQueries, actualQueries);
+        assertTrue(actualQueries.size() == 1);
+        assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?uri ?property_0 ?class_0 . ?uri ?property_1 ?class_1 . ?uri ?property_2 ?inhabitants ."));
     }
 
     @Test
-    public void testGenerateQueriesStringLiteralInQuery() throws Exception {
+    public void testGenerateQueriesStringLiteralInQuery() {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?uri WHERE {          ?uri dbo:office 'President of the United States' .          ?uri dbo:orderInOffice '16th' . }";
         String question = "Who was the 16th president of the United States?";
@@ -755,7 +796,7 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    public void testGenerateQueriesStringLiteralInQuery2() throws Exception {
+    public void testGenerateQueriesStringLiteralInQuery2() {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> ASK  WHERE {  ?uri rdf:type dbo:VideoGame .         ?uri rdfs:label 'Battle Chess'@en . }";
         String question = "Is there a video game called Battle Chess?";

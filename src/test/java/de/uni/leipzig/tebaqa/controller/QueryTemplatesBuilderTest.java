@@ -14,10 +14,8 @@ import static org.junit.Assert.assertTrue;
 
 public class QueryTemplatesBuilderTest {
 
-    private static String UNPARSEABLE_QUERY = "some random string";
-
     @Test
-    public void getModifiersWithFilterTest() throws Exception {
+    public void getModifiersWithFilterTest() {
         ArrayList<String> queries = new ArrayList<>();
         String simpleSelectWithFilter = "SELECT DISTINCT ?uri WHERE { ?uri a " +
                 "<http://dbpedia.org/ontology/BasketballPlayer> . ?uri <http://dbpedia.org/ontology/height> ?n . " +
@@ -32,7 +30,7 @@ public class QueryTemplatesBuilderTest {
     }
 
     @Test
-    public void testAskQuery() throws Exception {
+    public void testAskQuery() {
         ArrayList<String> queries = new ArrayList<>();
         String simpleAskWithFilter = "ASK WHERE { ?uri a " +
                 "<http://dbpedia.org/ontology/BasketballPlayer> . ?uri <http://dbpedia.org/ontology/height> ?n . " +
@@ -47,7 +45,7 @@ public class QueryTemplatesBuilderTest {
     }
 
     @Test
-    public void testUnionModifier() throws Exception {
+    public void testUnionModifier() {
         ArrayList<String> queries = new ArrayList<>();
         String simpleAskWithFilter = "SELECT DISTINCT ?uri WHERE { { ?uri <http://dbpedia.org/ontology/field>" +
                 "<http://dbpedia.org/resource/Computer_science> . } " +
@@ -63,7 +61,7 @@ public class QueryTemplatesBuilderTest {
     }
 
     @Test
-    public void testNonSelectAskQuery() throws Exception {
+    public void testNonSelectAskQuery() {
         ArrayList<String> queries = new ArrayList<>();
         String simpleDescribeQuery = "DESCRIBE <http://example.org/>";
         queries.add(simpleDescribeQuery);
@@ -76,7 +74,7 @@ public class QueryTemplatesBuilderTest {
     //TODO modifier values is not recognized well
     @Test
     @Ignore
-    public void testNestedSelect() throws Exception {
+    public void testNestedSelect() {
         ArrayList<String> queries = new ArrayList<>();
         String nestedSelectQuery = "select ?x ?y where {values ?x { 1 2 3 } " +
                 "{ select ?y where {  values ?y { 5 6 7 8 } } limit 2 }}";
@@ -91,7 +89,7 @@ public class QueryTemplatesBuilderTest {
     }
 
     @Test
-    public void testGetModifiersHandlesMultipleModifiers() throws Exception {
+    public void testGetModifiersHandlesMultipleModifiers() {
         ArrayList<String> queries = new ArrayList<>();
         String selectExtendedFilter = "SELECT DISTINCT ?n WHERE " +
                 "{ ?x a <http://dbpedia.org/ontology/BasketballPlayer> . ?x <http://dbpedia.org/ontology/league> " +
@@ -111,14 +109,15 @@ public class QueryTemplatesBuilderTest {
 
     @Test
     @Ignore
-    public void unparseableQuery() throws Exception {
+    public void unparseableQuery() {
         ArrayList<String> queries = new ArrayList<>();
+        String UNPARSEABLE_QUERY = "some random string";
         queries.add(UNPARSEABLE_QUERY);
         QueryTemplatesBuilder queryTemplatesBuilder = new QueryTemplatesBuilder(queries);
     }
 
     @Test
-    public void testSeperatorAfterQuestionMarkWithoutSpaceStays() throws Exception {
+    public void testSeperatorAfterQuestionMarkWithoutSpaceStays() {
         ArrayList<String> queries = new ArrayList<>();
         String queryNoSpaceBeforeDot = "SELECT DISTINCT ?uri WHERE { ?uri a " +
                 "<http://dbpedia.org/ontology/BasketballPlayer> . ?uri <http://dbpedia.org/ontology/height> ?n . " +

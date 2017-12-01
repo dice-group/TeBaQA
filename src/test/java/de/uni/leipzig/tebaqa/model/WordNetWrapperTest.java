@@ -10,12 +10,12 @@ import static org.junit.Assert.assertTrue;
 
 public class WordNetWrapperTest {
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         StanfordPipelineProvider.getSingletonPipelineInstance();
     }
 
     @Test
-    public void testLookUpWord() throws Exception {
+    public void testLookUpWord() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
         Set<String> actualSynonyms = wordNetWrapper.lookUpWords("Whom did Lance Bass marry?");
         assertTrue(actualSynonyms.contains("espouse"));

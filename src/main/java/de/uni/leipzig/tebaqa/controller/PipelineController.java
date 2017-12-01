@@ -51,7 +51,6 @@ public class PipelineController {
         log.info("Configuring controller");
         semanticAnalysisHelper = new SemanticAnalysisHelper();
 
-
         PipelineController controller = new PipelineController();
         controller.addDataset(Dataset.QALD7_Train_Multilingual);
 
@@ -182,6 +181,7 @@ public class PipelineController {
 
             //If there still is no suitable answer, use all query templates to find one
             if (bestAnswer.isEmpty()) {
+                logMessage.append("There is no suitable answer, using all query templates instead...\n");
                 queries = mappingFactory.generateQueries(mappings, false);
                 results.addAll(executeQueries(queries, logMessage));
                 bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, false);
@@ -242,7 +242,7 @@ public class PipelineController {
                 classifiedResult.put(sparqlResultSet.getType(), result);
                 results.add(classifiedResult);
             }
-            logMessage.append(s).append("\n").append(String.join("; ", result)).append("\n");
+            logMessage.append(s).append("\nResult: ").append(String.join("; ", result)).append("\n\n");
         }
         return results;
     }

@@ -8,7 +8,7 @@ import static org.junit.Assert.assertEquals;
 
 public class SPARQLUtilitiesTest {
     @Test
-    public void resolveNamespacesTestWithDotAfterEntity() throws Exception {
+    public void resolveNamespacesTestWithDotAfterEntity() {
         String s = SPARQLUtilities.resolveNamespaces("PREFIX dbo: <http://dbpedia.org/ontology/>\n" +
                 "PREFIX res: <http://dbpedia.org/resource/>\n" +
                 "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
@@ -34,7 +34,7 @@ public class SPARQLUtilitiesTest {
     }
 
     @Test
-    public void resolveNamespacesTest() throws Exception {
+    public void resolveNamespacesTest() {
         String s = SPARQLUtilities.resolveNamespaces("PREFIX dbo: <http://dbpedia.org/ontology/>\n" +
                 "PREFIX res: <http://dbpedia.org/resource/>\n" +
                 "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
@@ -60,7 +60,7 @@ public class SPARQLUtilitiesTest {
     }
 
     @Test
-    public void resolveNamespacesTestTwoTriples() throws Exception {
+    public void resolveNamespacesTestTwoTriples() {
         String s = SPARQLUtilities.resolveNamespaces("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . res:Nile dbo:city ?uri . }");
         String expected = "SELECT DISTINCT ?uri WHERE { <http://dbpedia.org/resource/Nile> <http://dbpedia.org/ontology/city> ?uri . <http://dbpedia.org/resource/Nile> <http://dbpedia.org/ontology/city> ?uri . }";
         assertEquals(expected, s);
@@ -68,7 +68,7 @@ public class SPARQLUtilitiesTest {
 
 
     @Test
-    public void resolveNamespacesTestWithSmallerChar() throws Exception {
+    public void resolveNamespacesTestWithSmallerChar() {
         String s = SPARQLUtilities.resolveNamespaces("ASK WHERE { " +
                 "?class_ ?property_ ?x . " +
                 "?class_ ?property_ ?y . " +
@@ -87,7 +87,7 @@ public class SPARQLUtilitiesTest {
     }
 
     @Test
-    public void resolveNamespacesTestWithGreaterChar() throws Exception {
+    public void resolveNamespacesTestWithGreaterChar() {
         String s = SPARQLUtilities.resolveNamespaces("ASK WHERE { " +
                 "?class_ ?property_ ?x . " +
                 "?class_ ?property_ ?y . " +
@@ -106,38 +106,38 @@ public class SPARQLUtilitiesTest {
     }
 
     @Test
-    public void testResolveNamespacesWithNoNS() throws Exception {
+    public void testResolveNamespacesWithNoNS() {
         String s = SPARQLUtilities.resolveNamespaces("SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/routeStart> <http://dbpedia.org/resource/Piccadilly>. } ");
         String expected = "SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/routeStart> <http://dbpedia.org/resource/Piccadilly>. }";
         assertEquals(expected, s);
     }
 
     @Test
-    public void testResultSetTypeSingleResource() throws Exception {
+    public void testResultSetTypeSingleResource() {
         SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/routeStart> <http://dbpedia.org/resource/Piccadilly>. } ");
         assertEquals(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, sparqlResultSet.getType());
     }
 
     @Test
-    public void testResultSetTypeNumber() throws Exception {
+    public void testResultSetTypeNumber() {
         SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("SELECT (COUNT(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . }");
         assertEquals(SemanticAnalysisHelper.NUMBER_ANSWER_TYPE, sparqlResultSet.getType());
     }
 
     @Test
-    public void testResultSetTypeList() throws Exception {
+    public void testResultSetTypeList() {
         SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE {  ?x <http://dbpedia.org/ontology/director> <http://dbpedia.org/resource/William_Shatner> .  ?x <http://dbpedia.org/ontology/starring> ?uri . } ");
         assertEquals(SemanticAnalysisHelper.LIST_ANSWER_TYPE, sparqlResultSet.getType());
     }
 
     @Test
-    public void testResultSetTypeBoolean() throws Exception {
+    public void testResultSetTypeBoolean() {
         SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("ASK WHERE { <http://dbpedia.org/resource/Neymar> <http://dbpedia.org/ontology/team> <http://dbpedia.org/resource/Real_Madrid_C.F.> . }");
         assertEquals(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, sparqlResultSet.getType());
     }
 
     @Test
-    public void testResultSetTypeUnknown() throws Exception {
+    public void testResultSetTypeUnknown() {
         SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE {  ?x <http://dbpedia.org/ontology/fooBar> <http://dbpedia.org/resource/William_Shatner> .  ?x <http://dbpedia.org/ontology/starring> ?uri . } ");
         assertEquals(SemanticAnalysisHelper.UNKNOWN_ANSWER_TYPE, sparqlResultSet.getType());
     }
