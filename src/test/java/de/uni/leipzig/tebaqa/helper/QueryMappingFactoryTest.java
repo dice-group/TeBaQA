@@ -259,7 +259,7 @@ public class QueryMappingFactoryTest {
                 "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . }");
 
         List<String> expected = new ArrayList<>();
-        expected.add("SELECT DISTINCT ?uri WHERE { ?class_0 a ?x . VALUES (?class_0) {(<http://dbpedia.org/resource/Country>) (<http://dbpedia.org/resource/The_Nile>) (<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)}}");
+        expected.add("SELECT DISTINCT ?uri WHERE { ?class_0 a ?x . VALUES (?class_0) {(<http://dbpedia.org/resource/The_Nile>) (<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/resource/Country>) (<http://dbpedia.org/ontology/Country>)}}");
 
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         mappings.put("", template1);
@@ -688,6 +688,32 @@ public class QueryMappingFactoryTest {
 
         Set<String> actual = queryMappingFactory.extractResources(question, true);
         assertTrue(!actual.contains("http://dbpedia.org/ontology/map"));
+    }
+
+    @Test
+    public void testExtractResourcesWontUseQuestionWords() {
+        String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
+        String question = "Where was Bach born?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractResources(question, true);
+        assertTrue(!actual.contains("http://dbpedia.org/resource/Where"));
+    }
+
+    @Test
+    public void testExtractResourcesWontUseQuestionWordsForSynonyms() {
+        String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
+        String question = "Who was the pope that founded the Vatican Television?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractResources(question, true);
+        assertTrue(!actual.contains("http://dbpedia.org/ontology/deathPlace"));
     }
 
     @Test
