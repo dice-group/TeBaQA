@@ -52,7 +52,7 @@ public class PipelineController {
         semanticAnalysisHelper = new SemanticAnalysisHelper();
 
         PipelineController controller = new PipelineController();
-        controller.addDataset(Dataset.QALD7_Train_Multilingual);
+        controller.addDataset(Dataset.QALD8_Train_Multilingual);
 
         log.info("Running controller");
         controller.run();
@@ -132,81 +132,84 @@ public class PipelineController {
 
         HashSet<String> graphs = new HashSet<>();
         customQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
-        //Generate SPARQL Queries
 
         List<Double> fMeasures = new ArrayList<>();
         List<Double> precisions = new ArrayList<>();
 
         //TODO enable parallelization with customQuestions.parallelStream().forEach()
         customQuestions.parallelStream().forEach(question -> {
-            List<Map<Integer, List<String>>> results = new ArrayList<>();
-            StringBuilder logMessage = new StringBuilder();
-            String additionalLogMessages = "";
-            String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
-            List<String> queries;
-            QueryMappingFactory mappingFactory = new QueryMappingFactory(question.getQuestionText(), question.getQuery(), Lists.newArrayList(ontologyNodes), dBpediaProperties);
-            List<String> mockedEntities = new ArrayList<>();
-            if (mockVariables) {
-                String originalQuery = idealQueries.get(question.getQuestionText());
-                String regex = "<(.+?)>";
-                Pattern pattern = Pattern.compile(regex);
-                Matcher m = pattern.matcher(originalQuery);
-                while (m.find()) {
-                    mockedEntities.add(m.group().replace("<", "").replace(">", ""));
-                }
-            }
-            if (mockTemplates) {
-                Map<String, QueryTemplateMapping> mockedMapping = new HashMap<>();
-                QueryTemplateMapping queryTemplateMapping = new QueryTemplateMapping(0, 0);
-                String originalQuery = idealQueryPatterns.get(question.getQuestionText());
-                queryTemplateMapping.addSelectTemplate(originalQuery, question.getQuery());
-                queryTemplateMapping.addAskTemplate(originalQuery, question.getQuery());
-                mockedMapping.put(graphPattern, queryTemplateMapping);
-                queries = mappingFactory.generateQueries(mockedMapping, graphPattern, mockedEntities, false);
-                additionalLogMessages += "Mocked Query: " + Strings.join(queries, "\n");
-            } else {
-                queries = mappingFactory.generateQueries(mappings, graphPattern, mockedEntities, false);
-            }
-
-            //If the template from the predicted graph won't find suitable templates, try all other templates
-            if (queries.isEmpty()) {
-                logMessage.append("There is no suitable query template for this graph, using all templates now...\n");
-                queries = mappingFactory.generateQueries(mappings, false);
-            }
-
-            results.addAll(executeQueries(queries, logMessage));
-
-            final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question.getQuestionText());
-            Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, false);
-
-            //If there still is no suitable answer, use all query templates to find one
-            if (bestAnswer.isEmpty()) {
-                logMessage.append("There is no suitable answer, using all query templates instead...\n");
-                queries = mappingFactory.generateQueries(mappings, false);
-                results.addAll(executeQueries(queries, logMessage));
-                bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, false);
-            }
-
-            //If there still is no suitable answer, use synonyms to find one
-            if (bestAnswer.isEmpty()) {
-                logMessage.append("There is no suitable answer, using synonyms to find one...\n");
-                queries = mappingFactory.generateQueries(mappings, true);
-                results.addAll(executeQueries(queries, logMessage));
-                bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, true);
-            }
-
             Optional<HAWKQuestion> hawkQuestionOptional = questions.stream()
                     .filter(q -> q.getLanguageToQuestion().get("en").equals(question.getQuestionText()))
                     .findFirst();
             if (hawkQuestionOptional.isPresent()) {
                 HAWKQuestion hawkQuestion = hawkQuestionOptional.get();
+                //Comment this to filter out what questions are used for f-measure calculation
                 if (!hawkQuestion.getAggregation() && hawkQuestion.getOnlydbo() && Objects.equals(hawkQuestion.getAnswerType(), "resource")) {
+                //if (hawkQuestion.getAggregation()) {
+                    List<Map<Integer, List<String>>> results = new ArrayList<>();
+                    StringBuilder logMessage = new StringBuilder();
+                    String additionalLogMessages = "";
+                    String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
+                    List<String> queries;
+                    QueryMappingFactory mappingFactory = new QueryMappingFactory(question.getQuestionText(), question.getQuery(), Lists.newArrayList(ontologyNodes), dBpediaProperties);
+                    List<String> mockedEntities = new ArrayList<>();
+                    if (mockVariables) {
+                        String originalQuery = idealQueries.get(question.getQuestionText());
+                        String regex = "<(.+?)>";
+                        Pattern pattern = Pattern.compile(regex);
+                        Matcher m = pattern.matcher(originalQuery);
+                        while (m.find()) {
+                            mockedEntities.add(m.group().replace("<", "").replace(">", ""));
+                        }
+                    }
+                    if (mockTemplates) {
+                        Map<String, QueryTemplateMapping> mockedMapping = new HashMap<>();
+                        QueryTemplateMapping queryTemplateMapping = new QueryTemplateMapping(0, 0);
+                        String originalQuery = idealQueryPatterns.get(question.getQuestionText());
+                        queryTemplateMapping.addSelectTemplate(originalQuery, question.getQuery());
+                        queryTemplateMapping.addAskTemplate(originalQuery, question.getQuery());
+                        mockedMapping.put(graphPattern, queryTemplateMapping);
+                        queries = mappingFactory.generateQueries(mockedMapping, graphPattern, mockedEntities, false);
+                        additionalLogMessages += "Mocked Query: " + Strings.join(queries, "\n");
+                    } else {
+                        queries = mappingFactory.generateQueries(mappings, graphPattern, mockedEntities, false);
+                    }
+
+                    //If the template from the predicted graph won't find suitable templates, try all other templates
+                    if (queries.isEmpty()) {
+                        logMessage.append("There is no suitable query template for this graph, using all templates now...\n");
+                        queries = mappingFactory.generateQueries(mappings, false);
+                    }
+
+                    results.addAll(executeQueries(queries, logMessage));
+
+                    final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question.getQuestionText());
+                    Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, false);
+
+                    //If there still is no suitable answer, use all query templates to find one
+                    if (bestAnswer.isEmpty()) {
+                        logMessage.append("There is no suitable answer, using all query templates instead...\n");
+                        queries = mappingFactory.generateQueries(mappings, false);
+                        results.addAll(executeQueries(queries, logMessage));
+                        bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, false);
+                    }
+
+                    //If there still is no suitable answer, use synonyms to find one
+                    if (bestAnswer.isEmpty()) {
+                        logMessage.append("There is no suitable answer, using synonyms to find one...\n");
+                        queries = mappingFactory.generateQueries(mappings, true);
+                        results.addAll(executeQueries(queries, logMessage));
+                        bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, true);
+                    }
+
+
                     double fMeasure = AnswerBasedEvaluation.fMeasure(bestAnswer, hawkQuestion);
                     fMeasures.add(fMeasure);
                     double precision = AnswerBasedEvaluation.precision(bestAnswer, hawkQuestion);
                     precisions.add(precision);
-                    logMessage.append(String.format("Question: '%s'\nF-Measure: %.3f; Precision: %.3f\nUndetected Entities:", question.getQuestionText(), fMeasure, precision));
+                    logMessage.append(String.format("Question: '%s'\nF-Measure: %.3f; Precision: %.3f", question.getQuestionText(), fMeasure, precision));
                     logMessage.append("\nBest result: ").append(Strings.join(bestAnswer, "; "));
+                    logMessage.append("\nUndetected Entities: ");
                     Pattern betweenLaceBraces = Pattern.compile("<(.*?)>");
                     Matcher matcher = betweenLaceBraces.matcher(SPARQLUtilities.resolveNamespaces(hawkQuestion.getSparqlQuery()));
                     Set<String> requiredDBpediaEntites = new HashSet<>();
@@ -223,9 +226,8 @@ public class PipelineController {
                     log.info(logMessage + "\n" + additionalLogMessages + "\n---------------------------------------------------------------------");
                 }
             } else {
-                log.error("Unable to get HAWK question by question text string matching!");
+                log.error(String.format("Unable to get HAWK question by question text: '%s' string matching!", question.getQuestionText()));
             }
-
         });
         //log.info("Correctly answered: " + correctlyAnswered[0] + "/" + questions.size());
         log.info("Average F-Measure: " + fMeasures.stream().mapToDouble(Double::doubleValue).summaryStatistics().getAverage());

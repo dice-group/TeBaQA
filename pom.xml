@@ -55,7 +55,7 @@
         <dependency>
             <groupId>org.aksw.qa</groupId>
             <artifactId>commons</artifactId>
-            <version>0.4.11</version>
+            <version>0.4.14</version>
         </dependency>
         <dependency>
             <groupId>org.aksw.qa</groupId>
@@ -98,7 +98,10 @@
             <artifactId>jwi</artifactId>
             <version>2.2.3</version>
         </dependency>
-
-
+        <dependency>
+            <groupId>org.dkpro.jwktl</groupId>
+            <artifactId>dkpro-jwktl</artifactId>
+            <version>1.1.0</version>
+        </dependency>
     </dependencies>
 </project>

@@ -1,11 +1,17 @@
 package de.uni.leipzig.tebaqa.controller;
 
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import de.tudarmstadt.ukp.jwktl.api.IWiktionaryEdition;
+import de.tudarmstadt.ukp.jwktl.api.IWiktionaryEntry;
+import de.tudarmstadt.ukp.jwktl.api.IWiktionaryPage;
+import de.tudarmstadt.ukp.jwktl.api.IWiktionaryRelation;
+import de.tudarmstadt.ukp.jwktl.api.RelationType;
 import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
 import de.uni.leipzig.tebaqa.helper.Utilities;
+import de.uni.leipzig.tebaqa.helper.WiktionaryProvider;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import edu.stanford.nlp.ling.CoreAnnotations;
@@ -40,10 +46,12 @@ public class SemanticAnalysisHelper {
 
     public static int UNKNOWN_ANSWER_TYPE = -1;
     public static int BOOLEAN_ANSWER_TYPE = 0;
-    public static int LIST_ANSWER_TYPE = 1;
+    public static int LIST_OF_RESOURCES_ANSWER_TYPE = 1;
     public static int SINGLE_RESOURCE_TYPE = 2;
     public static int NUMBER_ANSWER_TYPE = 3;
     public static int DATE_ANSWER_TYPE = 4;
+    public static int STRING_ANSWER_TYPE = 5;
+    public static int MIXED_LIST_ANSWER_TYPE = 6;
 
     public SemanticAnalysisHelper() {
         this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
@@ -60,7 +68,11 @@ public class SemanticAnalysisHelper {
         } else {
             firstThreeWords.addAll(Arrays.asList(split));
         }
-        if (firstThreeWords.stream().anyMatch(s -> selectIndicatorsList.contains(s.toLowerCase()))) {
+        if (SemanticAnalysisHelper.hasAscAggregation(q)) {
+            return SPARQLUtilities.SELECT_SUPERLATIVE_ASC_QUERY;
+        } else if (SemanticAnalysisHelper.hasDescAggregation(q)) {
+            return SPARQLUtilities.SELECT_SUPERLATIVE_DESC_QUERY;
+        } else if (firstThreeWords.stream().anyMatch(s -> selectIndicatorsList.contains(s.toLowerCase()))) {
             return SPARQLUtilities.SELECT_QUERY;
         } else if (firstThreeWords.stream().anyMatch(s -> askIndicatorsList.contains(s.toLowerCase()))) {
             return SPARQLUtilities.ASK_QUERY;
@@ -128,12 +140,19 @@ public class SemanticAnalysisHelper {
             String query = question.getQuery();
             QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question.getQuestionText(), query, nodes, properties);
             String queryPattern = queryMappingFactory.getQueryPattern();
+            boolean isSuperlativeDesc = false;
+            boolean isSuperlativeAsc = false;
 
-            if (!queryPattern.contains("http://dbpedia.org/resource/") && !queryPattern.toLowerCase().contains("count")
+            if (queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("limit 1")) {
+                isSuperlativeDesc = true;
+            } else if (queryPattern.toLowerCase().contains("order by asc") && queryPattern.toLowerCase().contains("limit 1")) {
+                isSuperlativeAsc = true;
+            }
+
+            if (!queryPattern.toLowerCase().contains("http://dbpedia.org/resource/") && !queryPattern.toLowerCase().contains("count")
                     && !queryPattern.toLowerCase().contains("sum") && !queryPattern.toLowerCase().contains("avg")
                     && !queryPattern.toLowerCase().contains("min") && !queryPattern.toLowerCase().contains("max")
-                    && !queryPattern.toLowerCase().contains("filter") && !queryPattern.toLowerCase().contains("bound")
-                    && !queryPattern.toLowerCase().contains("limit")) {
+                    && !queryPattern.toLowerCase().contains("filter") && !queryPattern.toLowerCase().contains("bound")) {
                 int classCnt = 0;
                 int propertyCnt = 0;
 
@@ -159,7 +178,11 @@ public class SemanticAnalysisHelper {
                 if (mappings.containsKey(graph)) {
                     QueryTemplateMapping mapping = mappings.get(graph);
                     if (mapping.getNumberOfClasses() == finalClassCnt && mapping.getNumberOfClasses() == finalPropertyCnt) {
-                        if (queryType == SPARQLUtilities.SELECT_QUERY) {
+                        if (isSuperlativeDesc) {
+                            mapping.addSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
+                        } else if (isSuperlativeAsc) {
+                            mapping.addSelectSuperlativeAscTemplate(queryPattern, question.getQuery());
+                        } else if (queryType == SPARQLUtilities.SELECT_QUERY) {
                             mapping.addSelectTemplate(queryPattern, question.getQuery());
                         } else if (queryType == SPARQLUtilities.ASK_QUERY) {
                             mapping.addAskTemplate(queryPattern, question.getQuery());
@@ -169,7 +192,11 @@ public class SemanticAnalysisHelper {
                     }
                 } else {
                     QueryTemplateMapping mapping = new QueryTemplateMapping(classCnt, propertyCnt);
-                    if (queryType == SPARQLUtilities.SELECT_QUERY) {
+                    if (isSuperlativeDesc) {
+                        mapping.addSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
+                    } else if (isSuperlativeAsc) {
+                        mapping.addSelectSuperlativeAscTemplate(queryPattern, question.getQuery());
+                    } else if (queryType == SPARQLUtilities.SELECT_QUERY) {
                         mapping.addSelectTemplate(queryPattern, question.getQuery());
                     } else if (queryType == SPARQLUtilities.ASK_QUERY) {
                         mapping.addAskTemplate(queryPattern, question.getQuery());
@@ -215,6 +242,30 @@ public class SemanticAnalysisHelper {
             }
         }
         return pos;
+    }
+
+    /**
+     * Checks if a given sentence uses superlatives like first, least and so on which are indicators for aggregation queries.
+     *
+     * @param sentence A string which contains a sentence.
+     * @return If the sentence contains keywords which are used in ascending aggregation queries.
+     */
+    public static boolean hasAscAggregation(String sentence) {
+        String[] ascIndicators = new String[]{"first", "oldest", "smallest", "lowest", "shortest", "least"};
+        String[] words = sentence.split("\\W+");
+        return Arrays.stream(words).anyMatch(Arrays.asList(ascIndicators)::contains);
+    }
+
+    /**
+     * Checks if a given sentence uses superlatives like largest, last, highest and so on which are indicators for aggregation queries.
+     *
+     * @param sentence A string which contains a sentence.
+     * @return If the sentence contains keywords which are used in descending aggregation queries.
+     */
+    public static boolean hasDescAggregation(String sentence) {
+        String[] descIndicators = new String[]{"largest", "last", "highest", "most", "biggest", "youngest", "longest", "tallest"};
+        String[] words = sentence.split("\\W+");
+        return Arrays.stream(words).anyMatch(Arrays.asList(descIndicators)::contains);
     }
 
     /**
@@ -397,7 +448,7 @@ public class SemanticAnalysisHelper {
         for (IndexedWord word : sequence) {
             String posTag = word.get(CoreAnnotations.PartOfSpeechAnnotation.class);
             if (posTag.equalsIgnoreCase("NNS") || posTag.equalsIgnoreCase("NNPS")) {
-                return LIST_ANSWER_TYPE;
+                return LIST_OF_RESOURCES_ANSWER_TYPE;
             } else if (posTag.equalsIgnoreCase("NN") || posTag.equalsIgnoreCase("NNP")) {
                 return SINGLE_RESOURCE_TYPE;
             }
@@ -406,26 +457,30 @@ public class SemanticAnalysisHelper {
     }
 
     Set<String> getBestAnswer(List<Map<Integer, List<String>>> results, StringBuilder logMessage, int expectedAnswerType, boolean forceResult) {
-        List<List<String>> suitableAnswers = new ArrayList<>();
+        List<Map<Integer, List<String>>> suitableAnswers = new ArrayList<>();
         List<String> bestAnswer = new ArrayList<>();
 
         if (expectedAnswerType == SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE) {
             //A list might contain the correct answer too
             results.forEach(result -> {
-                if (result.containsKey(SemanticAnalysisHelper.LIST_ANSWER_TYPE)) {
-                    List<String> resultWithMatchingType = result.get(SemanticAnalysisHelper.LIST_ANSWER_TYPE);
+                if (result.containsKey(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE)) {
+                    List<String> resultWithMatchingType = result.get(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE);
                     if (!resultWithMatchingType.isEmpty()) {
-                        suitableAnswers.add(resultWithMatchingType);
+                        Map<Integer, List<String>> answer = new HashMap<>();
+                        answer.put(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, resultWithMatchingType);
+                        suitableAnswers.add(answer);
                     }
                 }
             });
-        } else if (expectedAnswerType == SemanticAnalysisHelper.LIST_ANSWER_TYPE) {
+        } else if (expectedAnswerType == SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE) {
             //A single answer might be a partly correct answer
             results.forEach(result -> {
                 if (result.containsKey(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE)) {
                     List<String> resultWithMatchingType = result.get(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE);
                     if (!resultWithMatchingType.isEmpty()) {
-                        suitableAnswers.add(resultWithMatchingType);
+                        Map<Integer, List<String>> answer = new HashMap<>();
+                        answer.put(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, resultWithMatchingType);
+                        suitableAnswers.add(answer);
                     }
                 }
             });
@@ -435,12 +490,20 @@ public class SemanticAnalysisHelper {
             if (result.containsKey(expectedAnswerType)) {
                 List<String> resultWithMatchingType = result.get(expectedAnswerType);
                 if (!resultWithMatchingType.isEmpty()) {
-                    suitableAnswers.add(resultWithMatchingType);
+                    Map<Integer, List<String>> answer = new HashMap<>();
+                    answer.put(expectedAnswerType, resultWithMatchingType);
+                    suitableAnswers.add(answer);
                 }
             }
         });
         if (suitableAnswers.size() == 1) {
-            return Sets.newHashSet(suitableAnswers.get(0));
+            Map<Integer, List<String>> answer = suitableAnswers.get(0);
+            Optional<List<String>> first = answer.values().stream().findFirst();
+            if (first.isPresent()) {
+                return Sets.newHashSet(first.get());
+            } else {
+                return new HashSet<>();
+            }
         } else if (suitableAnswers.isEmpty() && forceResult) {
             //If there is no suitable result fallback to the other results
             List<String> finalBestAnswer = bestAnswer;
@@ -451,9 +514,18 @@ public class SemanticAnalysisHelper {
                             .collect(Collectors.toList())));
             bestAnswer = finalBestAnswer;
         } else if (suitableAnswers.size() > 1) {
-            //Uncomment the following lines to use the pagerank
-            //return getBestAnswerByPageRank(suitableAnswers);
-            return suitableAnswers.stream().flatMap(Collection::stream).collect(Collectors.toSet());
+            Set<String> answersWithMatchingType = suitableAnswers.stream()
+                    .filter(answer -> answer.containsKey(expectedAnswerType))
+                    .map(answer -> answer.getOrDefault(expectedAnswerType, new ArrayList<>()))
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toSet());
+            if (answersWithMatchingType.size() != 0) {
+                return answersWithMatchingType;
+            } else {
+                return suitableAnswers.stream().map(answer -> answer.getOrDefault(expectedAnswerType, new ArrayList<>()))
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toSet());
+            }
         }
         return Sets.newHashSet(bestAnswer);
     }
@@ -473,5 +545,19 @@ public class SemanticAnalysisHelper {
             }
         });
         return bestAnswer;
+    }
+
+    public static List<String> getHypernymsFromWiktionary(String s) {
+        List<String> hypernyms = new ArrayList<>();
+        IWiktionaryEdition wiktionaryInstance = WiktionaryProvider.getWiktionaryInstance();
+        IWiktionaryPage page = wiktionaryInstance.getPageForWord(s);
+        if (page != null) {
+            for (IWiktionaryEntry entry : page.getEntries()) {
+                for (IWiktionaryRelation relation : entry.getRelations(RelationType.HYPERNYM)) {
+                    hypernyms.add(relation.getTarget());
+                }
+            }
+        }
+        return hypernyms;
     }
 }
