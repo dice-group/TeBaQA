@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.helper;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
@@ -60,13 +61,12 @@ import static org.apache.commons.lang3.StringUtils.getLevenshteinDistance;
  */
 public class QueryMappingFactory {
 
-    private int queryType = -1;
-
+    private int queryType;
     private static Logger log = Logger.getLogger(QueryMappingFactory.class);
-    private String queryPattern = "";
+    private String queryPattern;
     private Map<String, List<String>> unresolvedEntities = new HashMap<>();
-    private String question = "";
-    private List<RDFNode> ontologyNodes = new ArrayList<>();
+    private String question;
+    private List<RDFNode> ontologyNodes;
     private List<String> properties = new ArrayList<>();
     private Set<String> rdfEntities = new HashSet<>();
     private Set<String> ontologyURIs;
@@ -143,7 +143,7 @@ public class QueryMappingFactory {
         while (m.find()) {
             String group = m.group();
             if (!group.contains("^")) {
-                queryString = queryString.replaceFirst(group, "<^VAR_" + i + "^>");
+                queryString = queryString.replaceFirst(Pattern.quote(group), "<^VAR_" + i + "^>");
                 i++;
             }
         }
@@ -315,7 +315,12 @@ public class QueryMappingFactory {
         String[] wordsFromQuestion = question.split("\\W+");
         for (String word : wordsFromQuestion) {
             Map<String, String> lemmas = SemanticAnalysisHelper.getLemmas(word);
-            if (!lemmas.containsKey(word) || !lemmas.get(word).toLowerCase().equals("be")) {
+            Map<String, String> pos = SemanticAnalysisHelper.getPOS(word);
+            if (!lemmas.getOrDefault(word, "").toLowerCase().equals("be") && !lemmas.getOrDefault(word, "").toLowerCase().equals("the")
+                    && !pos.getOrDefault(word, "").equalsIgnoreCase("WP") && !pos.getOrDefault(word, "").equalsIgnoreCase("DT") && !pos.getOrDefault(word, "").equalsIgnoreCase("IN")) {
+                List<String> hypernyms = SemanticAnalysisHelper.getHypernymsFromWiktionary(word);
+                hypernyms.forEach(s -> rdfResources.addAll(getProperties(s)));
+                hypernyms.forEach(s -> rdfResources.addAll(getOntologies(s)));
                 List<String> properties = getProperties(word);
                 rdfResources.addAll(properties);
                 List<String> ontologies = getOntologies(word);
@@ -523,9 +528,17 @@ public class QueryMappingFactory {
                         return ratio < 0.5;
                     })
                     .collect(Collectors.toSet());
-
-            IndexDBO_properties indexDBO_properties = new IndexDBO_properties();
-            List<String> indexDBO_propertySearch = indexDBO_properties.search(coOccurrence);
+            List<String> indexDBO_propertySearch = new ArrayList<>();
+            List<String> stopwords = ImmutableList.of("the", "of", "on", "in", "for", "at", "to");
+            if (!stopwords.contains(coOccurrence.toLowerCase())) {
+                IndexDBO_properties indexDBO_properties = new IndexDBO_properties();
+                indexDBO_propertySearch = indexDBO_properties.search(coOccurrence);
+                try {
+                    indexDBO_properties.close();
+                } catch (NullPointerException e) {
+                    log.error("NullPointerException when trying to close IndexDBO_properties!", e);
+                }
+            }
             Set<String> resultsInDBOIndexProperty = indexDBO_propertySearch.stream()
                     .filter(s -> {
                         String[] split = s.split("/");
@@ -638,7 +651,19 @@ public class QueryMappingFactory {
             }
         }
         List<String> result = new ArrayList<>();
-        if (queryType == SPARQLUtilities.ASK_QUERY) {
+        if (queryType == SPARQLUtilities.SELECT_SUPERLATIVE_ASC_QUERY) {
+            result = templatesForGraph.stream()
+                    //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
+                    .map(QueryTemplateMapping::getSelectSuperlativeAscTemplate)
+                    .filter(Objects::nonNull)
+                    .flatMap(Collection::stream).collect(Collectors.toList());
+        } else if (queryType == SPARQLUtilities.SELECT_SUPERLATIVE_DESC_QUERY) {
+            result = templatesForGraph.stream()
+                    //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
+                    .map(QueryTemplateMapping::getSelectSuperlativeDescTemplate)
+                    .filter(Objects::nonNull)
+                    .flatMap(Collection::stream).collect(Collectors.toList());
+        } else if (queryType == SPARQLUtilities.ASK_QUERY) {
             result = templatesForGraph.stream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getAskTemplates)

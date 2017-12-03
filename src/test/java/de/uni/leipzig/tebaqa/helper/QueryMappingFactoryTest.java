@@ -132,7 +132,7 @@ public class QueryMappingFactoryTest {
         List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
-        assertEquals("SELECT DISTINCT ?uri WHERE { <^NNP0_NNP2_FW_NNP3^> <^NN1^> ?uri . }",
+        assertEquals("SELECT DISTINCT ?uri WHERE { <^NNP0_NNP2_FW_NNP3^> <^NN1^> ?uri . } ",
                 queryMappingFactory.getQueryPattern());
     }
 
@@ -717,6 +717,20 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
+    @Ignore
+    public void testExtractResourcesUsesHypernyms() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT DISTINCT ?uri WHERE {res:Abraham_Lincoln dbo:spouse ?uri.}";
+        String question = "Who was the wife of U.S. president Lincoln?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/spouse"));
+    }
+
+    @Test
     public void testGenerateQueries() {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "SELECT DISTINCT ?uri WHERE {  <http://dbpedia.org/resource/San_Pedro_de_Atacama> <http://dbpedia.org/ontology/timeZone> ?uri . }";
@@ -843,5 +857,53 @@ public class QueryMappingFactoryTest {
         assertTrue(actualQueries.size() == 1);
         assertTrue(actualQueries.get(0).startsWith("ASK WHERE { ?uri ?property_0 ?class_0 . ?uri ?property_1 'Battle Chess'@en .  VALUES "));
         assertTrue(actualQueries.get(0).contains("CONCAT( ?uri, ?property_1, 'Battle Chess'@en )"));
+    }
+
+    @Test
+    public void testGenerateQueriesForSuperlativeAscQuestion() {
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT DISTINCT ?uri WHERE { res:Meryl_Streep dbo:child ?uri . ?uri dbo:birthDate ?d . } ORDER BY ASC(?d) OFFSET 0 LIMIT 1";
+        String question = "Who is the oldest child of Meryl Streep?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT DISTINCT ?uri WHERE { res:Meryl_Streep dbo:child ?uri . ?uri dbo:birthDate ?d . } ORDER BY ASC(?d) OFFSET 0 LIMIT 1",
+                "", null, graph, new HashMap<>()));
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
+
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+
+        assertTrue(actualQueries.size() == 1);
+        assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?class_0 ?property_0 ?uri . ?uri ?property_1 ?d . "));
+        assertTrue(actualQueries.get(0).endsWith("ORDER BY ASC(?d) OFFSET 0 LIMIT 1"));
+    }
+
+    @Test
+    public void testGenerateQueriesForSuperlativeDescQuestion() {
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        String query = "SELECT DISTINCT ?uri WHERE { ?uri a <http://dbpedia.org/ontology/Company> . ?uri <http://dbpedia.org/ontology/location> <http://dbpedia.org/resource/India> . ?uri <http://dbpedia.org/ontology/numberOfEmployees> ?n . } ORDER BY DESC(?n) OFFSET 0 LIMIT 1";
+        String question = "Which Indian company has the most employees?";
+        NTripleParser nTripleParser = new NTripleParser();
+        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?uri WHERE { ?uri a <http://dbpedia.org/ontology/Company> . ?uri <http://dbpedia.org/ontology/location> <http://dbpedia.org/resource/India> . ?uri <http://dbpedia.org/ontology/numberOfEmployees> ?n . } ORDER BY DESC(?n) OFFSET 0 LIMIT 1",
+                "", null, graph, new HashMap<>()));
+        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
+
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+
+        assertTrue(actualQueries.size() == 1);
+        assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?uri a ?class_0 . ?uri ?property_0 ?class_1 . ?uri ?property_1 ?n . "));
+        assertTrue(actualQueries.get(0).endsWith(" ORDER BY DESC(?n) OFFSET 0 LIMIT 1"));
     }
 }
