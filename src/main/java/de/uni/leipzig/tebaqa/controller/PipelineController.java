@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import de.uni.leipzig.tebaqa.helper.DBpediaPropertiesProvider;
 import de.uni.leipzig.tebaqa.helper.NTripleParser;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
@@ -82,9 +83,8 @@ public class PipelineController {
                 questionWithQuery.put(q.getSparqlQuery(), questionText);
             }
         }
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> ontologyNodes = nTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+        Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
 
         Map<String, String> idealQueryPatterns = new HashMap<>();
         Map<String, String> idealQueries = new HashMap<>();

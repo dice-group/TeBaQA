@@ -141,24 +141,6 @@ public class SPARQLUtilities {
         return new SPARQLResultSet(result, resultType);
     }
 
-    public static List<String> getDBpediaProperties() {
-        Set<String> properties = new HashSet<>();
-        String query = "select ?property where { ?property a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> } OFFSET %d LIMIT 10000";
-        boolean gotResult = true;
-        int offset = 0;
-        while (gotResult) {
-            String format = String.format(query, offset);
-            List<String> result = SPARQLUtilities.executeSPARQLQuery(format).getResultSet();
-            if (!result.isEmpty()) {
-                properties.addAll(result);
-                offset += 10000;
-            } else {
-                gotResult = false;
-            }
-        }
-        return newArrayList(properties);
-    }
-
     static boolean isDBpediaEntity(String s) {
         List<String> result = executeSPARQLQuery(String.format("ASK { VALUES (?r) {(<%s>)} {?r ?p ?o} UNION {?s ?r ?o} UNION {?s ?p ?r} }", s)).getResultSet();
         return result.size() == 1 && Boolean.valueOf(result.get(0));

@@ -334,8 +334,7 @@ public class QueryMappingFactory {
                 .filter(s -> s.split("\\W+").length < 5)
                 .collect(Collectors.toList());
 
-        //TODO enable parallelization with coOccurrences.parallelStream().forEach
-        coOccurrences.forEach(coOccurrence -> {
+        coOccurrences.parallelStream().forEach(coOccurrence -> {
             String[] coOccurrenceSplitted = coOccurrence.split("\\W+");
             if (coOccurrenceSplitted.length > 0 && (coOccurrenceSplitted.length > 1 || (!wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("DT") && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("WP")))) {
                 Map<String, Double> currentResources = new HashMap<>();

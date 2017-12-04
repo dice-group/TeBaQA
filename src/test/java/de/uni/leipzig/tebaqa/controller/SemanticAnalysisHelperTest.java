@@ -2,8 +2,8 @@ package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import de.uni.leipzig.tebaqa.helper.DBpediaPropertiesProvider;
 import de.uni.leipzig.tebaqa.helper.NTripleParser;
-import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import org.junit.Ignore;
@@ -31,9 +31,9 @@ public class SemanticAnalysisHelperTest {
                 "        res:Douglas_Hofstadter dbo:award ?uri . " +
                 "}", "Which awards did Douglas Hofstadter win?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         assertTrue(mappings.size() == 1);
@@ -52,9 +52,9 @@ public class SemanticAnalysisHelperTest {
                 "        res:Douglas_Hofstadter dbo:award ?uri . " +
                 "}", "Which awards did Douglas Hofstadter win?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -72,9 +72,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT DISTINCT ?uri WHERE {  <http://dbpedia.org/resource/San_Pedro_de_Atacama> <http://dbpedia.org/ontology/timeZone> ?uri . }",
                 "What is the timezone in San Pedro de Atacama?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -94,9 +94,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
                 "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -118,9 +118,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT (COUNT(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -142,9 +142,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT (SUM(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -166,9 +166,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT (AVG(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -190,9 +190,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT (MIN(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -214,9 +214,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT (MAX(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -238,9 +238,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x)) }",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -262,9 +262,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x))}",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -282,9 +282,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?uri WHERE { ?uri rdf:type dbo:Mountain . ?uri dbo:locatedInArea res:Australia . ?uri dbo:elevation ?elevation . } ORDER BY DESC(?elevation) LIMIT 1",
                 "What is the highest mountain in Australia?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -302,9 +302,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT DISTINCT ?uri WHERE { ?uri a <http://dbpedia.org/ontology/Album> . ?uri <http://dbpedia.org/ontology/artist> <http://dbpedia.org/resource/Queen_(band)> . ?uri <http://dbpedia.org/ontology/releaseDate> ?d . } ORDER BY ASC(?d) OFFSET 0 LIMIT 1",
                 "What was the first Queen album?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
