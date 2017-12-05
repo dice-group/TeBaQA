@@ -48,7 +48,7 @@ public class PipelineController {
     private static boolean mockTemplates = false;
     private static boolean mockVariables = false;
     private static boolean onlyDBO = false;
-    private static boolean useAggregation = false;
+    private static boolean useAggregation = true;
     private static boolean useOnlyAggregation = false;
     private static boolean useOnlyAnswerTypeResource = false;
 
@@ -64,7 +64,7 @@ public class PipelineController {
         semanticAnalysisHelper = new SemanticAnalysisHelper();
 
         PipelineController controller = new PipelineController();
-        controller.addDataset(Dataset.QALD8_Train_Multilingual);
+        controller.addDataset(Dataset.QALD7_Train_Multilingual);
 
         log.info("Running controller");
         controller.run();
