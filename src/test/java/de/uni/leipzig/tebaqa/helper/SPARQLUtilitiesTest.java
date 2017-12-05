@@ -108,7 +108,7 @@ public class SPARQLUtilitiesTest {
     @Test
     public void testResolveNamespacesWithNoNS() {
         String s = SPARQLUtilities.resolveNamespaces("SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/routeStart> <http://dbpedia.org/resource/Piccadilly>. } ");
-        String expected = "SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/routeStart> <http://dbpedia.org/resource/Piccadilly>. }";
+        String expected = "SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/routeStart> <http://dbpedia.org/resource/Piccadilly>. } ";
         assertEquals(expected, s);
     }
 
@@ -127,7 +127,7 @@ public class SPARQLUtilitiesTest {
     @Test
     public void testResultSetTypeList() {
         SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE {  ?x <http://dbpedia.org/ontology/director> <http://dbpedia.org/resource/William_Shatner> .  ?x <http://dbpedia.org/ontology/starring> ?uri . } ");
-        assertEquals(SemanticAnalysisHelper.LIST_ANSWER_TYPE, sparqlResultSet.getType());
+        assertEquals(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, sparqlResultSet.getType());
     }
 
     @Test

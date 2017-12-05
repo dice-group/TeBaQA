@@ -2,8 +2,8 @@ package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import de.uni.leipzig.tebaqa.helper.DBpediaPropertiesProvider;
 import de.uni.leipzig.tebaqa.helper.NTripleParser;
-import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import org.junit.Ignore;
@@ -16,8 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class SemanticAnalysisHelperTest {
     @Test
@@ -32,9 +31,9 @@ public class SemanticAnalysisHelperTest {
                 "        res:Douglas_Hofstadter dbo:award ?uri . " +
                 "}", "Which awards did Douglas Hofstadter win?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         assertTrue(mappings.size() == 1);
@@ -53,9 +52,9 @@ public class SemanticAnalysisHelperTest {
                 "        res:Douglas_Hofstadter dbo:award ?uri . " +
                 "}", "Which awards did Douglas Hofstadter win?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -73,9 +72,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT DISTINCT ?uri WHERE {  <http://dbpedia.org/resource/San_Pedro_de_Atacama> <http://dbpedia.org/ontology/timeZone> ?uri . }",
                 "What is the timezone in San Pedro de Atacama?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -95,9 +94,9 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
                 "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
@@ -119,13 +118,13 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT (COUNT(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
-        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . } ");
 
         assertTrue(mappings.size() == 1);
         assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
@@ -143,13 +142,13 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT (SUM(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
-        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . } ");
 
         assertTrue(mappings.size() == 1);
         assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
@@ -167,13 +166,13 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT (AVG(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
-        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . } ");
 
         assertTrue(mappings.size() == 1);
         assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
@@ -191,13 +190,13 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT (MIN(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
-        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . } ");
 
         assertTrue(mappings.size() == 1);
         assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
@@ -215,13 +214,13 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT (MAX(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } ",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
-        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . } ");
 
         assertTrue(mappings.size() == 1);
         assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
@@ -239,13 +238,13 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x)) }",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
-        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . } ");
 
         assertTrue(mappings.size() == 1);
         assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
@@ -263,41 +262,76 @@ public class SemanticAnalysisHelperTest {
         customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . FILTER (!BOUND(?x))}",
                 "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
-        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . } ");
 
         assertTrue(mappings.size() == 1);
         assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
     }
 
-
     @Test
-    public void testExtractTemplatesIgnoresLimit() {
+    public void testExtractTemplatesUsesSuperlativeDesc() {
         List<CustomQuestion> customQuestions = new ArrayList<>();
         Map<String, List<String>> goldenAnswers = new HashMap<>();
         String graph = " {\"1\" @\"p\" \"2\"}";
-        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } LIMIT 1 ",
-                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
-        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . } ",
-                "How high is the lighthouse in Colombo?", null, graph, goldenAnswers));
-        customQuestions.add(new CustomQuestion("SELECT ?x WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . } LIMIT 1 ",
-                "How many languages are spoken in Turkmenistan?", null, graph, goldenAnswers));
+        customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?uri WHERE { ?uri rdf:type dbo:Mountain . ?uri dbo:locatedInArea res:Australia . ?uri dbo:elevation ?elevation . } ORDER BY DESC(?elevation) LIMIT 1",
+                "What is the highest mountain in Australia?", null, graph, goldenAnswers));
         SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
-        NTripleParser nTripleParser = new NTripleParser();
-        Set<RDFNode> nodes = nTripleParser.getNodes();
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
 
         Set<String> expectedSelectPatterns = new HashSet<>();
-        expectedSelectPatterns.add("SELECT DISTINCT ?num WHERE { <^VAR_0^> <^VAR_1^> ?num . }");
+        expectedSelectPatterns.add("SELECT DISTINCT ?uri WHERE { ?uri <^VAR_0^> <^VAR_1^> . ?uri <^VAR_2^> <^VAR_3^> . ?uri <^VAR_4^> ?elevation . } ORDER BY DESC(?elevation) LIMIT 1");
 
         assertTrue(mappings.size() == 1);
-        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectTemplates());
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectSuperlativeDescTemplate());
+    }
+
+    @Test
+    public void testExtractTemplatesUsesSuperlativeAsc() {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?uri WHERE { ?uri a <http://dbpedia.org/ontology/Album> . ?uri <http://dbpedia.org/ontology/artist> <http://dbpedia.org/resource/Queen_(band)> . ?uri <http://dbpedia.org/ontology/releaseDate> ?d . } ORDER BY ASC(?d) OFFSET 0 LIMIT 1",
+                "What was the first Queen album?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+        
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT DISTINCT ?uri WHERE { ?uri a <^VAR_0^> . ?uri <^VAR_1^> <^VAR_2^> . ?uri <^VAR_3^> ?d . } ORDER BY ASC(?d) OFFSET 0 LIMIT 1");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectSuperlativeAscTemplate());
+    }
+
+    @Test
+    public void testExtractTemplatesUsesCountQueryTemplates() {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT (COUNT(DISTINCT ?uri) AS ?c) WHERE { res:Slovenia dbo:ethnicGroup ?uri }",
+                "How many ethnic groups live in Slovenia?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT (COUNT(DISTINCT ?uri) AS ?c) WHERE { <^VAR_0^> <^VAR_1^> ?uri }");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectCountTemplates());
     }
 
     @Test
@@ -339,19 +373,19 @@ public class SemanticAnalysisHelperTest {
     @Test
     public void testDetectQuestionAnswerTypeListAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Give me all professional skateboarders from Sweden.");
-        assertEquals(SemanticAnalysisHelper.LIST_ANSWER_TYPE, answerType);
+        assertEquals(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeListAnswer2() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Which ingredients do I need for carrot cake?");
-        assertEquals(SemanticAnalysisHelper.LIST_ANSWER_TYPE, answerType);
+        assertEquals(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeListAnswer3() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("List all episodes of the first season of the HBO television series The Sopranos.");
-        assertEquals(SemanticAnalysisHelper.LIST_ANSWER_TYPE, answerType);
+        assertEquals(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
     }
 
     @Test
@@ -455,5 +489,193 @@ public class SemanticAnalysisHelperTest {
         Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), answerType, false);
         assertEquals(1, bestAnswer.size());
         assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Socialist_Party_(France)"));
+    }
+
+    @Test
+    public void testGetBestAnswerPrefersListsOfResourcesOverListOfStrings() {
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<Map<Integer, List<String>>> results = new ArrayList<>();
+        Map<Integer, List<String>> result = new HashMap<>();
+        List<String> resultSet1 = new ArrayList<>();
+        resultSet1.add("136906.77151236095");
+        resultSet1.add("139931.0");
+        resultSet1.add("http://dbpedia.org/resource/Ontario");
+        result.put(SemanticAnalysisHelper.MIXED_LIST_ANSWER_TYPE, resultSet1);
+        results.add(result);
+
+        Map<Integer, List<String>> result2 = new HashMap<>();
+        List<String> resultSet2 = new ArrayList<>();
+        resultSet2.add("http://dbpedia.org/resource/Southern_Ontario");
+        resultSet2.add("http://dbpedia.org/resource/Loire_Valley_(wine)");
+        result2.put(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, resultSet2);
+        results.add(result2);
+
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, true);
+        assertTrue(bestAnswer.size() == 2);
+        assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Southern_Ontario"));
+        assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Loire_Valley_(wine)"));
+    }
+
+    @Test
+    public void testGetBestAnswerPrefersSingleResources() {
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<Map<Integer, List<String>>> results = new ArrayList<>();
+        Map<Integer, List<String>> result = new HashMap<>();
+        List<String> resultSet1 = new ArrayList<>();
+        resultSet1.add("http://dbpedia.org/resource/Valparaíso");
+        result.put(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, resultSet1);
+        results.add(result);
+
+        Map<Integer, List<String>> result2 = new HashMap<>();
+        List<String> resultSet2 = new ArrayList<>();
+        resultSet2.add("http://dbpedia.org/resource/Colegio_de_la_Preciosa_Sangre_de_Pichilemu__Cheer_C.P.S.__1");
+        resultSet2.add("http://dbpedia.org/resource/Valparaíso");
+        result2.put(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, resultSet2);
+        results.add(result2);
+
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, false);
+        assertTrue(bestAnswer.size() == 1);
+        assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Valparaíso"));
+    }
+
+    @Test
+    public void testGetBestAnswerPrefersSingleResourcesWithForceTrue() {
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<Map<Integer, List<String>>> results = new ArrayList<>();
+        Map<Integer, List<String>> result = new HashMap<>();
+        List<String> resultSet1 = new ArrayList<>();
+        resultSet1.add("http://dbpedia.org/resource/Valparaíso");
+        result.put(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, resultSet1);
+        results.add(result);
+
+        Map<Integer, List<String>> result2 = new HashMap<>();
+        List<String> resultSet2 = new ArrayList<>();
+        resultSet2.add("http://dbpedia.org/resource/Colegio_de_la_Preciosa_Sangre_de_Pichilemu__Cheer_C.P.S.__1");
+        resultSet2.add("http://dbpedia.org/resource/Valparaíso");
+        result2.put(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, resultSet2);
+        results.add(result2);
+
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, true);
+        assertTrue(bestAnswer.size() == 1);
+        assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Valparaíso"));
+    }
+
+    @Test
+    public void testGetBestAnswerOnlyReturnsMostCommonBoolean() {
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<Map<Integer, List<String>>> results = new ArrayList<>();
+        Map<Integer, List<String>> result = new HashMap<>();
+        List<String> resultSet1 = new ArrayList<>();
+        resultSet1.add("true");
+        result.put(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, resultSet1);
+        results.add(result);
+
+        Map<Integer, List<String>> result2 = new HashMap<>();
+        List<String> resultSet2 = new ArrayList<>();
+        resultSet2.add("false");
+        result2.put(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, resultSet2);
+        results.add(result2);
+
+        Map<Integer, List<String>> result3 = new HashMap<>();
+        List<String> resultSet3 = new ArrayList<>();
+        resultSet3.add("false");
+        result3.put(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, resultSet3);
+        results.add(result3);
+
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, false);
+        assertTrue(bestAnswer.size() == 1);
+        assertTrue(bestAnswer.contains("false"));
+    }
+
+    @Test
+    public void testHasAscAggregation() {
+        assertFalse(SemanticAnalysisHelper.hasAscAggregation("What is the largest country in the world?"));
+    }
+
+    @Test
+    public void testHasAscAggregation2() {
+        assertFalse(SemanticAnalysisHelper.hasAscAggregation("What was the last movie with Alec Guinness?"));
+    }
+
+    @Test
+    public void testHasAscAggregation3() {
+        assertFalse(SemanticAnalysisHelper.hasAscAggregation("What is the highest mountain in Australia?"));
+    }
+
+    @Test
+    public void testHasAscAggregation4() {
+        assertFalse(SemanticAnalysisHelper.hasAscAggregation("Which city has the most inhabitants?"));
+    }
+
+    @Test
+    public void testHasAscAggregation5() {
+        assertFalse(SemanticAnalysisHelper.hasAscAggregation("Which city has the most inhabitants?"));
+    }
+
+    @Test
+    public void testHasAscAggregation6() {
+        assertFalse(SemanticAnalysisHelper.hasAscAggregation("Which city has the most inhabitants?"));
+    }
+
+    @Test
+    public void testHasAscAggregatio7() {
+        assertTrue(SemanticAnalysisHelper.hasAscAggregation("Which city has the least inhabitants?"));
+    }
+
+    @Test
+    public void testHasAscAggregation8() {
+        assertTrue(SemanticAnalysisHelper.hasAscAggregation("What was the first Queen album?"));
+    }
+
+    @Test
+    public void testHasAscAggregation9() {
+        assertTrue(SemanticAnalysisHelper.hasAscAggregation("Who is the oldest child of Meryl Streep?"));
+    }
+
+    @Test
+    public void testHasAscAggregationFalseMatch() {
+        assertFalse(SemanticAnalysisHelper.hasAscAggregation("Is there a company called leasterious?"));
+    }
+
+    @Test
+    public void testHasDescAggregation() {
+        assertTrue(SemanticAnalysisHelper.hasDescAggregation("What is the largest country in the world?"));
+    }
+
+    @Test
+    public void testHasDescAggregation2() {
+        assertTrue(SemanticAnalysisHelper.hasDescAggregation("What was the last movie with Alec Guinness?"));
+    }
+
+    @Test
+    public void testHasDescAggregation3() {
+        assertTrue(SemanticAnalysisHelper.hasDescAggregation("What is the highest mountain in Australia?"));
+    }
+
+    @Test
+    public void testHasDescAggregation4() {
+        assertTrue(SemanticAnalysisHelper.hasDescAggregation("Which city has the most inhabitants?"));
+    }
+
+    @Test
+    public void testHasDescAggregation5() {
+        assertTrue(SemanticAnalysisHelper.hasDescAggregation("Which city has the most inhabitants?"));
+    }
+
+
+    @Test
+    public void testHasDescAggregation6() {
+        assertTrue(SemanticAnalysisHelper.hasDescAggregation("Which city has the most inhabitants?"));
+    }
+
+    @Test
+    public void testHasDescAggregationFalseMatch() {
+        assertFalse(SemanticAnalysisHelper.hasDescAggregation("Is there a company called mosterious?"));
+    }
+
+    @Test
+    public void testGetHypernym() {
+        List<String> actual = SemanticAnalysisHelper.getHypernymsFromWiktionary("wife");
+        assertTrue(actual.contains("spouse"));
     }
 }

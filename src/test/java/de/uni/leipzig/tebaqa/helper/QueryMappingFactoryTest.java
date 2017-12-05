@@ -37,8 +37,7 @@ public class QueryMappingFactoryTest {
         posSequence.put("start", "VB0");
         posSequence.put("city", "NN1");
         posSequence.put("Nile", "NNP2");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^NNP2^> <^NN1^> ?uri . }", queryMappingFactory.getQueryPattern());
@@ -54,8 +53,7 @@ public class QueryMappingFactoryTest {
         posSequence.put("start", "VB0");
         posSequence.put("city", "NN1");
         posSequence.put("Nile", "NNP2");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^NNP2^> <^NN1^> ?uri . }", queryMappingFactory.getQueryPattern());
@@ -71,8 +69,8 @@ public class QueryMappingFactoryTest {
         posSequence.put("start", "VB0");
         posSequence.put("city", "NN1");
         posSequence.put("Nile_FooBar_FooBar", "NNP2");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <http://dbpedia.org/resource/Nile> <^NN1^> ?uri . }",
@@ -89,8 +87,7 @@ public class QueryMappingFactoryTest {
         posSequence.put("airport", "NNS1");
         posSequence.put("Airlines", "NNP2");
         posSequence.put("Yeti", "NNP3");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^NNP3_NNP2^> <^NNS1^> ?uri . }",
@@ -108,8 +105,7 @@ public class QueryMappingFactoryTest {
         posSequence.put("airports", "NNP1");
         posSequence.put("Airlines", "NNP2");
         posSequence.put("Yeti", "NNP3");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^NNP3_NNP2^> <^NNP1^> ?uri . }",
@@ -128,11 +124,11 @@ public class QueryMappingFactoryTest {
         posSequence.put("Pedro", "NNP2");
         posSequence.put("de", "FW");
         posSequence.put("Atacama", "NNP3");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
-        assertEquals("SELECT DISTINCT ?uri WHERE { <^NNP0_NNP2_FW_NNP3^> <^NN1^> ?uri . }",
+        assertEquals("SELECT DISTINCT ?uri WHERE { <^NNP0_NNP2_FW_NNP3^> <^NN1^> ?uri . } ",
                 queryMappingFactory.getQueryPattern());
     }
 
@@ -146,8 +142,8 @@ public class QueryMappingFactoryTest {
         posSequence.put("start", "VB0");
         posSequence.put("city", "NN1");
         posSequence.put("Nile", "NNP2");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^NNP2^> <^NN1^> ?uri . }", queryMappingFactory.getQueryPattern());
@@ -172,8 +168,8 @@ public class QueryMappingFactoryTest {
         posSequence.put("me", "PRP0");
         posSequence.put("launch", "NN2");
         posSequence.put("operated", "VBN3");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { ?uri <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <^NN2_NNS1^> . ?uri <^VBN3^> <^NNP4^> . }",
@@ -191,8 +187,8 @@ public class QueryMappingFactoryTest {
         posSequence.put("start", "VB0");
         posSequence.put("city", "NN1");
         posSequence.put("Nile", "NNP2");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
 
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
@@ -219,8 +215,8 @@ public class QueryMappingFactoryTest {
         posSequence.put("start", "VB0");
         posSequence.put("city", "NN1");
         posSequence.put("Nile", "NNP2");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(1, 1);
@@ -249,8 +245,8 @@ public class QueryMappingFactoryTest {
         posSequence.put("start", "VB0");
         posSequence.put("city", "NN1");
         posSequence.put("Nile", "NNP2");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(1, 0);
@@ -277,8 +273,8 @@ public class QueryMappingFactoryTest {
         posSequence.put("start", "VB0");
         posSequence.put("city", "NN1");
         posSequence.put("Nile", "NNP2");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(0, 1);
@@ -302,8 +298,8 @@ public class QueryMappingFactoryTest {
         posSequence.put("start", "VB0");
         posSequence.put("city", "NN1");
         posSequence.put("Nile", "NNP2");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(3, 3);
@@ -327,8 +323,8 @@ public class QueryMappingFactoryTest {
         posSequence.put("start", "VB0");
         posSequence.put("city", "NN1");
         posSequence.put("Nile", "NNP2");
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, posSequence, query, nodes);
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(0, 0);
@@ -351,9 +347,9 @@ public class QueryMappingFactoryTest {
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . }";
         String question = "In which country does the Nile start?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . }", queryMappingFactory.getQueryPattern());
@@ -365,9 +361,9 @@ public class QueryMappingFactoryTest {
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . res:Nile dbo:city ?uri . }";
         String question = "In which country does the Nile start?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . <^VAR_2^> <^VAR_3^> ?uri . }", queryMappingFactory.getQueryPattern());
@@ -385,9 +381,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "Does Breaking Bad have more episodes than Game of Thrones?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -407,9 +403,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "In which city was the president of Montenegro born?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -426,9 +422,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "Give me all source countries.";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -445,9 +441,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "Give me a source country.";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -464,9 +460,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "Which television shows were created by Walt Disney?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -483,9 +479,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "Is Christian Bale starring in Velvet Goldmine?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -503,9 +499,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "What company is founded by John Smith?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -522,9 +518,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "Is Christian Bale starring in Batman Begins?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -541,9 +537,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "Who developed the video game World of Warcraft?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -560,9 +556,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "Who developed the video game World of Warcraft?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.findResourcesInFullText("World of Warcraft");
@@ -580,9 +576,9 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "Who developed the video game World of Warcraft?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.findResourcesInFullText("Game of Thrones");
@@ -593,9 +589,9 @@ public class QueryMappingFactoryTest {
     public void testExtractResourcesOnlyUsesBiggestMatchBetweenWordgroupAndOntology() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT DISTINCT ?uri WHERE {          res:Suriname dbo:officialLanguage ?uri . }";
         String question = "What is the official language of Suriname?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -615,9 +611,9 @@ public class QueryMappingFactoryTest {
     public void testExtractResourcesWithoutSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Which awards did Douglas Hofstadter win?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -629,9 +625,9 @@ public class QueryMappingFactoryTest {
     public void testExtractResourcesWontUseBe() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "What is Batman's real name?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -642,9 +638,9 @@ public class QueryMappingFactoryTest {
     public void testExtractResourcesWontUseBeWithSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "What is Batman's real name?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, true);
@@ -655,9 +651,9 @@ public class QueryMappingFactoryTest {
     public void testExtractResourcesWontUseCost() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Who was Vincent van Gogh inspired by?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, false);
@@ -668,9 +664,9 @@ public class QueryMappingFactoryTest {
     public void testExtractResourcesWontUseCostWithSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Who was Vincent van Gogh inspired by?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, true);
@@ -681,9 +677,9 @@ public class QueryMappingFactoryTest {
     public void testExtractResourcesWontUseMapWithSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Where was Bach born?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, true);
@@ -694,9 +690,9 @@ public class QueryMappingFactoryTest {
     public void testExtractResourcesWontUseQuestionWords() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Where was Bach born?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, true);
@@ -707,9 +703,9 @@ public class QueryMappingFactoryTest {
     public void testExtractResourcesWontUseQuestionWordsForSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Who was the pope that founded the Vatican Television?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractResources(question, true);
@@ -717,20 +713,34 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
+    @Ignore
+    public void testExtractResourcesUsesHypernyms() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT DISTINCT ?uri WHERE {res:Abraham_Lincoln dbo:spouse ?uri.}";
+        String question = "Who was the wife of U.S. president Lincoln?";
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/spouse"));
+    }
+
+    @Test
     public void testGenerateQueries() {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "SELECT DISTINCT ?uri WHERE {  <http://dbpedia.org/resource/San_Pedro_de_Atacama> <http://dbpedia.org/ontology/timeZone> ?uri . }";
         String question = "What is the timezone in San Pedro de Atacama?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<CustomQuestion> customQuestions = new ArrayList<>();
         customQuestions.add(new CustomQuestion("SELECT DISTINCT ?num WHERE {  <http://dbpedia.org/resource/Colombo_Lighthouse> <http://dbpedia.org/ontology/height> ?num . }",
                 "", null, graph, new HashMap<>()));
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
@@ -750,12 +760,13 @@ public class QueryMappingFactoryTest {
                 "    ?uri <http://dbpedia.org/ontology/starring> <http://dbpedia.org/resource/Richard_Gere> . " +
                 "}";
         String question = "In which films did Julia Roberts as well as Richard Gere play?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+
         List<CustomQuestion> customQuestions = new ArrayList<>();
         customQuestions.add(new CustomQuestion("SELECT DISTINCT ?uri WHERE {  \n" +
                 "    ?uri <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/Film> .  " +
@@ -763,8 +774,8 @@ public class QueryMappingFactoryTest {
                 "    ?uri <http://dbpedia.org/ontology/starring> <http://dbpedia.org/resource/Richard_Gere> . " +
                 "}",
                 "", null, graph, new HashMap<>()));
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
-        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
+        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), properties);
+
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
 
@@ -777,16 +788,16 @@ public class QueryMappingFactoryTest {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX dbp: <http://dbpedia.org/property/> PREFIX res: <http://dbpedia.org/resource/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?uri  WHERE {  ?uri rdf:type dbo:City .         ?uri dbo:isPartOf res:New_Jersey .         ?uri dbp:populationTotal ?inhabitants .         FILTER (?inhabitants > 100000) . }";
         String question = "Give me all cities in New Jersey with more than 100000 inhabitants.";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<CustomQuestion> customQuestions = new ArrayList<>();
         customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX dbp: <http://dbpedia.org/property/> PREFIX res: <http://dbpedia.org/resource/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?uri  WHERE {  ?uri rdf:type dbo:City .         ?uri dbo:isPartOf res:New_Jersey .         ?uri dbp:populationTotal ?inhabitants . }",
                 "", null, graph, new HashMap<>()));
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
         List<String> expectedQueries = new ArrayList<>();
@@ -803,16 +814,16 @@ public class QueryMappingFactoryTest {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?uri WHERE {          ?uri dbo:office 'President of the United States' .          ?uri dbo:orderInOffice '16th' . }";
         String question = "Who was the 16th president of the United States?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<CustomQuestion> customQuestions = new ArrayList<>();
         customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> SELECT DISTINCT ?uri WHERE {          ?uri dbo:office 'President of the United States' .          ?uri dbo:orderInOffice '16th' . }",
                 "", null, graph, new HashMap<>()));
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
@@ -826,16 +837,16 @@ public class QueryMappingFactoryTest {
         String graph = " {\"1\" @\"p\" \"2\"}";
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> ASK  WHERE {  ?uri rdf:type dbo:VideoGame .         ?uri rdfs:label 'Battle Chess'@en . }";
         String question = "Is there a video game called Battle Chess?";
-        NTripleParser nTripleParser = new NTripleParser();
-        List<RDFNode> nodes = Lists.newArrayList(nTripleParser.getNodes());
-        List<String> properties = SPARQLUtilities.getDBpediaProperties();
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<CustomQuestion> customQuestions = new ArrayList<>();
         customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> ASK  WHERE {  ?uri rdf:type dbo:VideoGame .         ?uri rdfs:label 'Battle Chess'@en . }",
                 "", null, graph, new HashMap<>()));
-        List<String> dBpediaProperties = SPARQLUtilities.getDBpediaProperties();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
@@ -843,5 +854,53 @@ public class QueryMappingFactoryTest {
         assertTrue(actualQueries.size() == 1);
         assertTrue(actualQueries.get(0).startsWith("ASK WHERE { ?uri ?property_0 ?class_0 . ?uri ?property_1 'Battle Chess'@en .  VALUES "));
         assertTrue(actualQueries.get(0).contains("CONCAT( ?uri, ?property_1, 'Battle Chess'@en )"));
+    }
+
+    @Test
+    public void testGenerateQueriesForSuperlativeAscQuestion() {
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT DISTINCT ?uri WHERE { res:Meryl_Streep dbo:child ?uri . ?uri dbo:birthDate ?d . } ORDER BY ASC(?d) OFFSET 0 LIMIT 1";
+        String question = "Who is the oldest child of Meryl Streep?";
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT DISTINCT ?uri WHERE { res:Meryl_Streep dbo:child ?uri . ?uri dbo:birthDate ?d . } ORDER BY ASC(?d) OFFSET 0 LIMIT 1",
+                "", null, graph, new HashMap<>()));
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
+
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+
+        assertTrue(actualQueries.size() == 1);
+        assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?class_0 ?property_0 ?uri . ?uri ?property_1 ?d . "));
+        assertTrue(actualQueries.get(0).endsWith("ORDER BY ASC(?d) OFFSET 0 LIMIT 1"));
+    }
+
+    @Test
+    public void testGenerateQueriesForSuperlativeDescQuestion() {
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        String query = "SELECT DISTINCT ?uri WHERE { ?uri a <http://dbpedia.org/ontology/Company> . ?uri <http://dbpedia.org/ontology/location> <http://dbpedia.org/resource/India> . ?uri <http://dbpedia.org/ontology/numberOfEmployees> ?n . } ORDER BY DESC(?n) OFFSET 0 LIMIT 1";
+        String question = "Which Indian company has the most employees?";
+        
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        customQuestions.add(new CustomQuestion("SELECT DISTINCT ?uri WHERE { ?uri a <http://dbpedia.org/ontology/Company> . ?uri <http://dbpedia.org/ontology/location> <http://dbpedia.org/resource/India> . ?uri <http://dbpedia.org/ontology/numberOfEmployees> ?n . } ORDER BY DESC(?n) OFFSET 0 LIMIT 1",
+                "", null, graph, new HashMap<>()));
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
+
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+
+        assertTrue(actualQueries.size() == 1);
+        assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?uri a ?class_0 . ?uri ?property_0 ?class_1 . ?uri ?property_1 ?n . "));
+        assertTrue(actualQueries.get(0).endsWith(" ORDER BY DESC(?n) OFFSET 0 LIMIT 1"));
     }
 }

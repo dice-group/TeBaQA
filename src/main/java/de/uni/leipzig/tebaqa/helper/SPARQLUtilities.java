@@ -4,6 +4,7 @@ import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryException;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
 import org.apache.jena.query.QueryFactory;
@@ -28,11 +29,14 @@ import java.util.regex.Pattern;
 import static com.google.common.collect.Lists.newArrayList;
 
 public class SPARQLUtilities {
-    public static Pattern SPLIT_TRIPLE_PATTERN = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
+    private static Pattern SPLIT_TRIPLE_PATTERN = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
     private static Logger log = Logger.getLogger(SPARQLUtilities.class);
     public static int QUERY_TYPE_UNKNOWN = -1;
-    public static int ASK_QUERY = 0;
-    public static int SELECT_QUERY = 1;
+    public static int ASK_QUERY = 1;
+    public static int SELECT_QUERY = 2;
+    public static int SELECT_SUPERLATIVE_ASC_QUERY = 3;
+    public static int SELECT_SUPERLATIVE_DESC_QUERY = 4;
+    public static int SELECT_COUNT_QUERY = 5;
 
 
     /**
@@ -98,15 +102,22 @@ public class SPARQLUtilities {
                     //result.add(message);
                 }
                 if (result.size() > 1) {
-                    resultType = SemanticAnalysisHelper.LIST_ANSWER_TYPE;
+                    boolean listIsMixed = result.stream().anyMatch(s -> !s.startsWith("http://dbpedia.org/resource/"));
+                    if (listIsMixed) {
+                        resultType = SemanticAnalysisHelper.MIXED_LIST_ANSWER_TYPE;
+                    } else {
+                        resultType = SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE;
+                    }
                 } else if (result.size() == 1) {
                     String s = result.get(0);
                     if (s.endsWith("^^http://www.w3.org/2001/XMLSchema#integer") || s.endsWith("http://www.w3.org/2001/XMLSchema#positiveInteger")) {
                         resultType = SemanticAnalysisHelper.NUMBER_ANSWER_TYPE;
                     } else if (s.endsWith("^^http://www.w3.org/2001/XMLSchema#date")) {
                         resultType = SemanticAnalysisHelper.DATE_ANSWER_TYPE;
-                    } else {
+                    } else if (s.startsWith("http://dbpedia.org/resource/")) {
                         resultType = SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE;
+                    } else {
+                        resultType = SemanticAnalysisHelper.STRING_ANSWER_TYPE;
                     }
                 } else {
                     resultType = SemanticAnalysisHelper.UNKNOWN_ANSWER_TYPE;
@@ -131,24 +142,6 @@ public class SPARQLUtilities {
         return new SPARQLResultSet(result, resultType);
     }
 
-    public static List<String> getDBpediaProperties() {
-        Set<String> properties = new HashSet<>();
-        String query = "select ?property where { ?property a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> } OFFSET %d LIMIT 10000";
-        boolean gotResult = true;
-        int offset = 0;
-        while (gotResult) {
-            String format = String.format(query, offset);
-            List<String> result = SPARQLUtilities.executeSPARQLQuery(format).getResultSet();
-            if (!result.isEmpty()) {
-                properties.addAll(result);
-                offset += 10000;
-            } else {
-                gotResult = false;
-            }
-        }
-        return newArrayList(properties);
-    }
-
     static boolean isDBpediaEntity(String s) {
         List<String> result = executeSPARQLQuery(String.format("ASK { VALUES (?r) {(<%s>)} {?r ?p ?o} UNION {?s ?r ?o} UNION {?s ?p ?r} }", s)).getResultSet();
         return result.size() == 1 && Boolean.valueOf(result.get(0));
@@ -161,56 +154,66 @@ public class SPARQLUtilities {
      * @return The given query where all namespaces are replaced with their full URI.
      */
     public static String resolveNamespaces(String query) {
-        Query q = QueryFactory.create(query);
-        Map<String, String> nsPrefixMap = q.getPrefixMapping().getNsPrefixMap();
-        if (nsPrefixMap.isEmpty()) {
-            return query.trim();
+        if (!query.toLowerCase().contains("prefix")) {
+            return query;
         } else {
-            String queryLowerCase = query.toLowerCase();
-            int startOfQuery = 0;
-            if (queryLowerCase.contains("select")) {
-                startOfQuery = queryLowerCase.indexOf("select");
-            } else if (queryLowerCase.contains("ask")) {
-                startOfQuery = queryLowerCase.indexOf("ask");
+            Query q;
+            try {
+                q = QueryFactory.create(query);
+            } catch (QueryException e) {
+                log.error("QueryException: Unable to parse query to remove : " + query);
+                return "";
+            }
+            Map<String, String> nsPrefixMap = q.getPrefixMapping().getNsPrefixMap();
+            if (nsPrefixMap.isEmpty()) {
+                return query.trim();
             } else {
-                log.error("Unable to determine query type of query: " + query);
-            }
-            final String[] queryWithoutPrefix = {query.substring(startOfQuery, query.length())};
-            nsPrefixMap.forEach((s, s2) -> queryWithoutPrefix[0] = queryWithoutPrefix[0].replace(s + ":", "<" + s2));
-            int startPosition = -1;
-            int endPosition = -1;
-            for (int i = 0; i < queryWithoutPrefix[0].length(); i++) {
-                if (queryWithoutPrefix[0].charAt(i) == '<' && i + 1 < queryWithoutPrefix[0].length()
-                        && (queryWithoutPrefix[0].charAt(i + 1) != '?' && queryWithoutPrefix[0].charAt(i + 1) != ' ')) {
-                    startPosition = i;
-                } else if ((queryWithoutPrefix[0].charAt(i) == ' '
-                        || queryWithoutPrefix[0].charAt(i) == ';')
-                        && (i > 0 && queryWithoutPrefix[0].charAt(i - 1) != '>')) {
-                    endPosition = i;
-                } else if (queryWithoutPrefix[0].charAt(i) == '.'
-                        && i < queryWithoutPrefix[0].length()
-                        && (queryWithoutPrefix[0].charAt(i + 1) == ' '
-                        || queryWithoutPrefix[0].charAt(i + 1) == '\n'
-                        || queryWithoutPrefix[0].charAt(i + 1) == '}')) {
-                    endPosition = i;
-                } else if (i > 0 && queryWithoutPrefix[0].charAt(i - 1) == '>') {
-                    startPosition = -1;
+                String queryLowerCase = query.toLowerCase();
+                int startOfQuery = 0;
+                if (queryLowerCase.contains("select")) {
+                    startOfQuery = queryLowerCase.indexOf("select");
+                } else if (queryLowerCase.contains("ask")) {
+                    startOfQuery = queryLowerCase.indexOf("ask");
+                } else {
+                    log.error("Unable to determine query type of query: " + query);
                 }
-                if (startPosition > 0 && endPosition > 0 && startPosition < endPosition) {
-                    queryWithoutPrefix[0] = queryWithoutPrefix[0].replace(queryWithoutPrefix[0].substring(startPosition, endPosition),
-                            queryWithoutPrefix[0].substring(startPosition, endPosition) + ">");
-                    startPosition = -1;
-                    endPosition = -1;
+                final String[] queryWithoutPrefix = {query.substring(startOfQuery, query.length())};
+                nsPrefixMap.forEach((s, s2) -> queryWithoutPrefix[0] = queryWithoutPrefix[0].replace(s + ":", "<" + s2));
+                int startPosition = -1;
+                int endPosition = -1;
+                for (int i = 0; i < queryWithoutPrefix[0].length(); i++) {
+                    if (queryWithoutPrefix[0].charAt(i) == '<' && i + 1 < queryWithoutPrefix[0].length()
+                            && (queryWithoutPrefix[0].charAt(i + 1) != '?' && queryWithoutPrefix[0].charAt(i + 1) != ' ')) {
+                        startPosition = i;
+                    } else if ((queryWithoutPrefix[0].charAt(i) == ' '
+                            || queryWithoutPrefix[0].charAt(i) == ';')
+                            && (i > 0 && queryWithoutPrefix[0].charAt(i - 1) != '>')) {
+                        endPosition = i;
+                    } else if (queryWithoutPrefix[0].charAt(i) == '.'
+                            && i < queryWithoutPrefix[0].length()
+                            && (queryWithoutPrefix[0].charAt(i + 1) == ' '
+                            || queryWithoutPrefix[0].charAt(i + 1) == '\n'
+                            || queryWithoutPrefix[0].charAt(i + 1) == '}')) {
+                        endPosition = i;
+                    } else if (i > 0 && queryWithoutPrefix[0].charAt(i - 1) == '>') {
+                        startPosition = -1;
+                    }
+                    if (startPosition > 0 && endPosition > 0 && startPosition < endPosition) {
+                        queryWithoutPrefix[0] = queryWithoutPrefix[0].replace(queryWithoutPrefix[0].substring(startPosition, endPosition),
+                                queryWithoutPrefix[0].substring(startPosition, endPosition) + ">");
+                        startPosition = -1;
+                        endPosition = -1;
+                    }
                 }
-            }
 
-            String[] split = queryWithoutPrefix[0].replaceAll("\\s+", " ").split(" ");
-            for (int i = 0; i < split.length; i++) {
-                if (split[0].startsWith("http://") || split[0].startsWith("https://")) {
-                    split[0] = "<" + split[0] + ">";
+                String[] split = queryWithoutPrefix[0].replaceAll("\\s+", " ").split(" ");
+                for (int i = 0; i < split.length; i++) {
+                    if (split[0].startsWith("http://") || split[0].startsWith("https://")) {
+                        split[0] = "<" + split[0] + ">";
+                    }
                 }
+                return String.join(" ", split).trim();
             }
-            return String.join(" ", split).trim();
         }
     }
 
