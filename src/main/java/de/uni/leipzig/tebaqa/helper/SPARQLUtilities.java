@@ -29,13 +29,14 @@ import java.util.regex.Pattern;
 import static com.google.common.collect.Lists.newArrayList;
 
 public class SPARQLUtilities {
-    public static Pattern SPLIT_TRIPLE_PATTERN = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
+    private static Pattern SPLIT_TRIPLE_PATTERN = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
     private static Logger log = Logger.getLogger(SPARQLUtilities.class);
     public static int QUERY_TYPE_UNKNOWN = -1;
     public static int ASK_QUERY = 1;
     public static int SELECT_QUERY = 2;
     public static int SELECT_SUPERLATIVE_ASC_QUERY = 3;
     public static int SELECT_SUPERLATIVE_DESC_QUERY = 4;
+    public static int SELECT_COUNT_QUERY = 5;
 
 
     /**

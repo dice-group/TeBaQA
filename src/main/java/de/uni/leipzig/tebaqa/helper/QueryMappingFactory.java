@@ -26,6 +26,7 @@ import org.assertj.core.util.Sets;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -341,7 +342,7 @@ public class QueryMappingFactory {
                 Map<String, Double> currentOntologies = new HashMap<>();
 
                 String lemmasJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, true);
-                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoined).forEach(s -> {
+                Consumer<String> addResourceWithLevenshteinRatio = s -> {
                     if (isResource(s)) {
                         currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
                     } else if (isOntology(s)) {
@@ -349,49 +350,18 @@ public class QueryMappingFactory {
                     } else {
                         log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
                     }
-                });
+                };
+                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoined).forEach(addResourceWithLevenshteinRatio);
 
                 String lemmasJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, true);
-                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoinedCapitalized).forEach(s -> {
-                    if (isResource(s)) {
-                        currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
-                    } else if (isOntology(s)) {
-                        currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
-                    } else {
-                        log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
-                    }
-                });
+                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoinedCapitalized).forEach(addResourceWithLevenshteinRatio);
 
                 String wordsJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, false);
-                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined).forEach(s -> {
-                    if (isResource(s)) {
-                        currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
-                    } else if (isOntology(s)) {
-                        currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
-                    } else {
-                        log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
-                    }
-                });
+                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined).forEach(addResourceWithLevenshteinRatio);
 
                 String wordsJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, false);
-                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized).forEach(s -> {
-                    if (isResource(s)) {
-                        currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
-                    } else if (isOntology(s)) {
-                        currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
-                    } else {
-                        log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
-                    }
-                });
-                searchInDBOIndex(coOccurrence).forEach(s -> {
-                    if (isResource(s)) {
-                        currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
-                    } else if (isOntology(s)) {
-                        currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
-                    } else {
-                        log.error(String.format("WARNING: Entity '%s' neither starts with http://dbpedia.org/resource nor with http://dbpedia.org/ontology/ ", s));
-                    }
-                });
+                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized).forEach(addResourceWithLevenshteinRatio);
+                searchInDBOIndex(coOccurrence).forEach(addResourceWithLevenshteinRatio);
                 List<String> bestOntologies = getKeyByLowestValue(currentOntologies);
                 rdfResources.addAll(bestOntologies);
                 List<String> bestResources = getKeyByLowestValue(currentResources);
@@ -518,15 +488,7 @@ public class QueryMappingFactory {
 
             IndexDBO_classes indexDBO_classes = new IndexDBO_classes();
             List<String> indexDBO_classesSearch = indexDBO_classes.search(coOccurrence);
-            Set<String> resultsInDBOIndexClass = indexDBO_classesSearch.stream()
-                    .filter(s -> {
-                        String[] split = s.split("/");
-                        String baseResourceName = split[split.length - 1];
-                        double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
-                        //TODO instead of using string similarity use the shortest one (e.g. Television instead of TelevisionShow) if it exists
-                        return ratio < 0.5;
-                    })
-                    .collect(Collectors.toSet());
+            Set<String> resultsInDBOIndexClass = getResultsInDBOIndexFilteredByRatio(coOccurrence, indexDBO_classesSearch);
             List<String> indexDBO_propertySearch = new ArrayList<>();
             List<String> stopwords = ImmutableList.of("the", "of", "on", "in", "for", "at", "to");
             if (!stopwords.contains(coOccurrence.toLowerCase())) {
@@ -538,19 +500,24 @@ public class QueryMappingFactory {
                     log.error("NullPointerException when trying to close IndexDBO_properties!", e);
                 }
             }
-            Set<String> resultsInDBOIndexProperty = indexDBO_propertySearch.stream()
-                    .filter(s -> {
-                        String[] split = s.split("/");
-                        String baseResourceName = split[split.length - 1];
-                        double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
-                        return ratio < 0.5;
-                    })
-                    .collect(Collectors.toSet());
+            Set<String> resultsInDBOIndexProperty = getResultsInDBOIndexFilteredByRatio(coOccurrence, indexDBO_propertySearch);
 
             resultsInDBOIndex.addAll(resultsInDBOIndexClass);
             resultsInDBOIndex.addAll(resultsInDBOIndexProperty);
             return resultsInDBOIndex;
         }
+    }
+
+    private Set<String> getResultsInDBOIndexFilteredByRatio(String coOccurrence, List<String> indexDBO_classesSearch) {
+        return indexDBO_classesSearch.stream()
+                .filter(s -> {
+                    String[] split = s.split("/");
+                    String baseResourceName = split[split.length - 1];
+                    double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
+                    //TODO instead of using string similarity use the shortest one (e.g. Television instead of TelevisionShow) if it exists
+                    return ratio < 0.5;
+                })
+                .collect(Collectors.toSet());
     }
 
     private List<String> tryDBpediaResourceNamingCombinations(Set<String> ontologyURIs, String[] words, String lemmasJoined) {
@@ -660,6 +627,12 @@ public class QueryMappingFactory {
             result = templatesForGraph.stream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectSuperlativeDescTemplate)
+                    .filter(Objects::nonNull)
+                    .flatMap(Collection::stream).collect(Collectors.toList());
+        }else if (queryType == SPARQLUtilities.SELECT_COUNT_QUERY) {
+            result = templatesForGraph.stream()
+                    //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
+                    .map(QueryTemplateMapping::getSelectCountTemplates)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
         } else if (queryType == SPARQLUtilities.ASK_QUERY) {
