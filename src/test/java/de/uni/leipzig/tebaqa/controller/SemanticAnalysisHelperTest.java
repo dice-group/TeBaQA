@@ -315,6 +315,26 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
+    public void testExtractTemplatesUsesCountQueryTemplates() {
+        List<CustomQuestion> customQuestions = new ArrayList<>();
+        Map<String, List<String>> goldenAnswers = new HashMap<>();
+        String graph = " {\"1\" @\"p\" \"2\"}";
+        customQuestions.add(new CustomQuestion("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT (COUNT(DISTINCT ?uri) AS ?c) WHERE { res:Slovenia dbo:ethnicGroup ?uri }",
+                "How many ethnic groups live in Slovenia?", null, graph, goldenAnswers));
+        SemanticAnalysisHelper analysisHelper = new SemanticAnalysisHelper();
+
+        Set<RDFNode> nodes = NTripleParser.getNodes();
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+        Map<String, QueryTemplateMapping> mappings = analysisHelper.extractTemplates(customQuestions, Lists.newArrayList(nodes), dBpediaProperties);
+
+        Set<String> expectedSelectPatterns = new HashSet<>();
+        expectedSelectPatterns.add("SELECT (COUNT(DISTINCT ?uri) AS ?c) WHERE { <^VAR_0^> <^VAR_1^> ?uri }");
+
+        assertTrue(mappings.size() == 1);
+        assertEquals(expectedSelectPatterns, mappings.get(graph).getSelectCountTemplates());
+    }
+
+    @Test
     public void testDetectQuestionAnswerTypeNumberAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("How many cities exist?");
         assertEquals(SemanticAnalysisHelper.NUMBER_ANSWER_TYPE, answerType);

@@ -72,6 +72,8 @@ public class SemanticAnalysisHelper {
             return SPARQLUtilities.SELECT_SUPERLATIVE_ASC_QUERY;
         } else if (SemanticAnalysisHelper.hasDescAggregation(q)) {
             return SPARQLUtilities.SELECT_SUPERLATIVE_DESC_QUERY;
+        } else if (SemanticAnalysisHelper.hasCountAggregation(q)) {
+            return SPARQLUtilities.SELECT_COUNT_QUERY;
         } else if (firstThreeWords.stream().anyMatch(s -> selectIndicatorsList.contains(s.toLowerCase()))) {
             return SPARQLUtilities.SELECT_QUERY;
         } else if (firstThreeWords.stream().anyMatch(s -> askIndicatorsList.contains(s.toLowerCase()))) {
@@ -142,14 +144,18 @@ public class SemanticAnalysisHelper {
             String queryPattern = queryMappingFactory.getQueryPattern();
             boolean isSuperlativeDesc = false;
             boolean isSuperlativeAsc = false;
+            boolean isCountQuery = false;
 
-            if (queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("limit 1")) {
+            if (queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("limit 1")) {
                 isSuperlativeDesc = true;
             } else if (queryPattern.toLowerCase().contains("order by asc") && queryPattern.toLowerCase().contains("limit 1")) {
                 isSuperlativeAsc = true;
             }
+            if (queryPattern.toLowerCase().contains("count")) {
+                isCountQuery = true;
+            }
 
-            if (!queryPattern.toLowerCase().contains("http://dbpedia.org/resource/") && !queryPattern.toLowerCase().contains("count")
+            if (!queryPattern.toLowerCase().contains("http://dbpedia.org/resource/")
                     && !queryPattern.toLowerCase().contains("sum") && !queryPattern.toLowerCase().contains("avg")
                     && !queryPattern.toLowerCase().contains("min") && !queryPattern.toLowerCase().contains("max")
                     && !queryPattern.toLowerCase().contains("filter") && !queryPattern.toLowerCase().contains("bound")) {
@@ -182,6 +188,8 @@ public class SemanticAnalysisHelper {
                             mapping.addSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
                         } else if (isSuperlativeAsc) {
                             mapping.addSelectSuperlativeAscTemplate(queryPattern, question.getQuery());
+                        } else if (isCountQuery) {
+                            mapping.addCountTemplate(queryPattern, question.getQuery());
                         } else if (queryType == SPARQLUtilities.SELECT_QUERY) {
                             mapping.addSelectTemplate(queryPattern, question.getQuery());
                         } else if (queryType == SPARQLUtilities.ASK_QUERY) {
@@ -196,6 +204,8 @@ public class SemanticAnalysisHelper {
                         mapping.addSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
                     } else if (isSuperlativeAsc) {
                         mapping.addSelectSuperlativeAscTemplate(queryPattern, question.getQuery());
+                    } else if (isCountQuery) {
+                        mapping.addCountTemplate(queryPattern, question.getQuery());
                     } else if (queryType == SPARQLUtilities.SELECT_QUERY) {
                         mapping.addSelectTemplate(queryPattern, question.getQuery());
                     } else if (queryType == SPARQLUtilities.ASK_QUERY) {
@@ -266,6 +276,11 @@ public class SemanticAnalysisHelper {
         String[] descIndicators = new String[]{"largest", "last", "highest", "most", "biggest", "youngest", "longest", "tallest"};
         String[] words = sentence.split("\\W+");
         return Arrays.stream(words).anyMatch(Arrays.asList(descIndicators)::contains);
+    }
+
+
+    public static boolean hasCountAggregation(String sentence) {
+        return sentence.toLowerCase().trim().startsWith("how many") || sentence.toLowerCase().trim().startsWith("how much");
     }
 
     /**

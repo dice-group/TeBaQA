@@ -17,6 +17,10 @@ public class QueryTemplateMapping {
     private Set<String> originalSuperlativeAscQueries = new HashSet<>();
     private Set<String> originalSuperlativeDescQueries = new HashSet<>();
 
+    private Set<String> originalCountQueries = new HashSet<>();
+    private Set<String> selectCountTemplates = new HashSet<>();
+
+
     private int numberOfClasses;
     private int numberOfProperties;
 
@@ -48,6 +52,19 @@ public class QueryTemplateMapping {
         if (!templateIsIsomorph[0]) {
             this.selectSuperlativeAscTemplate.add(template);
             this.originalSuperlativeAscQueries.add(originalQuery);
+        }
+    }
+
+    public void addCountTemplate(String template, String originalQuery) {
+        final boolean[] templateIsIsomorph = {false};
+        originalCountQueries.forEach(s -> {
+            if (QueryIsomorphism.areIsomorph(s, originalQuery)) {
+                templateIsIsomorph[0] = true;
+            }
+        });
+        if (!templateIsIsomorph[0]) {
+            this.selectCountTemplates.add(template);
+            this.originalCountQueries.add(originalQuery);
         }
     }
 
@@ -91,6 +108,10 @@ public class QueryTemplateMapping {
 
     public Set<String> getSelectSuperlativeDescTemplate() {
         return selectSuperlativeDescTemplate;
+    }
+
+    public Set<String> getSelectCountTemplates() {
+        return selectCountTemplates;
     }
 
     public int getNumberOfClasses() {
