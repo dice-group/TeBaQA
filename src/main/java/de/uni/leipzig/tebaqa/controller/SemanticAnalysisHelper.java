@@ -529,13 +529,23 @@ public class SemanticAnalysisHelper {
                             .collect(Collectors.toList())));
             bestAnswer = finalBestAnswer;
         } else if (suitableAnswers.size() > 1) {
-            Set<String> answersWithMatchingType = suitableAnswers.stream()
+            List<String> answersWithMatchingType = suitableAnswers.stream()
                     .filter(answer -> answer.containsKey(expectedAnswerType))
                     .map(answer -> answer.getOrDefault(expectedAnswerType, new ArrayList<>()))
                     .flatMap(Collection::stream)
-                    .collect(Collectors.toSet());
-            if (answersWithMatchingType.size() != 0) {
-                return answersWithMatchingType;
+                    .collect(Collectors.toList());
+            if (expectedAnswerType == SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE) {
+                int trueCount = Math.toIntExact(answersWithMatchingType.stream().filter(Boolean::valueOf).count());
+                int falseCount = Math.toIntExact(answersWithMatchingType.stream().filter(a -> !Boolean.valueOf(a)).count());
+                Set<String> set = new HashSet<>();
+                if (trueCount >= falseCount) {
+                    set.add("true");
+                } else {
+                    set.add("false");
+                }
+                return set;
+            } else if (answersWithMatchingType.size() != 0) {
+                return Sets.newHashSet(answersWithMatchingType);
             } else {
                 return suitableAnswers.stream().map(answer -> answer.getOrDefault(expectedAnswerType, new ArrayList<>()))
                         .flatMap(Collection::stream)

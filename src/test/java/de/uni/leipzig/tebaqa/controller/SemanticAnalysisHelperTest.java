@@ -561,6 +561,33 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
+    public void testGetBestAnswerOnlyReturnsMostCommonBoolean() {
+        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        List<Map<Integer, List<String>>> results = new ArrayList<>();
+        Map<Integer, List<String>> result = new HashMap<>();
+        List<String> resultSet1 = new ArrayList<>();
+        resultSet1.add("true");
+        result.put(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, resultSet1);
+        results.add(result);
+
+        Map<Integer, List<String>> result2 = new HashMap<>();
+        List<String> resultSet2 = new ArrayList<>();
+        resultSet2.add("false");
+        result2.put(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, resultSet2);
+        results.add(result2);
+
+        Map<Integer, List<String>> result3 = new HashMap<>();
+        List<String> resultSet3 = new ArrayList<>();
+        resultSet3.add("false");
+        result3.put(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, resultSet3);
+        results.add(result3);
+
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, false);
+        assertTrue(bestAnswer.size() == 1);
+        assertTrue(bestAnswer.contains("false"));
+    }
+
+    @Test
     public void testHasAscAggregation() {
         assertFalse(SemanticAnalysisHelper.hasAscAggregation("What is the largest country in the world?"));
     }
