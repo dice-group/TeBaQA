@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import org.apache.log4j.Logger;
+import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.bayes.BayesNet;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.bayes.NaiveBayesMultinomialText;
@@ -147,9 +148,9 @@ public class ArffGenerator {
         try {
             trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
             randomCommittee.buildClassifier(trainingSet);
-            SerializationHelper.write("./src/main/resources/randomCommittee.model", randomCommittee);
+            SerializationHelper.write(new ClassPathResource("randomCommittee.model").getFile().getPath(), randomCommittee);
         } catch (Exception e) {
-            log.error("Unable to generate weka model and save it file!", e);
+            log.error("Unable to generate weka model!", e);
         }
 
         //TODO enable to evaluate result

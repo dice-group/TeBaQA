@@ -6,6 +6,7 @@ import de.uni.leipzig.tebaqa.helper.DBpediaPropertiesProvider;
 import de.uni.leipzig.tebaqa.helper.NTripleParser;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
+import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -337,67 +338,67 @@ public class SemanticAnalysisHelperTest {
     @Test
     public void testDetectQuestionAnswerTypeNumberAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("How many cities exist?");
-        assertEquals(SemanticAnalysisHelper.NUMBER_ANSWER_TYPE, answerType);
+        assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeNumberAnswer2() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("How many companies were founded in the same year as Google?");
-        assertEquals(SemanticAnalysisHelper.NUMBER_ANSWER_TYPE, answerType);
+        assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeDateAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("When was the Titanic completed?");
-        assertEquals(SemanticAnalysisHelper.DATE_ANSWER_TYPE, answerType);
+        assertEquals(SPARQLResultSet.DATE_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeBooleanAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Is there a god?");
-        assertEquals(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, answerType);
+        assertEquals(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeBooleanAnswer2() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Does Neymar play for Real Madrid?");
-        assertEquals(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, answerType);
+        assertEquals(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeBooleanAnswer3() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Was the Cuban Missile Crisis earlier than the Bay of Pigs Invasion?");
-        assertEquals(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, answerType);
+        assertEquals(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeListAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Give me all professional skateboarders from Sweden.");
-        assertEquals(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
+        assertEquals(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeListAnswer2() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Which ingredients do I need for carrot cake?");
-        assertEquals(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
+        assertEquals(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeListAnswer3() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("List all episodes of the first season of the HBO television series The Sopranos.");
-        assertEquals(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
+        assertEquals(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeSingleAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Which computer scientist won an oscar?");
-        assertEquals(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, answerType);
+        assertEquals(SPARQLResultSet.SINGLE_RESOURCE_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeSingleAnswer2() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("In which UK city are the headquarters of the MI6?");
-        assertEquals(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, answerType);
+        assertEquals(SPARQLResultSet.SINGLE_RESOURCE_TYPE, answerType);
     }
 
     @Test
@@ -500,17 +501,17 @@ public class SemanticAnalysisHelperTest {
         resultSet1.add("136906.77151236095");
         resultSet1.add("139931.0");
         resultSet1.add("http://dbpedia.org/resource/Ontario");
-        result.put(SemanticAnalysisHelper.MIXED_LIST_ANSWER_TYPE, resultSet1);
+        result.put(SPARQLResultSet.MIXED_LIST_ANSWER_TYPE, resultSet1);
         results.add(result);
 
         Map<Integer, List<String>> result2 = new HashMap<>();
         List<String> resultSet2 = new ArrayList<>();
         resultSet2.add("http://dbpedia.org/resource/Southern_Ontario");
         resultSet2.add("http://dbpedia.org/resource/Loire_Valley_(wine)");
-        result2.put(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, resultSet2);
+        result2.put(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE, resultSet2);
         results.add(result2);
 
-        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, true);
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE, true);
         assertTrue(bestAnswer.size() == 2);
         assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Southern_Ontario"));
         assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Loire_Valley_(wine)"));
@@ -523,17 +524,17 @@ public class SemanticAnalysisHelperTest {
         Map<Integer, List<String>> result = new HashMap<>();
         List<String> resultSet1 = new ArrayList<>();
         resultSet1.add("http://dbpedia.org/resource/Valparaíso");
-        result.put(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, resultSet1);
+        result.put(SPARQLResultSet.SINGLE_RESOURCE_TYPE, resultSet1);
         results.add(result);
 
         Map<Integer, List<String>> result2 = new HashMap<>();
         List<String> resultSet2 = new ArrayList<>();
         resultSet2.add("http://dbpedia.org/resource/Colegio_de_la_Preciosa_Sangre_de_Pichilemu__Cheer_C.P.S.__1");
         resultSet2.add("http://dbpedia.org/resource/Valparaíso");
-        result2.put(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, resultSet2);
+        result2.put(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE, resultSet2);
         results.add(result2);
 
-        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, false);
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SPARQLResultSet.SINGLE_RESOURCE_TYPE, false);
         assertTrue(bestAnswer.size() == 1);
         assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Valparaíso"));
     }
@@ -545,17 +546,17 @@ public class SemanticAnalysisHelperTest {
         Map<Integer, List<String>> result = new HashMap<>();
         List<String> resultSet1 = new ArrayList<>();
         resultSet1.add("http://dbpedia.org/resource/Valparaíso");
-        result.put(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, resultSet1);
+        result.put(SPARQLResultSet.SINGLE_RESOURCE_TYPE, resultSet1);
         results.add(result);
 
         Map<Integer, List<String>> result2 = new HashMap<>();
         List<String> resultSet2 = new ArrayList<>();
         resultSet2.add("http://dbpedia.org/resource/Colegio_de_la_Preciosa_Sangre_de_Pichilemu__Cheer_C.P.S.__1");
         resultSet2.add("http://dbpedia.org/resource/Valparaíso");
-        result2.put(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, resultSet2);
+        result2.put(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE, resultSet2);
         results.add(result2);
 
-        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, true);
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SPARQLResultSet.SINGLE_RESOURCE_TYPE, true);
         assertTrue(bestAnswer.size() == 1);
         assertTrue(bestAnswer.contains("http://dbpedia.org/resource/Valparaíso"));
     }
@@ -567,22 +568,22 @@ public class SemanticAnalysisHelperTest {
         Map<Integer, List<String>> result = new HashMap<>();
         List<String> resultSet1 = new ArrayList<>();
         resultSet1.add("true");
-        result.put(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, resultSet1);
+        result.put(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, resultSet1);
         results.add(result);
 
         Map<Integer, List<String>> result2 = new HashMap<>();
         List<String> resultSet2 = new ArrayList<>();
         resultSet2.add("false");
-        result2.put(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, resultSet2);
+        result2.put(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, resultSet2);
         results.add(result2);
 
         Map<Integer, List<String>> result3 = new HashMap<>();
         List<String> resultSet3 = new ArrayList<>();
         resultSet3.add("false");
-        result3.put(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, resultSet3);
+        result3.put(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, resultSet3);
         results.add(result3);
 
-        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, false);
+        Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, new StringBuilder(), SPARQLResultSet.BOOLEAN_ANSWER_TYPE, false);
         assertTrue(bestAnswer.size() == 1);
         assertTrue(bestAnswer.contains("false"));
     }

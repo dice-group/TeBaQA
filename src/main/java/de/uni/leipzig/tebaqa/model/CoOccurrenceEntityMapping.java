@@ -1,7 +1,7 @@
 package de.uni.leipzig.tebaqa.model;
 
+import com.google.common.collect.Sets;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
-import org.assertj.core.util.Sets;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static de.uni.leipzig.tebaqa.helper.QueryMappingFactory.NON_WORD_CHARACTERS_REGEX;
 
 public class CoOccurrenceEntityMapping {
     private String wordGroup;
@@ -25,7 +27,7 @@ public class CoOccurrenceEntityMapping {
         Map<String, String> lemmas = SemanticAnalysisHelper.getLemmas(wordGroup);
         String[] split = entityURI.split("/");
         String entity = split[split.length - 1];
-        Set<String> wordsInWordGroup = Sets.newHashSet(Arrays.asList(wordGroup.split("\\W+")));
+        Set<String> wordsInWordGroup = Sets.newHashSet(Arrays.asList(wordGroup.split(NON_WORD_CHARACTERS_REGEX)));
         for (String word : wordsInWordGroup) {
             String lemma = lemmas.get(word);
             if(lemma != null && !lemma.equalsIgnoreCase(word)){

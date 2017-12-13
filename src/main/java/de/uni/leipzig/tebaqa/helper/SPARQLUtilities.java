@@ -1,6 +1,5 @@
 package de.uni.leipzig.tebaqa.helper;
 
-import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.Query;
@@ -16,13 +15,11 @@ import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,7 +54,7 @@ public class SPARQLUtilities {
     }
 
     public static SPARQLResultSet executeSPARQLQuery(String sparlQuery) {
-        int resultType = SemanticAnalysisHelper.UNKNOWN_ANSWER_TYPE;
+        int resultType = SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
         List<String> result = new ArrayList<>();
         ParameterizedSparqlString qs = new ParameterizedSparqlString(sparlQuery);
         if (sparlQuery.contains("<^")) {
@@ -104,29 +101,29 @@ public class SPARQLUtilities {
                 if (result.size() > 1) {
                     boolean listIsMixed = result.stream().anyMatch(s -> !s.startsWith("http://dbpedia.org/resource/"));
                     if (listIsMixed) {
-                        resultType = SemanticAnalysisHelper.MIXED_LIST_ANSWER_TYPE;
+                        resultType = SPARQLResultSet.MIXED_LIST_ANSWER_TYPE;
                     } else {
-                        resultType = SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE;
+                        resultType = SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
                     }
                 } else if (result.size() == 1) {
                     String s = result.get(0);
                     if (s.endsWith("^^http://www.w3.org/2001/XMLSchema#integer") || s.endsWith("http://www.w3.org/2001/XMLSchema#positiveInteger")) {
-                        resultType = SemanticAnalysisHelper.NUMBER_ANSWER_TYPE;
+                        resultType = SPARQLResultSet.NUMBER_ANSWER_TYPE;
                     } else if (s.endsWith("^^http://www.w3.org/2001/XMLSchema#date")) {
-                        resultType = SemanticAnalysisHelper.DATE_ANSWER_TYPE;
+                        resultType = SPARQLResultSet.DATE_ANSWER_TYPE;
                     } else if (s.startsWith("http://dbpedia.org/resource/")) {
-                        resultType = SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE;
+                        resultType = SPARQLResultSet.SINGLE_RESOURCE_TYPE;
                     } else {
-                        resultType = SemanticAnalysisHelper.STRING_ANSWER_TYPE;
+                        resultType = SPARQLResultSet.STRING_ANSWER_TYPE;
                     }
                 } else {
-                    resultType = SemanticAnalysisHelper.UNKNOWN_ANSWER_TYPE;
+                    resultType = SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
                 }
             } else if (isAskType) {
                 try {
                     boolean rs = qe.execAsk();
                     result.add(String.valueOf(rs));
-                    resultType = SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE;
+                    resultType = SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
                 } catch (Exception e) {
                     log.error("HTTP Exception while creating query: " + sparlQuery, e);
                     //throw e;
