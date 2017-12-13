@@ -151,7 +151,7 @@ public class QueryResourceTypeAnalyzer implements IAnalyzer {
 
     @Override
     public Object analyze(String q) {
-        log.debug("String question: " + q);
+        //log.debug("String question: " + q);
         Map<String, List<org.aksw.qa.commons.datastructure.Entity>> entities = null;
         entities = spotter.getEntities(q);
         if (!entities.isEmpty()) {

@@ -23,7 +23,9 @@ public class Noun implements IAnalyzer {
 
     public Object analyze(String q) {
         Annotation annotation = new Annotation(q);
-        pipeline.annotate(annotation);
+        if(!q.isEmpty()){
+            pipeline.annotate(annotation);
+        }
         double nounCnt = 0;
         List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
         for (CoreMap sentence : sentences) {

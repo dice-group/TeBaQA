@@ -1,11 +1,11 @@
 package de.uni.leipzig.tebaqa.helper;
 
+import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
-import org.assertj.core.util.Lists;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -260,7 +260,9 @@ public class QueryMappingFactoryTest {
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         mappings.put("", template1);
 
-        assertEquals(expected, queryMappingFactory.generateQueries(mappings, false));
+        List<String> actual = queryMappingFactory.generateQueries(mappings, false);
+        assertTrue(actual.size() == 1);
+        assertTrue(actual.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?class_0 a ?x . VALUES (?class_0) {(<http://dbpedia.org/resource/"));
     }
 
     @Test
@@ -370,8 +372,6 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
-    @Ignore
-    //TODO Implement the recognition of multi-word entities like "http://dbpedia.org/resource/Game_of_Thrones
     public void testExtractResources() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -386,14 +386,490 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/resource/Breaking_Bad"));
         assertTrue(actual.contains("http://dbpedia.org/resource/Game_of_Thrones"));
     }
 
     @Test
+    public void testExtractResourcesDetectsOntology() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "What is the alma mater of the chancellor of Germany Angela Merkel?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/almaMater"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/Angela_Merkel"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "How large is the area of UK?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/areaTotal"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/United_Kingdom"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping2() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Who is the author of the interpretation of dreams?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/author"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/The_Interpretation_of_Dreams"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping3() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "What is the birth name of Adele?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/birthName"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/Adele"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping4() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "How many awards has Bertrand Russell?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/property/awards"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/Bertrand_Russell"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping6() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "When will start the final match of the football world cup 2018?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/property/date"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping7() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "how much is the elevation of Düsseldorf Airport ?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/resource/Düsseldorf_Airport"));
+        assertTrue(actual.contains("http://dbpedia.org/ontology/elevation"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping8() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "how much is the total population of  european union?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/resource/European_Union"));
+        assertTrue(actual.contains("http://dbpedia.org/ontology/populationTotal"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping9() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Who are the founders of  BlaBlaCar?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/resource/BlaBlaCar"));
+        assertTrue(actual.contains("http://dbpedia.org/property/founders"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping10() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "how many foreigners speak German?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/property/speakers"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping11() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Where is the birthplace of Goethe?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/resource/Johann_Wolfgang_von_Goethe"));
+        assertTrue(actual.contains("http://dbpedia.org/ontology/birthPlace"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping12() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Where is the origin of Carolina reaper?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/resource/Carolina_Reaper"));
+        assertTrue(actual.contains("http://dbpedia.org/ontology/origin"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping13() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "How much is the population of Mexico City ?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/resource/Mexico_City"));
+        assertTrue(actual.contains("http://dbpedia.org/ontology/populationTotal"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping14() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "What is the nick name of Baghdad?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://xmlns.com/foaf/0.1/nick"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/Baghdad"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping15() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Who is the novelist of the work a song of ice and fire?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/property/author"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/A_Song_of_Ice_and_Fire"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping16() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "What is the percentage of area water in Brazil?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/percentageOfAreaWater"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/Brazil"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping17() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "How much is the population of Iraq?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/populationTotal"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/Iraq"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping18() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "What is the population of Cairo?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/populationTotal"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/Cairo"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping20() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "How large is the total area of North Rhine-Westphalia";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/resource/North_Rhine-Westphalia"));
+        assertTrue(actual.contains("http://dbpedia.org/ontology/areaTotal"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping21() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "What is the original title of the interpretation of dreams?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/resource/The_Interpretation_of_Dreams"));
+        assertTrue(actual.contains("http://xmlns.com/foaf/0.1/name"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping22() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Who are the writers of the Wall album of Pink Floyd?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/resource/The_Wall"));
+    }
+
+    @Test
     @Ignore
-    //TODO Implement the recognition of multi-word entities like "http://dbpedia.org/resource/Game_of_Thrones
+    //TODO Detect William_Shakespeare from Shakespeare with Apache OpenNLP or something else
+    public void testExtractResourcesDetectsOntologyFromMapping23() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "When was the death  of  Shakespeare?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/deathDate"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/William_Shakespeare"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping24() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "What is the largest city in america?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/ontology/largestCity"));
+    }
+
+    @Test
+    public void testExtractResourcesDetectsOntologyFromMapping25() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "What is the highest mountain in the Bavarian Alps?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/property/highest"));
+        assertTrue(actual.contains("http://dbpedia.org/resource/Bavarian_Alps"));
+    }
+
+    @Test
     public void testExtractResourcesIgnoresCase() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -408,7 +884,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/resource/President_of_Montenegro"));
     }
 
@@ -427,7 +903,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/ontology/sourceCountry"));
     }
 
@@ -446,7 +922,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/ontology/sourceCountry"));
     }
 
@@ -465,7 +941,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/ontology/TelevisionShow"));
     }
 
@@ -484,7 +960,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         //TODO should starring be detected? the lemma 'star' is only detected at the moment.
         assertTrue(actual.contains("http://dbpedia.org/ontology/starring"));
     }
@@ -504,7 +980,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/ontology/foundedBy"));
     }
 
@@ -523,7 +999,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/ontology/starring"));
     }
 
@@ -542,7 +1018,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/resource/World_of_Warcraft"));
     }
 
@@ -576,13 +1052,32 @@ public class QueryMappingFactoryTest {
                 "        FILTER (?y > ?x) " +
                 "}";
         String question = "Who developed the video game World of Warcraft?";
-        
+
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.findResourcesInFullText("Game of Thrones");
         assertTrue(actual.contains("http://dbpedia.org/resource/Game_of_Thrones"));
+    }
+
+    @Test
+    public void testFindResourceInFullTextDetectsResourcesWithMultipleWords3() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Who is the novelist of the work a song of ice and fire?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.findResourcesInFullText("a song of ice and fire");
+        assertTrue(actual.contains("http://dbpedia.org/resource/A_Song_of_Ice_and_Fire"));
     }
 
     @Test
@@ -594,7 +1089,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/ontology/officialLanguage"));
         assertTrue(actual.contains("http://dbpedia.org/ontology/otherLanguage"));
         assertTrue(!actual.contains("http://dbpedia.org/ontology/ProgrammingLanguage"));
@@ -608,6 +1103,19 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
+    public void testExtractResourcesWithSpecialCharacters() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX res: <http://dbpedia.org/resource/> SELECT DISTINCT ?uri WHERE {          res:Suriname dbo:officialLanguage ?uri . }";
+        String question = "Österreich";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(actual.contains("http://dbpedia.org/resource/Österreich"));
+    }
+
+    @Test
     public void testExtractResourcesWithoutSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Which awards did Douglas Hofstadter win?";
@@ -616,7 +1124,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(!actual.contains("http://dbpedia.org/ontology/birthPlace"));
         assertTrue(!actual.contains("http://dbpedia.org/ontology/deathPlace"));
     }
@@ -630,7 +1138,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(!actual.contains("http://dbpedia.org/property/be"));
     }
 
@@ -643,7 +1151,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, true);
+        Set<String> actual = queryMappingFactory.extractEntities(question, true);
         assertTrue(!actual.contains("http://dbpedia.org/property/be"));
     }
 
@@ -656,7 +1164,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(!actual.contains("http://dbpedia.org/ontology/cost"));
     }
 
@@ -669,7 +1177,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, true);
+        Set<String> actual = queryMappingFactory.extractEntities(question, true);
         assertTrue(!actual.contains("http://dbpedia.org/ontology/cost"));
     }
 
@@ -682,7 +1190,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, true);
+        Set<String> actual = queryMappingFactory.extractEntities(question, true);
         assertTrue(!actual.contains("http://dbpedia.org/ontology/map"));
     }
 
@@ -695,7 +1203,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, true);
+        Set<String> actual = queryMappingFactory.extractEntities(question, true);
         assertTrue(!actual.contains("http://dbpedia.org/resource/Where"));
     }
 
@@ -708,7 +1216,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, true);
+        Set<String> actual = queryMappingFactory.extractEntities(question, true);
         assertTrue(!actual.contains("http://dbpedia.org/ontology/deathPlace"));
     }
 
@@ -722,7 +1230,7 @@ public class QueryMappingFactoryTest {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractResources(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/ontology/spouse"));
     }
 
