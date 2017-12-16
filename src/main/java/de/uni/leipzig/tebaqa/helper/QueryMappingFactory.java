@@ -33,6 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper.getLemmas;
 import static de.uni.leipzig.tebaqa.helper.Utilities.ARGUMENTS_BETWEEN_SPACES;
 import static de.uni.leipzig.tebaqa.helper.Utilities.getLevenshteinRatio;
 import static edu.stanford.nlp.ling.CoreAnnotations.*;
@@ -320,7 +321,7 @@ public class QueryMappingFactory {
 
         String[] wordsFromQuestion = question.split(NON_WORD_CHARACTERS_REGEX);
         for (String word : wordsFromQuestion) {
-            Map<String, String> lemmas = SemanticAnalysisHelper.getLemmas(word);
+            Map<String, String> lemmas = getLemmas(word);
             Map<String, String> pos = SemanticAnalysisHelper.getPOS(word);
             if (!lemmas.getOrDefault(word, "").toLowerCase().equals("be") && !lemmas.getOrDefault(word, "").toLowerCase().equals("the")
                     && !pos.getOrDefault(word, "").equalsIgnoreCase("WP")
@@ -348,7 +349,11 @@ public class QueryMappingFactory {
 
         Consumer<String> coOccurrenceConsumer = coOccurrence -> {
             String[] coOccurrenceSplitted = coOccurrence.split(NON_WORD_CHARACTERS_REGEX);
-            if (coOccurrenceSplitted.length > 0 && (coOccurrenceSplitted.length > 1 || (!wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("DT") && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("WP")))) {
+            if (coOccurrenceSplitted.length > 0 && (coOccurrenceSplitted.length > 1 ||
+                    (!wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("DT")
+                            && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("WP")
+                            && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("EX")
+                            && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("IN")))) {
                 Map<String, Double> currentResources = new HashMap<>();
                 Map<String, Double> currentOntologies = new HashMap<>();
 
@@ -361,8 +366,16 @@ public class QueryMappingFactory {
                     }
                 };
                 if (coOccurrenceSplitted.length > 1 || (!wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("DT") && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").startsWith("W"))) {
+                    boolean isImportantEntity = true;
+                    if (coOccurrenceSplitted.length == 1) {
+                        Map<String, String> lemmas = getLemmas(coOccurrenceSplitted[0]);
+                        if (lemmas.getOrDefault(coOccurrenceSplitted[0], "").equals("be")
+                                || lemmas.getOrDefault(coOccurrenceSplitted[0], "").equals("the")) {
+                            isImportantEntity = false;
+                        }
+                    }
                     String coOccurrenceJoinedWithUnderScore = "http://dbpedia.org/resource/" + String.join("_", coOccurrenceSplitted);
-                    if (existsAsEntity(coOccurrenceJoinedWithUnderScore)) {
+                    if (isImportantEntity && existsAsEntity(coOccurrenceJoinedWithUnderScore)) {
                         rdfEntities.add(coOccurrenceJoinedWithUnderScore);
                     }
                 }
@@ -378,10 +391,10 @@ public class QueryMappingFactory {
                 tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized).forEach(addResourceWithLevenshteinRatio);
                 searchInDBOIndex(coOccurrence).forEach(addResourceWithLevenshteinRatio);
                 List<String> bestOntologies = getKeyByLowestValue(currentOntologies);
-                rdfEntities.addAll(bestOntologies);
                 List<String> bestResources = getKeyByLowestValue(currentResources);
-                rdfEntities.addAll(bestResources);
                 Set<String> resourcesFoundInFullText = findResourcesInFullText(coOccurrence);
+                rdfEntities.addAll(bestResources);
+                rdfEntities.addAll(bestOntologies);
                 rdfEntities.addAll(resourcesFoundInFullText);
             }
         };
@@ -405,18 +418,20 @@ public class QueryMappingFactory {
         List<String> questionWords = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which|is|are|did|was|does|a".split("\\|"));
         Set<String> result = new HashSet<>();
         //SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(String.format("select distinct ?s { ?s ?p ?o. ?s <http://www.w3.org/2000/01/rdf-schema#label> ?l. filter(langmatches(lang(?l), 'en')) ?l <bif:contains> \"'%s'\" }", s));
-        SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(String.format("SELECT DISTINCT ?s ?label WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?label . FILTER (lang(?label) = 'en'). ?label <bif:contains> \"'%s'\" . ?s <http://purl.org/dc/terms/subject> ?sub }", s));
-        List<String> resultSet = sparqlResultSet.getResultSet();
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(String.format("SELECT DISTINCT ?s ?label WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?label . FILTER (lang(?label) = 'en'). ?label <bif:contains> \"'%s'\" . ?s <http://purl.org/dc/terms/subject> ?sub }", s));
+        List<String> resultSet = new ArrayList<>();
+        sparqlResultSets.forEach(sparqlResultSet -> resultSet.addAll(sparqlResultSet.getResultSet()));
         resultSet.stream().filter(s1 -> s1.startsWith("http://")).forEach(uri -> {
             String[] split = uri.split("/");
             String resourceName = split[split.length - 1];
             if (!questionWords.contains(resourceName.toLowerCase())) {
-                double levenshteinRatio = Utilities.getLevenshteinRatio(s, resourceName.replace("_", " ")
+                double levenshteinRatio = Utilities.getLevenshteinRatio(s.toLowerCase(), resourceName.replace("_", " ")
                         .replace("(", " ")
                         .replace(")", " ")
                         .replaceAll("\\s+", " ")
-                        .trim());
-                if (levenshteinRatio < 0.2) {
+                        .trim()
+                        .toLowerCase());
+                if (levenshteinRatio < 0.1) {
                     result.add(uri);
                 }
             }
@@ -425,8 +440,8 @@ public class QueryMappingFactory {
     }
 
     private boolean existsAsEntity(String s) {
-        SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(String.format("ASK { VALUES (?r) {(<%s>)} {?r ?p ?o} UNION {?s ?r ?o} UNION {?s ?p ?r} }", s));
-        return Boolean.valueOf(sparqlResultSet.getResultSet().get(0));
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(String.format("ASK { VALUES (?r) {(<%s>)} {?r ?p ?o} UNION {?s ?r ?o} UNION {?s ?p ?r} }", s));
+        return Boolean.valueOf(sparqlResultSets.get(0).getResultSet().get(0));
     }
 
     public Set<String> findResourcesBySynonyms(String question) {
@@ -510,7 +525,7 @@ public class QueryMappingFactory {
                         String[] split = s.split("/");
                         String baseResourceName = split[split.length - 1];
                         double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
-                        return ratio <= 0.7;
+                        return ratio <= 0.5;
                     })
                     .collect(Collectors.toSet());
 

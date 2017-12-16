@@ -24,7 +24,9 @@ public class QuestionAnsweringController {
 
 
     @RequestMapping(method = RequestMethod.POST, path = "/qa")
-    public String answerQuestion(@RequestParam String query, @RequestParam String lang, HttpServletResponse response) {
+    public String answerQuestion(@RequestParam String query,
+                                 @RequestParam(required = false, defaultValue = "en") String lang,
+                                 HttpServletResponse response) {
         log.debug(String.format("Received POST request with: query='%s' and lang='%s'", query, lang));
         if (!query.isEmpty()) {
             PipelineController qaPipeline = getQAPipeline();
@@ -44,7 +46,9 @@ public class QuestionAnsweringController {
     }
 
     @RequestMapping(method = RequestMethod.POST, path = "/qa-simple")
-    public String answerQuestionSimple(@RequestParam String query, @RequestParam String lang, HttpServletResponse response) {
+    public String answerQuestionSimple(@RequestParam String query,
+                                       @RequestParam(required = false, defaultValue = "en") String lang,
+                                       HttpServletResponse response) {
         log.debug(String.format("Received POST request with: query='%s' and lang='%s'", query, lang));
         if (!query.isEmpty()) {
             PipelineController qaPipeline = getQAPipeline();
@@ -52,7 +56,12 @@ public class QuestionAnsweringController {
             try {
                 AnswerToQuestion answer = qaPipeline.answerQuestion(query);
                 JsonArrayBuilder resultArray = Json.createArrayBuilder();
-                answer.getAnswer().forEach(resultArray::add);
+                answer.getAnswer().forEach(a -> {
+                    if (!a.isEmpty() && a.startsWith("'") && a.contains("'@")) {
+                        a = a.substring(0, a.lastIndexOf("'@") + 1);
+                    }
+                    resultArray.add(a);
+                });
                 result = Json.createObjectBuilder().add("answers", resultArray).build().toString();
 
             } catch (Exception e) {
@@ -66,5 +75,4 @@ public class QuestionAnsweringController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter query cannot be empty!").toString();
         }
     }
-
 }

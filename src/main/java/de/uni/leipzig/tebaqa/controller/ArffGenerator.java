@@ -37,7 +37,6 @@ import weka.core.converters.ArffLoader;
 import weka.core.converters.CSVSaver;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -141,8 +140,16 @@ public class ArffGenerator {
             trainingSet.add(trainInstance);
         }
 
-        writeSetToArffFile(trainingSet, "./src/main/resources/Train.arff");
-        writeSetToArffFile(testSet, "./src/main/resources/Test.arff");
+        try {
+            writeSetToArffFile(trainingSet, new ClassPathResource("Train.arff").getFile().getPath());
+        } catch (IOException e) {
+            log.error("Unable to write Train.arff to file!", e);
+        }
+        try {
+            writeSetToArffFile(testSet, new ClassPathResource("Test.arff").getFile().getPath());
+        } catch (IOException e) {
+            log.error("Unable to write Test.arff to file!", e);
+        }
 
         RandomCommittee randomCommittee = new RandomCommittee();
         try {
@@ -440,11 +447,15 @@ public class ArffGenerator {
         instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
         set.add(instance);
 
-        writeSetToArffFile(set, "./src/main/resources/Evaluation.arff");
+        try {
+            writeSetToArffFile(set, new ClassPathResource("Evaluation.arff").getFile().getPath());
+        } catch (IOException e) {
+            log.error("IOException while writing Evaluation.arff to file!", e);
+        }
         CSVSaver csvSaver = new CSVSaver();
         try {
             csvSaver.setInstances(set);
-            csvSaver.setFile(new File("./src/main/resources/Evaluation.csv"));
+            csvSaver.setFile(new ClassPathResource("Evaluation.scv").getFile());
             csvSaver.writeBatch();
         } catch (IOException e) {
             log.error("Unable to write classifier evaluation to CSV", e);
@@ -480,7 +491,7 @@ public class ArffGenerator {
 
     private Instances readClassifiedResult() {
         try {
-            BufferedReader reader = new BufferedReader(new FileReader("./src/main/resources/Test.arff"));
+            BufferedReader reader = new BufferedReader(new FileReader(new ClassPathResource("Test.arff").getFile()));
             ArffLoader.ArffReader arff = new ArffLoader.ArffReader(reader);
             Instances data = arff.getData();
             data.setClassIndex(data.numAttributes() - 1);

@@ -1,5 +1,7 @@
 package de.uni.leipzig.tebaqa.helper;
 
+import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -28,7 +30,9 @@ public class DBpediaPropertiesProvider {
         int offset = 0;
         while (gotResult) {
             String format = String.format(query, offset);
-            List<String> result = SPARQLUtilities.executeSPARQLQuery(format).getResultSet();
+            List<String> result = new ArrayList<>();
+            List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(format);
+            sparqlResultSets.forEach( sparqlResultSet -> result.addAll(sparqlResultSet.getResultSet()));
             if (!result.isEmpty()) {
                 properties.addAll(result);
                 offset += 10000;

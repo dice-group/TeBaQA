@@ -2,17 +2,11 @@ package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.Sets;
 import com.hp.hpl.jena.rdf.model.RDFNode;
-import de.tudarmstadt.ukp.jwktl.api.IWiktionaryEdition;
-import de.tudarmstadt.ukp.jwktl.api.IWiktionaryEntry;
-import de.tudarmstadt.ukp.jwktl.api.IWiktionaryPage;
-import de.tudarmstadt.ukp.jwktl.api.IWiktionaryRelation;
-import de.tudarmstadt.ukp.jwktl.api.RelationType;
 import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
 import de.uni.leipzig.tebaqa.helper.Utilities;
-import de.uni.leipzig.tebaqa.helper.WiktionaryProvider;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
@@ -35,18 +29,26 @@ import weka.core.Instances;
 import weka.core.SerializationHelper;
 
 import java.io.FileInputStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static de.uni.leipzig.tebaqa.helper.HypernymMappingProvider.getHypernymMapping;
 import static de.uni.leipzig.tebaqa.helper.QueryMappingFactory.NON_WORD_CHARACTERS_REGEX;
 import static de.uni.leipzig.tebaqa.helper.Utilities.ARGUMENTS_BETWEEN_SPACES;
 
 public class SemanticAnalysisHelper {
     private static Logger log = Logger.getLogger(SemanticAnalysisHelper.class);
     private StanfordCoreNLP pipeline;
+    private static DateTimeFormatter dateTimeFormatterLong = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static DateTimeFormatter dateTimeFormatterShortMonth = DateTimeFormatter.ofPattern("yyyy-M-dd");
+    private static DateTimeFormatter dateTimeFormatterShortDay = DateTimeFormatter.ofPattern("yyyy-MM-d");
+
 
     public SemanticAnalysisHelper() {
         this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
@@ -55,7 +57,7 @@ public class SemanticAnalysisHelper {
     public static int determineQueryType(String q) {
         List<String> selectIndicatorsList = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which".split("\\|"));
         List<String> askIndicatorsList = Arrays.asList("is|are|did|was|does|can".split("\\|"));
-        log.debug("String question: " + q);
+        //log.debug("String question: " + q);
         String[] split = q.split("\\s+");
         List<String> firstThreeWords = new ArrayList<>();
         if (split.length > 3) {
@@ -82,17 +84,17 @@ public class SemanticAnalysisHelper {
         Annotation annotation = new Annotation(text);
         pipeline.annotate(annotation);
 
-        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
-        for (CoreMap sentence : sentences) {
-            SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
-            if (dependencyGraph == null) {
-                dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
-            }
-            //dependencyGraph.prettyPrint();
-            //String compactGraph = dependencyGraph.toCompactString();
+        //List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+        //for (CoreMap sentence : sentences) {
+        //SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
+        //if (dependencyGraph == null) {
+        //dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
+        //}
+        //dependencyGraph.prettyPrint();
+        //String compactGraph = dependencyGraph.toCompactString();
 
-            //log.info(compactGraph);
-        }
+        //log.info(compactGraph);
+        //}
 
 
         //pipeline.prettyPrint(annotation, System.out);
@@ -356,9 +358,9 @@ public class SemanticAnalysisHelper {
             log.error("Unable to load weka model file!", e);
         }
         // if (predictedGraph.equals(question.getGraph())) {
-            //log.info("Predicted class is correct.");
+        //log.info("Predicted class is correct.");
         //} else {
-            //log.info("Predicted class is incorrect! Predicted: " + predictedGraph + "; actual: " + question.getGraph());
+        //log.info("Predicted class is incorrect! Predicted: " + predictedGraph + "; actual: " + question.getGraph());
         //}
         return predictedGraph;
     }
@@ -410,9 +412,7 @@ public class SemanticAnalysisHelper {
 
     public List<IndexedWord> getDependencySequence(SemanticGraph semanticGraph) {
         IndexedWord firstRoot = semanticGraph.getFirstRoot();
-        List<IndexedWord> sequence = getDependenciesFromEdge(firstRoot, semanticGraph);
-        log.debug(sequence);
-        return sequence;
+        return getDependenciesFromEdge(firstRoot, semanticGraph);
     }
 
     private static List<IndexedWord> getDependenciesFromEdge(IndexedWord root, SemanticGraph semanticGraph) {
@@ -455,8 +455,16 @@ public class SemanticAnalysisHelper {
                 return SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
             }
         }
-        if (question.toLowerCase().startsWith("how many") || question.toLowerCase().startsWith("how much")) {
+        if (question.toLowerCase().startsWith("how many") || question.toLowerCase().startsWith("how much")
+                || question.toLowerCase().startsWith("how big")) {
             return SPARQLResultSet.NUMBER_ANSWER_TYPE;
+        }
+        if (question.toLowerCase().startsWith("how") && sequence.size() >= 2) {
+            String posOfSecondWord = sequence.get(1).get(CoreAnnotations.PartOfSpeechAnnotation.class);
+            //For cases like how big, how small, ...
+            if (posOfSecondWord.startsWith("JJ")) {
+                return SPARQLResultSet.NUMBER_ANSWER_TYPE;
+            }
         }
         if (question.toLowerCase().startsWith("when")) {
             return SPARQLResultSet.DATE_ANSWER_TYPE;
@@ -472,7 +480,7 @@ public class SemanticAnalysisHelper {
         return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
     }
 
-    Set<String> getBestAnswer(List<Map<Integer, List<String>>> results, StringBuilder logMessage, int expectedAnswerType, boolean forceResult) {
+    Set<String> getBestAnswer(List<Map<Integer, List<String>>> results, int expectedAnswerType, boolean forceResult) {
         List<Map<Integer, List<String>>> suitableAnswers = new ArrayList<>();
         List<String> bestAnswer = new ArrayList<>();
 
@@ -515,6 +523,38 @@ public class SemanticAnalysisHelper {
         if (suitableAnswers.size() == 1) {
             Map<Integer, List<String>> answer = suitableAnswers.get(0);
             Optional<List<String>> first = answer.values().stream().findFirst();
+            Set<String> suitableAnswer = first.<Set<String>>map(Sets::newHashSet).orElseGet(HashSet::new);
+            if (expectedAnswerType == SPARQLResultSet.DATE_ANSWER_TYPE && suitableAnswer.size() > 1) {
+                Map<LocalDate, String> uniqueDates = new HashMap<>();
+                suitableAnswer.forEach(s -> {
+                    if (s.contains("-")) {
+                        LocalDate dateTime = null;
+                        try {
+                            dateTime = LocalDate.parse(s, dateTimeFormatterLong);
+                        } catch (DateTimeParseException ignored) {
+                        }
+                        try {
+                            dateTime = LocalDate.parse(s, dateTimeFormatterShortDay);
+                        } catch (DateTimeParseException ignored) {
+                        }
+                        try {
+                            dateTime = LocalDate.parse(s, dateTimeFormatterShortMonth);
+                        } catch (DateTimeParseException ignored) {
+                        }
+                        if (dateTime != null && !uniqueDates.containsKey(dateTime)) {
+                            uniqueDates.put(dateTime, s);
+                        } else if (dateTime != null && uniqueDates.containsKey(dateTime)) {
+                            String s1 = uniqueDates.get(dateTime);
+                            //Update the date if the dates are equivalent and the new date is longer e.g. 1616-04-23 instead of 1616-4-23
+                            //TODO What happens if a year is requested?
+                            if (s1.length() < s.length()) {
+                                uniqueDates.put(dateTime, s);
+                            }
+                        }
+                    }
+                });
+                return Sets.newHashSet(uniqueDates.values());
+            }
             return first.<Set<String>>map(Sets::newHashSet).orElseGet(HashSet::new);
         } else if (suitableAnswers.isEmpty() && forceResult) {
             //If there is no suitable result fallback to the other results
@@ -541,6 +581,11 @@ public class SemanticAnalysisHelper {
                     set.add("false");
                 }
                 return set;
+            } else if (expectedAnswerType == SPARQLResultSet.DATE_ANSWER_TYPE) {
+                Optional<String> max = answersWithMatchingType.stream().max(Comparator.comparingInt(String::length));
+                if (max.isPresent()) {
+                    bestAnswer.add(max.get());
+                }
             } else if (answersWithMatchingType.size() != 0) {
                 return Sets.newHashSet(answersWithMatchingType);
             } else {
@@ -570,16 +615,7 @@ public class SemanticAnalysisHelper {
     }
 
     public static List<String> getHypernymsFromWiktionary(String s) {
-        List<String> hypernyms = new ArrayList<>();
-        IWiktionaryEdition wiktionaryInstance = WiktionaryProvider.getWiktionaryInstance();
-        IWiktionaryPage page = wiktionaryInstance.getPageForWord(s);
-        if (page != null) {
-            for (IWiktionaryEntry entry : page.getEntries()) {
-                for (IWiktionaryRelation relation : entry.getRelations(RelationType.HYPERNYM)) {
-                    hypernyms.add(relation.getTarget());
-                }
-            }
-        }
-        return hypernyms;
+        Map<String, List<String>> hypernymMapping = getHypernymMapping();
+        return hypernymMapping.getOrDefault(s, new ArrayList<>());
     }
 }
