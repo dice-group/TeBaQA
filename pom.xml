@@ -9,7 +9,9 @@
             <resource>
                 <directory>src/main/resources/</directory>
                 <excludes>
-                    <!-- <exclude>wiktionary/*</exclude> -->
+                    <exclude>dewiktionary-20171201-pages-articles-multistream.xml.bz2</exclude>
+                    <exclude>enwiktionary-20171201-pages-articles-multistream.xml.bz2</exclude>
+                    <exclude>wiktionary/*</exclude>
                 </excludes>
             </resource>
         </resources>

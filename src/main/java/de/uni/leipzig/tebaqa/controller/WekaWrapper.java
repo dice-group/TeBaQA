@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.AbstractClassifier;
 import weka.classifiers.Evaluation;
 import weka.core.Instances;
@@ -24,7 +25,7 @@ class WekaWrapper {
 
     WekaWrapper() {
         try {
-            DataSource source = new DataSource("./src/main/resources/Train.arff");
+            DataSource source = new DataSource(new ClassPathResource("Train.arff").getFile().getPath());
             data = source.getDataSet();
             // setting class attribute if the data format does not provide this information
             // For example, the XRFF format saves the class attribute information as well
@@ -32,9 +33,7 @@ class WekaWrapper {
                 data.setClassIndex(data.numAttributes() - 1);
 
             // load unlabeled data
-            unlabeled = new Instances(
-                    new BufferedReader(
-                            new FileReader("./src/main/resources/Test.arff")));
+            unlabeled = new Instances(new BufferedReader(new FileReader(new ClassPathResource("Test.arff").getFile())));
 
             // set class attribute
             unlabeled.setClassIndex(unlabeled.numAttributes() - 1);
@@ -45,8 +44,9 @@ class WekaWrapper {
 
     /**
      * Classifies data with the given classifier from the weka framework and it's options.
+     *
      * @param classifier The classifier to classify the data.
-     * @param options Options for the classifier. If there are non given the weka framework will use the standard ones.
+     * @param options    Options for the classifier. If there are non given the weka framework will use the standard ones.
      * @return The macro weighted average f-measure. The classified instances are in the created Test.arff file.
      */
     double classify(AbstractClassifier classifier, String[] options) {
@@ -108,8 +108,7 @@ class WekaWrapper {
 
         try {
             // save labeled data
-            BufferedWriter writer = new BufferedWriter(
-                    new FileWriter("./src/main/resources/Test.arff"));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(new ClassPathResource("Test.arff").getFile()));
             writer.write(labeled.toString());
             writer.newLine();
             writer.flush();

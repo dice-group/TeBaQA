@@ -392,6 +392,29 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
+    public void testExtractResourcesOnlyUsesSimiliarEntitiesToQuestionWords() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "ASK WHERE { " +
+                "        res:Breaking_Bad dbo:numberOfEpisodes ?x . " +
+                "        res:Game_of_Thrones dbo:numberOfEpisodes ?y . " +
+                "        FILTER (?y > ?x) " +
+                "}";
+        String question = "Are there any castles in the United States?";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertTrue(!actual.contains("http://dbpedia.org/resource/Are"));
+        assertTrue(!actual.contains("http://dbpedia.org/resource/E85_in_the_United_States"));
+        assertTrue(!actual.contains("http://dbpedia.org/resource/Zen_in_the_United_States"));
+        assertTrue(!actual.contains("http://dbpedia.org/resource/DDT_in_the_United_States"));
+        assertTrue(!actual.contains("http://dbpedia.org/ontology/Earthquake"));
+    }
+
+    @Test
     public void testExtractResourcesDetectsOntology() {
         String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
                 "PREFIX res: <http://dbpedia.org/resource/> " +
@@ -1091,7 +1114,6 @@ public class QueryMappingFactoryTest {
 
         Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/ontology/officialLanguage"));
-        assertTrue(actual.contains("http://dbpedia.org/ontology/otherLanguage"));
         assertTrue(!actual.contains("http://dbpedia.org/ontology/ProgrammingLanguage"));
         assertTrue(!actual.contains("http://dbpedia.org/ontology/languageCode"));
         assertTrue(!actual.contains("http://dbpedia.org/ontology/namedByLanguage"));
@@ -1252,11 +1274,12 @@ public class QueryMappingFactoryTest {
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
-        SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(actualQueries.get(0));
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(actualQueries.get(0));
 
         assertTrue(actualQueries.size() == 1);
-        assertTrue(sparqlResultSet.getResultSet().size() == 1);
-        assertTrue(sparqlResultSet.getResultSet().get(0).equals("http://dbpedia.org/resource/Time_in_Chile"));
+        assertTrue(sparqlResultSets.size() == 1);
+        assertTrue(sparqlResultSets.get(0).getResultSet().size() == 1);
+        assertTrue(sparqlResultSets.get(0).getResultSet().get(0).equals("http://dbpedia.org/resource/Time_in_Chile"));
     }
 
     @Test

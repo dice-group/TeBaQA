@@ -32,10 +32,11 @@ public class QueryIsomorphism {
     private List<Cluster> clusters;
 
     QueryIsomorphism(HashMap<String, String> queries) {
+        log.debug("Generating SPARQL Query graphs...");
         BiMap<String, String> inverseQueryMap = HashBiMap.create(queries).inverse();
         clusters = new ArrayList<>(new ArrayList<>());
-        HashMap<Graph, Integer> graphs = new HashMap<Graph, Integer>();
-        HashMap<String, List<String>> graphsWithQuestion = new HashMap<String, List<String>>();
+        HashMap<Graph, Integer> graphs = new HashMap<>();
+        HashMap<String, List<String>> graphsWithQuestion = new HashMap<>();
         for (String s : queries.keySet()) {
             //build the graph associated to the query
             final Graph g = GraphFactory.createDefaultGraph();
@@ -51,7 +52,7 @@ public class QueryIsomorphism {
                 ElementWalker.walk(query.getQueryPattern(), new ElementVisitorBase() {
                     public void visit(ElementPathBlock el) {
                         PathBlock path = el.getPattern();
-                        HashMap<Node, Node> dict = new HashMap<Node, Node>();
+                        HashMap<Node, Node> dict = new HashMap<>();
                         int i = 1;
                         for (TriplePath t : path.getList()) {
                             Node s = t.getSubject();
@@ -84,7 +85,7 @@ public class QueryIsomorphism {
                 }
                 if (!present) {
                     graphs.put(g, 1);
-                    List<String> currGraph = new ArrayList<String>();
+                    List<String> currGraph = new ArrayList<>();
                     currGraph.add(queries.get(s));
                     graphsWithQuestion.put(g.toString(), currGraph);
                 }
@@ -94,16 +95,14 @@ public class QueryIsomorphism {
 
         }
         //look at some properties
-        int i = 0;
-        int j = 0;
-        for (Graph g : graphs.keySet()) {
-            i += graphs.get(g);
-            if (graphs.get(g) > 10) {
-                j += graphs.get(g);
-                System.out.println(g.toString());
-                System.out.println(graphs.get(g));
-            }
-        }
+        //int i = 0;
+        //int j = 0;
+        //for (Graph g : graphs.keySet()) {
+        //    i += graphs.get(g);
+        //    if (graphs.get(g) > 10) {
+        //        j += graphs.get(g);
+        //    }
+        //}
         //uncomment these lines to for debugging
         //System.out.print(i + "\n");
         //System.out.print(j);
