@@ -13,10 +13,15 @@ public class ExtendedQALDAnswer {
     public ExtendedQALDAnswer(String question, AnswerToQuestion answer, String lang) {
         JsonObjectBuilder resultBindings = Json.createObjectBuilder();
         Set<String> answers = answer.getAnswer();
-        answers.forEach(a -> resultBindings.add("bindings", Json.createArrayBuilder().add(Json.createObjectBuilder()
+        answers.forEach(a -> {
+            if (!a.isEmpty() && a.startsWith("'") && a.contains("'@")) {
+                a = a.substring(0, a.lastIndexOf("'@") + 1);
+            }
+            resultBindings.add("bindings", Json.createArrayBuilder().add(Json.createObjectBuilder()
                 .add("x", Json.createObjectBuilder()
                         .add("type", answer.getAnswerType())
-                        .add("value", a)))));
+                        .add("value", a))));
+        });
         JsonObjectBuilder questions = Json.createObjectBuilder()
                 .add("questions", Json.createArrayBuilder().add(Json.createObjectBuilder()
                         .add("question", Json.createObjectBuilder()

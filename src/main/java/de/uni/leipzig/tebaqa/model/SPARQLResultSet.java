@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class SPARQLResultSet {
-    public static int BOOLEAN_ANSWER_TYPE = 0;
-    public static int SINGLE_RESOURCE_TYPE = 2;
     public static int UNKNOWN_ANSWER_TYPE = -1;
+    public static int BOOLEAN_ANSWER_TYPE = 0;
     public static int LIST_OF_RESOURCES_ANSWER_TYPE = 1;
+    public static int SINGLE_RESOURCE_TYPE = 2;
     public static int NUMBER_ANSWER_TYPE = 3;
     public static int DATE_ANSWER_TYPE = 4;
     public static int STRING_ANSWER_TYPE = 5;

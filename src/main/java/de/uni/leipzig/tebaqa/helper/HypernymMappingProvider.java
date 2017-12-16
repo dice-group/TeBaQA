@@ -12,35 +12,35 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public class OntologyMappingProvider {
+public class HypernymMappingProvider {
 
-    private static Map<String, List<String>> ontologyMapping;
+    private static Map<String, List<String>> hypernymMapping;
     private static Logger log = Logger.getLogger(PipelineController.class);
 
 
     //do not instantiate
-    private OntologyMappingProvider() {
+    private HypernymMappingProvider() {
     }
 
-    public static Map<String, List<String>> getOntologyMapping() {
-        if (null == ontologyMapping) {
-            log.info("Load ontology mapping...");
+    public static Map<String, List<String>> getHypernymMapping() {
+        if (null == hypernymMapping) {
+            log.info("Load hypernym mapping...");
             try {
-                ontologyMapping = loadOntologyMapping();
+                hypernymMapping = loadHypernymMappings();
             } catch (IOException e) {
-                log.error("Unable to load ontology mapping from file: ontology-mappings.properties!", e);
+                log.error("Unable to load ontology mapping from file: hypernyms.properties!", e);
             }
         }
-        return ontologyMapping;
+        return hypernymMapping;
     }
 
-    private static Map<String, List<String>> loadOntologyMapping() throws IOException {
+    private static Map<String, List<String>> loadHypernymMappings() throws IOException {
         Map<String, List<String>> mapping = new HashMap<>();
         Properties properties = new Properties();
-        properties.load(new FileInputStream(new ClassPathResource("ontology-mappings.properties").getFile()));
+        properties.load(new FileInputStream(new ClassPathResource("hypernyms.properties").getFile()));
 
         for (String key : properties.stringPropertyNames()) {
-            mapping.put(key, Arrays.asList(properties.get(key).toString().split(",")));
+            mapping.put(key, Arrays.asList(properties.get(key).toString().split(";")));
         }
         return mapping;
     }
