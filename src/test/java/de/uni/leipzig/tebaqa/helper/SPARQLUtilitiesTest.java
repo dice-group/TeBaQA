@@ -1,10 +1,12 @@
 package de.uni.leipzig.tebaqa.helper;
 
-import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SPARQLUtilitiesTest {
     @Test
@@ -114,32 +116,50 @@ public class SPARQLUtilitiesTest {
 
     @Test
     public void testResultSetTypeSingleResource() {
-        SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/routeStart> <http://dbpedia.org/resource/Piccadilly>. } ");
-        assertEquals(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, sparqlResultSet.getType());
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/routeStart> <http://dbpedia.org/resource/Piccadilly>. } ");
+        assertTrue(sparqlResultSets.size() == 1);
+        SPARQLResultSet  sparqlResultSet = sparqlResultSets.get(0);
+        assertEquals(SPARQLResultSet.SINGLE_RESOURCE_TYPE, sparqlResultSet.getType());
     }
 
     @Test
     public void testResultSetTypeNumber() {
-        SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("SELECT (COUNT(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . }");
-        assertEquals(SemanticAnalysisHelper.NUMBER_ANSWER_TYPE, sparqlResultSet.getType());
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery("SELECT (COUNT(DISTINCT ?x) as ?c) WHERE {  <http://dbpedia.org/resource/Turkmenistan> <http://dbpedia.org/ontology/language> ?x . }");
+        assertTrue(sparqlResultSets.size() == 1);
+        SPARQLResultSet  sparqlResultSet = sparqlResultSets.get(0);
+        assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, sparqlResultSet.getType());
+    }
+
+    @Test
+    public void testResultSetTypeNumberWithExponentialNumber() {
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery("PREFIX dbo: <http://dbpedia.org/ontology/> PREFIX dbr: <http://dbpedia.org/resource/> SELECT ?tarea WHERE { dbr:North_Rhine-Westphalia dbo:areaTotal ?tarea }");
+        assertTrue(sparqlResultSets.size() == 1);
+        SPARQLResultSet  sparqlResultSet = sparqlResultSets.get(0);
+        assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, sparqlResultSet.getType());
     }
 
     @Test
     public void testResultSetTypeList() {
-        SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE {  ?x <http://dbpedia.org/ontology/director> <http://dbpedia.org/resource/William_Shatner> .  ?x <http://dbpedia.org/ontology/starring> ?uri . } ");
-        assertEquals(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, sparqlResultSet.getType());
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE {  ?x <http://dbpedia.org/ontology/director> <http://dbpedia.org/resource/William_Shatner> .  ?x <http://dbpedia.org/ontology/starring> ?uri . } ");
+        SPARQLResultSet  sparqlResultSet = sparqlResultSets.get(0);
+        assertTrue(sparqlResultSets.size() == 1);
+        assertEquals(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE, sparqlResultSet.getType());
     }
 
     @Test
     public void testResultSetTypeBoolean() {
-        SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("ASK WHERE { <http://dbpedia.org/resource/Neymar> <http://dbpedia.org/ontology/team> <http://dbpedia.org/resource/Real_Madrid_C.F.> . }");
-        assertEquals(SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE, sparqlResultSet.getType());
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery("ASK WHERE { <http://dbpedia.org/resource/Neymar> <http://dbpedia.org/ontology/team> <http://dbpedia.org/resource/Real_Madrid_C.F.> . }");
+        SPARQLResultSet  sparqlResultSet = sparqlResultSets.get(0);
+        assertTrue(sparqlResultSets.size() == 1);
+        assertEquals(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, sparqlResultSet.getType());
     }
 
     @Test
     public void testResultSetTypeUnknown() {
-        SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE {  ?x <http://dbpedia.org/ontology/fooBar> <http://dbpedia.org/resource/William_Shatner> .  ?x <http://dbpedia.org/ontology/starring> ?uri . } ");
-        assertEquals(SemanticAnalysisHelper.UNKNOWN_ANSWER_TYPE, sparqlResultSet.getType());
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE {  ?x <http://dbpedia.org/ontology/fooBar> <http://dbpedia.org/resource/William_Shatner> .  ?x <http://dbpedia.org/ontology/starring> ?uri . } ");
+        SPARQLResultSet  sparqlResultSet = sparqlResultSets.get(0);
+        assertTrue(sparqlResultSets.size() == 1);
+        assertEquals(SPARQLResultSet.UNKNOWN_ANSWER_TYPE, sparqlResultSet.getType());
     }
 
     @Test

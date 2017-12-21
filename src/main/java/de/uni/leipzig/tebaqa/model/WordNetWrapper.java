@@ -13,6 +13,7 @@ import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.CoreMap;
 import org.apache.log4j.Logger;
+import org.springframework.core.io.ClassPathResource;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -52,9 +53,8 @@ public class WordNetWrapper {
     }
 
     private static void initDictionary() throws Exception {
-        String wordnetPath = "./src/main/resources/dict/";
         if (dictionary == null) {
-            dictionary = new Dictionary(new URL("file", null, wordnetPath));
+            dictionary = new Dictionary(new ClassPathResource("dict/").getFile());
             dictionary.open();
         }
     }

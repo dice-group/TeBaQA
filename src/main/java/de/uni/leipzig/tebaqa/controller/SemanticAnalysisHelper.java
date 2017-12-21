@@ -1,19 +1,15 @@
 package de.uni.leipzig.tebaqa.controller;
 
+import com.google.common.collect.Sets;
 import com.hp.hpl.jena.rdf.model.RDFNode;
-import de.tudarmstadt.ukp.jwktl.api.IWiktionaryEdition;
-import de.tudarmstadt.ukp.jwktl.api.IWiktionaryEntry;
-import de.tudarmstadt.ukp.jwktl.api.IWiktionaryPage;
-import de.tudarmstadt.ukp.jwktl.api.IWiktionaryRelation;
-import de.tudarmstadt.ukp.jwktl.api.RelationType;
 import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
 import de.uni.leipzig.tebaqa.helper.Utilities;
-import de.uni.leipzig.tebaqa.helper.WiktionaryProvider;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
+import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.IndexedWord;
@@ -25,33 +21,35 @@ import edu.stanford.nlp.util.CoreMap;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
-import org.assertj.core.util.Sets;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.Classifier;
 import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
 
+import java.io.FileInputStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static de.uni.leipzig.tebaqa.helper.HypernymMappingProvider.getHypernymMapping;
+import static de.uni.leipzig.tebaqa.helper.QueryMappingFactory.NON_WORD_CHARACTERS_REGEX;
 import static de.uni.leipzig.tebaqa.helper.Utilities.ARGUMENTS_BETWEEN_SPACES;
 
 public class SemanticAnalysisHelper {
     private static Logger log = Logger.getLogger(SemanticAnalysisHelper.class);
     private StanfordCoreNLP pipeline;
+    private static DateTimeFormatter dateTimeFormatterLong = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static DateTimeFormatter dateTimeFormatterShortMonth = DateTimeFormatter.ofPattern("yyyy-M-dd");
+    private static DateTimeFormatter dateTimeFormatterShortDay = DateTimeFormatter.ofPattern("yyyy-MM-d");
 
-    public static int UNKNOWN_ANSWER_TYPE = -1;
-    public static int BOOLEAN_ANSWER_TYPE = 0;
-    public static int LIST_OF_RESOURCES_ANSWER_TYPE = 1;
-    public static int SINGLE_RESOURCE_TYPE = 2;
-    public static int NUMBER_ANSWER_TYPE = 3;
-    public static int DATE_ANSWER_TYPE = 4;
-    public static int STRING_ANSWER_TYPE = 5;
-    public static int MIXED_LIST_ANSWER_TYPE = 6;
 
     public SemanticAnalysisHelper() {
         this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
@@ -59,8 +57,8 @@ public class SemanticAnalysisHelper {
 
     public static int determineQueryType(String q) {
         List<String> selectIndicatorsList = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which".split("\\|"));
-        List<String> askIndicatorsList = Arrays.asList("is|are|did|was|does".split("\\|"));
-        log.debug("String question: " + q);
+        List<String> askIndicatorsList = Arrays.asList("is|are|did|was|does|can".split("\\|"));
+        //log.debug("String question: " + q);
         String[] split = q.split("\\s+");
         List<String> firstThreeWords = new ArrayList<>();
         if (split.length > 3) {
@@ -87,17 +85,17 @@ public class SemanticAnalysisHelper {
         Annotation annotation = new Annotation(text);
         pipeline.annotate(annotation);
 
-        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
-        for (CoreMap sentence : sentences) {
-            SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
-            if (dependencyGraph == null) {
-                dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
-            }
-            //dependencyGraph.prettyPrint();
-            //String compactGraph = dependencyGraph.toCompactString();
+        //List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+        //for (CoreMap sentence : sentences) {
+        //SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
+        //if (dependencyGraph == null) {
+        //dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
+        //}
+        //dependencyGraph.prettyPrint();
+        //String compactGraph = dependencyGraph.toCompactString();
 
-            //log.info(compactGraph);
-        }
+        //log.info(compactGraph);
+        //}
 
 
         //pipeline.prettyPrint(annotation, System.out);
@@ -221,6 +219,9 @@ public class SemanticAnalysisHelper {
     }
 
     public static Map<String, String> getLemmas(String q) {
+        if (q.isEmpty()) {
+            return new HashMap<>();
+        }
         Map<String, String> lemmas = new HashMap<>();
         Annotation annotation = new Annotation(q);
         StanfordCoreNLP pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
@@ -238,6 +239,9 @@ public class SemanticAnalysisHelper {
     }
 
     public static Map<String, String> getPOS(String q) {
+        if (q.isEmpty()) {
+            return new HashMap<>();
+        }
         Map<String, String> pos = new HashMap<>();
         Annotation annotation = new Annotation(q);
         StanfordCoreNLP pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
@@ -262,7 +266,7 @@ public class SemanticAnalysisHelper {
      */
     public static boolean hasAscAggregation(String sentence) {
         String[] ascIndicators = new String[]{"first", "oldest", "smallest", "lowest", "shortest", "least"};
-        String[] words = sentence.split("\\W+");
+        String[] words = sentence.split(NON_WORD_CHARACTERS_REGEX);
         return Arrays.stream(words).anyMatch(Arrays.asList(ascIndicators)::contains);
     }
 
@@ -274,12 +278,12 @@ public class SemanticAnalysisHelper {
      */
     public static boolean hasDescAggregation(String sentence) {
         String[] descIndicators = new String[]{"largest", "last", "highest", "most", "biggest", "youngest", "longest", "tallest"};
-        String[] words = sentence.split("\\W+");
+        String[] words = sentence.split(NON_WORD_CHARACTERS_REGEX);
         return Arrays.stream(words).anyMatch(Arrays.asList(descIndicators)::contains);
     }
 
 
-    public static boolean hasCountAggregation(String sentence) {
+    private static boolean hasCountAggregation(String sentence) {
         return sentence.toLowerCase().trim().startsWith("how many") || sentence.toLowerCase().trim().startsWith("how much");
     }
 
@@ -290,7 +294,7 @@ public class SemanticAnalysisHelper {
      * @param graphList A list containing every possible graph pattern.
      * @return The predicted graph pattern.
      */
-    String classifyInstance(CustomQuestion question, HashSet<String> graphList) {
+    String classifyInstance(String question, HashSet<String> graphList) {
         ArrayList<Attribute> attributes = new ArrayList<>();
 
         List<String> filter = new ArrayList<>();
@@ -331,7 +335,7 @@ public class SemanticAnalysisHelper {
         Analyzer analyzer = new Analyzer(attributes);
         Instances dataset = new Instances("testdata", analyzer.fvWekaAttributes, 1);
         dataset.setClassIndex(dataset.numAttributes() - 1);
-        Instance instance = analyzer.analyze(question.getQuestionText());
+        Instance instance = analyzer.analyze(question);
         instance.setDataset(dataset);
         instance.setMissing(classAttribute);
         String[] classes = new String[graphList.size()];
@@ -344,7 +348,7 @@ public class SemanticAnalysisHelper {
 
         String predictedGraph = "";
         try {
-            Classifier cls = (Classifier) SerializationHelper.read("./src/main/resources/randomCommittee.model");
+            Classifier cls = (Classifier) SerializationHelper.read(new FileInputStream(new ClassPathResource("randomCommittee.model").getFile()));
             double predictedClass = cls.classifyInstance(instance);
 
             predictedGraph = instance.classAttribute().value((int) predictedClass);
@@ -354,11 +358,11 @@ public class SemanticAnalysisHelper {
         } catch (Exception e) {
             log.error("Unable to load weka model file!", e);
         }
-        if (predictedGraph.equals(question.getGraph())) {
-            //log.info("Predicted class is correct.");
-        } else {
-            //log.info("Predicted class is incorrect! Predicted: " + predictedGraph + "; actual: " + question.getGraph());
-        }
+        // if (predictedGraph.equals(question.getGraph())) {
+        //log.info("Predicted class is correct.");
+        //} else {
+        //log.info("Predicted class is incorrect! Predicted: " + predictedGraph + "; actual: " + question.getGraph());
+        //}
         return predictedGraph;
     }
 
@@ -409,9 +413,7 @@ public class SemanticAnalysisHelper {
 
     public List<IndexedWord> getDependencySequence(SemanticGraph semanticGraph) {
         IndexedWord firstRoot = semanticGraph.getFirstRoot();
-        List<IndexedWord> sequence = getDependenciesFromEdge(firstRoot, semanticGraph);
-        log.debug(sequence);
-        return sequence;
+        return getDependenciesFromEdge(firstRoot, semanticGraph);
     }
 
     private static List<IndexedWord> getDependenciesFromEdge(IndexedWord root, SemanticGraph semanticGraph) {
@@ -451,54 +453,44 @@ public class SemanticAnalysisHelper {
         Matcher m = pattern.matcher(question);
         if (m.find()) {
             if (m.group().toLowerCase().matches("is|are|did|was|does")) {
-                return BOOLEAN_ANSWER_TYPE;
+                return SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
             }
         }
-        if (question.toLowerCase().startsWith("how many") || question.toLowerCase().startsWith("how much")) {
-            return NUMBER_ANSWER_TYPE;
+        if (question.toLowerCase().startsWith("how many") || question.toLowerCase().startsWith("how much")
+                || question.toLowerCase().startsWith("how big")) {
+            return SPARQLResultSet.NUMBER_ANSWER_TYPE;
+        }
+        if (question.toLowerCase().startsWith("how") && sequence.size() >= 2) {
+            String posOfSecondWord = sequence.get(1).get(CoreAnnotations.PartOfSpeechAnnotation.class);
+            //For cases like how big, how small, ...
+            if (posOfSecondWord.startsWith("JJ")) {
+                return SPARQLResultSet.NUMBER_ANSWER_TYPE;
+            }
         }
         if (question.toLowerCase().startsWith("when")) {
-            return DATE_ANSWER_TYPE;
+            return SPARQLResultSet.DATE_ANSWER_TYPE;
         }
         for (IndexedWord word : sequence) {
             String posTag = word.get(CoreAnnotations.PartOfSpeechAnnotation.class);
             if (posTag.equalsIgnoreCase("NNS") || posTag.equalsIgnoreCase("NNPS")) {
-                return LIST_OF_RESOURCES_ANSWER_TYPE;
+                return SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
             } else if (posTag.equalsIgnoreCase("NN") || posTag.equalsIgnoreCase("NNP")) {
-                return SINGLE_RESOURCE_TYPE;
+                return SPARQLResultSet.SINGLE_RESOURCE_TYPE;
             }
         }
-        return UNKNOWN_ANSWER_TYPE;
+        return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
     }
 
-    Set<String> getBestAnswer(List<Map<Integer, List<String>>> results, StringBuilder logMessage, int expectedAnswerType, boolean forceResult) {
+    Set<String> getBestAnswer(List<Map<Integer, List<String>>> results, int expectedAnswerType, boolean forceResult) {
         List<Map<Integer, List<String>>> suitableAnswers = new ArrayList<>();
         List<String> bestAnswer = new ArrayList<>();
 
-        if (expectedAnswerType == SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE) {
+        if (expectedAnswerType == SPARQLResultSet.SINGLE_RESOURCE_TYPE) {
             //A list might contain the correct answer too
-            results.forEach(result -> {
-                if (result.containsKey(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE)) {
-                    List<String> resultWithMatchingType = result.get(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE);
-                    if (!resultWithMatchingType.isEmpty()) {
-                        Map<Integer, List<String>> answer = new HashMap<>();
-                        answer.put(SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE, resultWithMatchingType);
-                        suitableAnswers.add(answer);
-                    }
-                }
-            });
-        } else if (expectedAnswerType == SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE) {
+            suitableAnswers.addAll(getPossibleAnswer(results, SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE));
+        } else if (expectedAnswerType == SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE) {
             //A single answer might be a partly correct answer
-            results.forEach(result -> {
-                if (result.containsKey(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE)) {
-                    List<String> resultWithMatchingType = result.get(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE);
-                    if (!resultWithMatchingType.isEmpty()) {
-                        Map<Integer, List<String>> answer = new HashMap<>();
-                        answer.put(SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE, resultWithMatchingType);
-                        suitableAnswers.add(answer);
-                    }
-                }
-            });
+            suitableAnswers.addAll(getPossibleAnswer(results, SPARQLResultSet.SINGLE_RESOURCE_TYPE));
         }
 
         results.forEach(result -> {
@@ -514,11 +506,11 @@ public class SemanticAnalysisHelper {
         if (suitableAnswers.size() == 1) {
             Map<Integer, List<String>> answer = suitableAnswers.get(0);
             Optional<List<String>> first = answer.values().stream().findFirst();
-            if (first.isPresent()) {
-                return Sets.newHashSet(first.get());
-            } else {
-                return new HashSet<>();
+            Set<String> suitableAnswer = first.<Set<String>>map(Sets::newHashSet).orElseGet(HashSet::new);
+            if (expectedAnswerType == SPARQLResultSet.DATE_ANSWER_TYPE && suitableAnswer.size() > 1) {
+                return Sets.newHashSet(getDateAnswer(suitableAnswer).values());
             }
+            return first.<Set<String>>map(Sets::newHashSet).orElseGet(HashSet::new);
         } else if (suitableAnswers.isEmpty() && forceResult) {
             //If there is no suitable result fallback to the other results
             List<String> finalBestAnswer = bestAnswer;
@@ -534,16 +526,13 @@ public class SemanticAnalysisHelper {
                     .map(answer -> answer.getOrDefault(expectedAnswerType, new ArrayList<>()))
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
-            if (expectedAnswerType == SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE) {
-                int trueCount = Math.toIntExact(answersWithMatchingType.stream().filter(Boolean::valueOf).count());
-                int falseCount = Math.toIntExact(answersWithMatchingType.stream().filter(a -> !Boolean.valueOf(a)).count());
-                Set<String> set = new HashSet<>();
-                if (trueCount >= falseCount) {
-                    set.add("true");
-                } else {
-                    set.add("false");
+            if (expectedAnswerType == SPARQLResultSet.BOOLEAN_ANSWER_TYPE) {
+                return getMostFrequentBooleanAnswer(answersWithMatchingType);
+            } else if (expectedAnswerType == SPARQLResultSet.DATE_ANSWER_TYPE) {
+                Optional<String> max = answersWithMatchingType.stream().max(Comparator.comparingInt(String::length));
+                if (max.isPresent()) {
+                    bestAnswer.add(max.get());
                 }
-                return set;
             } else if (answersWithMatchingType.size() != 0) {
                 return Sets.newHashSet(answersWithMatchingType);
             } else {
@@ -553,6 +542,74 @@ public class SemanticAnalysisHelper {
             }
         }
         return Sets.newHashSet(bestAnswer);
+    }
+
+    @NotNull
+    private Map<LocalDate, String> getDateAnswer(Set<String> suitableAnswer) {
+        Map<LocalDate, String> uniqueDates = new HashMap<>();
+        suitableAnswer.forEach(s -> {
+            if (s.contains("-")) {
+                LocalDate dateTime = null;
+                try {
+                    dateTime = LocalDate.parse(s, dateTimeFormatterLong);
+                } catch (DateTimeParseException ignored) {
+                }
+                try {
+                    dateTime = LocalDate.parse(s, dateTimeFormatterShortDay);
+                } catch (DateTimeParseException ignored) {
+                }
+                try {
+                    dateTime = LocalDate.parse(s, dateTimeFormatterShortMonth);
+                } catch (DateTimeParseException ignored) {
+                }
+                if (dateTime != null && !uniqueDates.containsKey(dateTime)) {
+                    uniqueDates.put(dateTime, s);
+                } else if (dateTime != null && uniqueDates.containsKey(dateTime)) {
+                    String s1 = uniqueDates.get(dateTime);
+                    //Update the date if the dates are equivalent and the new date is longer e.g. 1616-04-23 instead of 1616-4-23
+                    //TODO What happens if a year is requested?
+                    if (s1.length() < s.length()) {
+                        uniqueDates.put(dateTime, s);
+                    }
+                }
+            }
+        });
+        return uniqueDates;
+    }
+
+    @NotNull
+    private Set<String> getMostFrequentBooleanAnswer(List<String> answersWithMatchingType) {
+        int trueCount = Math.toIntExact(answersWithMatchingType.stream().filter(Boolean::valueOf).count());
+        int falseCount = Math.toIntExact(answersWithMatchingType.stream().filter(a -> !Boolean.valueOf(a)).count());
+        Set<String> set = new HashSet<>();
+        if (trueCount >= falseCount) {
+            set.add("true");
+        } else {
+            set.add("false");
+        }
+        return set;
+    }
+
+    private List<Map<Integer, List<String>>> getPossibleAnswer(List<Map<Integer, List<String>>> results, int singleResourceType) {
+        List<Map<Integer, List<String>>> a = new ArrayList<>();
+        results.forEach(result -> {
+            if (result.containsKey(singleResourceType)) {
+                List<String> resultWithMatchingType = result.get(singleResourceType);
+                if (!resultWithMatchingType.isEmpty()) {
+                    Map<Integer, List<String>> answer = new HashMap<>();
+                    answer.put(singleResourceType, resultWithMatchingType);
+                    a.add(answer);
+                }
+            } else if (result.containsKey(SPARQLResultSet.STRING_ANSWER_TYPE)) {
+                List<String> stringAnswers = result.get(SPARQLResultSet.STRING_ANSWER_TYPE);
+                if (!stringAnswers.isEmpty()) {
+                    Map<Integer, List<String>> answer = new HashMap<>();
+                    answer.put(SPARQLResultSet.STRING_ANSWER_TYPE, stringAnswers);
+                    a.add(answer);
+                }
+            }
+        });
+        return a;
     }
 
     private Set<String> getBestAnswerByPageRank(List<List<String>> suitableAnswers) {
@@ -573,16 +630,7 @@ public class SemanticAnalysisHelper {
     }
 
     public static List<String> getHypernymsFromWiktionary(String s) {
-        List<String> hypernyms = new ArrayList<>();
-        IWiktionaryEdition wiktionaryInstance = WiktionaryProvider.getWiktionaryInstance();
-        IWiktionaryPage page = wiktionaryInstance.getPageForWord(s);
-        if (page != null) {
-            for (IWiktionaryEntry entry : page.getEntries()) {
-                for (IWiktionaryRelation relation : entry.getRelations(RelationType.HYPERNYM)) {
-                    hypernyms.add(relation.getTarget());
-                }
-            }
-        }
-        return hypernyms;
+        Map<String, List<String>> hypernymMapping = getHypernymMapping();
+        return hypernymMapping.getOrDefault(s, new ArrayList<>());
     }
 }

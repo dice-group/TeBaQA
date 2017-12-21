@@ -1,7 +1,8 @@
 package de.uni.leipzig.tebaqa.helper;
 
-import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
+import com.google.common.collect.Lists;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryException;
@@ -16,7 +17,6 @@ import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.google.common.collect.Lists.newArrayList;
+import java.util.stream.Collectors;
 
 public class SPARQLUtilities {
     private static Pattern SPLIT_TRIPLE_PATTERN = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
@@ -56,20 +55,21 @@ public class SPARQLUtilities {
         }
     }
 
-    public static SPARQLResultSet executeSPARQLQuery(String sparlQuery) {
-        int resultType = SemanticAnalysisHelper.UNKNOWN_ANSWER_TYPE;
+    public static List<SPARQLResultSet> executeSPARQLQuery(String sparlQuery) {
+        List<SPARQLResultSet> results = new ArrayList<>();
+        int resultType;
         List<String> result = new ArrayList<>();
         ParameterizedSparqlString qs = new ParameterizedSparqlString(sparlQuery);
         if (sparlQuery.contains("<^")) {
             log.error("ERROR: Invalid SPARQL Query: " + sparlQuery);
-            return new SPARQLResultSet();
+            return results;
         } else {
             Query query;
             try {
                 query = qs.asQuery();
             } catch (QueryParseException e) {
                 log.error("QueryParseException: Unable to parse query: " + qs, e);
-                return new SPARQLResultSet();
+                return results;
             }
             QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
             qe.setTimeout(20000, 20000);
@@ -82,7 +82,7 @@ public class SPARQLUtilities {
                     rs = qe.execSelect();
                 } catch (QueryExceptionHTTP e) {
                     log.error("HTTP Exception while executing SPARQL query: " + sparlQuery, e);
-                    return new SPARQLResultSet();
+                    return results;
                 }
                 while (rs.hasNext()) {
                     QuerySolution s = rs.nextSolution();
@@ -96,37 +96,71 @@ public class SPARQLUtilities {
                         //message = String.valueOf(s.getResource(resultVariableName));
                     } catch (ClassCastException e) {
                         log.error("Unable to parse response! SPARQL: " + sparlQuery, e);
-                        return new SPARQLResultSet();
+                        return results;
                     }
                     //log.info(String.join("; ", message));
                     //result.add(message);
                 }
                 if (result.size() > 1) {
-                    boolean listIsMixed = result.stream().anyMatch(s -> !s.startsWith("http://dbpedia.org/resource/"));
+                    boolean listIsMixed = result.stream().anyMatch(s -> !isResource(s));
                     if (listIsMixed) {
-                        resultType = SemanticAnalysisHelper.MIXED_LIST_ANSWER_TYPE;
+                        Set<String> dates = result.stream().filter(SPARQLUtilities::isDateFromXMLSchema).collect(Collectors.toSet());
+                        if (dates.size() > 0) {
+                            SPARQLResultSet dateResult = new SPARQLResultSet(Lists.newArrayList(dates), SPARQLResultSet.DATE_ANSWER_TYPE);
+                            results.add(dateResult);
+                        }
+
+                        Set<String> numbers = result.stream().filter(SPARQLUtilities::isNumberFromXMLSchema).collect(Collectors.toSet());
+                        if (numbers.size() > 0) {
+                            SPARQLResultSet numberResult = new SPARQLResultSet(Lists.newArrayList(numbers), SPARQLResultSet.NUMBER_ANSWER_TYPE);
+                            results.add(numberResult);
+                        }
+
+                        Set<String> resources = result.stream().filter(SPARQLUtilities::isResource).collect(Collectors.toSet());
+                        if (resources.size() > 0) {
+                            SPARQLResultSet resourceResult;
+                            if (resources.size() > 1) {
+                                resourceResult = new SPARQLResultSet(Lists.newArrayList(resources), SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE);
+                            } else {
+                                resourceResult = new SPARQLResultSet(Lists.newArrayList(resources), SPARQLResultSet.SINGLE_RESOURCE_TYPE);
+                            }
+                            results.add(resourceResult);
+                        }
+
+                        Set<String> strings = result.stream().filter(s -> !isResource(s) && !isDateFromXMLSchema(s) && !isResource(s) || isStringFromXMLSchema(s)).collect(Collectors.toSet());
+                        if (strings.size() > 0) {
+                            SPARQLResultSet stringResult = new SPARQLResultSet(Lists.newArrayList(strings), SPARQLResultSet.STRING_ANSWER_TYPE);
+                            results.add(stringResult);
+                        }
                     } else {
-                        resultType = SemanticAnalysisHelper.LIST_OF_RESOURCES_ANSWER_TYPE;
+                        resultType = SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
+                        results.add(new SPARQLResultSet(result, resultType));
                     }
                 } else if (result.size() == 1) {
                     String s = result.get(0);
-                    if (s.endsWith("^^http://www.w3.org/2001/XMLSchema#integer") || s.endsWith("http://www.w3.org/2001/XMLSchema#positiveInteger")) {
-                        resultType = SemanticAnalysisHelper.NUMBER_ANSWER_TYPE;
-                    } else if (s.endsWith("^^http://www.w3.org/2001/XMLSchema#date")) {
-                        resultType = SemanticAnalysisHelper.DATE_ANSWER_TYPE;
-                    } else if (s.startsWith("http://dbpedia.org/resource/")) {
-                        resultType = SemanticAnalysisHelper.SINGLE_RESOURCE_TYPE;
+                    //Check for scientific numbers like 3.40841e+10
+                    if (isNumericOrScientific(s)) {
+                        resultType = SPARQLResultSet.NUMBER_ANSWER_TYPE;
+                    } else if (isNumberFromXMLSchema(s)) {
+                        resultType = SPARQLResultSet.NUMBER_ANSWER_TYPE;
+                    } else if (isDateFromXMLSchema(s)) {
+                        resultType = SPARQLResultSet.DATE_ANSWER_TYPE;
+                    } else if (isResource(s)) {
+                        resultType = SPARQLResultSet.SINGLE_RESOURCE_TYPE;
                     } else {
-                        resultType = SemanticAnalysisHelper.STRING_ANSWER_TYPE;
+                        resultType = SPARQLResultSet.STRING_ANSWER_TYPE;
                     }
+                    results.add(new SPARQLResultSet(result, resultType));
                 } else {
-                    resultType = SemanticAnalysisHelper.UNKNOWN_ANSWER_TYPE;
+                    resultType = SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
+                    results.add(new SPARQLResultSet(result, resultType));
                 }
             } else if (isAskType) {
                 try {
                     boolean rs = qe.execAsk();
                     result.add(String.valueOf(rs));
-                    resultType = SemanticAnalysisHelper.BOOLEAN_ANSWER_TYPE;
+                    resultType = SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
+                    results.add(new SPARQLResultSet(result, resultType));
                 } catch (Exception e) {
                     log.error("HTTP Exception while creating query: " + sparlQuery, e);
                     //throw e;
@@ -139,12 +173,52 @@ public class SPARQLUtilities {
         //if (!result.isEmpty()) {
         //log.info("Result: " + Strings.join(result, "; "));
         //}
-        return new SPARQLResultSet(result, resultType);
+        return results;
+    }
+
+    private static boolean isResource(String s) {
+        return s.startsWith("http://dbpedia.org/resource/");
+    }
+
+    private static boolean isNumericOrScientific(String s) {
+        return StringUtils.isNumeric(s) || (Character.isDigit(s.charAt(0))
+                && Character.isDigit(s.charAt(s.length() - 1)) && (s.toLowerCase().contains("e+") || s.toLowerCase().contains("e-")));
+    }
+
+    private static boolean isDateFromXMLSchema(String s) {
+        return s.endsWith("^^http://www.w3.org/2001/XMLSchema#date") || s.endsWith("^^http://www.w3.org/2001/XMLSchema#gYear");
+    }
+
+    private static boolean isStringFromXMLSchema(String s) {
+        return s.endsWith("^^http://www.w3.org/1999/02/22-rdf-syntax-ns#langString");
+    }
+
+    private static boolean isNumberFromXMLSchema(String s) {
+        return s.endsWith("^^http://www.w3.org/2001/XMLSchema#integer")
+                || s.endsWith("^^http://www.w3.org/2001/XMLSchema#positiveInteger")
+                || s.endsWith("^^http://www.w3.org/2001/XMLSchema#float")
+                || s.endsWith("^^http://www.w3.org/2001/XMLSchema#decimal")
+                || s.endsWith("^^http://www.w3.org/2001/XMLSchema#nonNegativeInteger")
+                || s.endsWith("^^http://www.w3.org/2001/XMLSchema#nonPositiveInteger")
+                || s.endsWith("^^http://www.w3.org/2001/XMLSchema#negativeInteger")
+                || s.endsWith("^^http://www.w3.org/2001/XMLSchema#int")
+                || s.endsWith("^^http://www.w3.org/2001/XMLSchema#short")
+                || s.endsWith("^^http://www.w3.org/2001/XMLSchema#long")
+                || s.endsWith("^^http://www.w3.org/2001/XMLSchema#double");
     }
 
     static boolean isDBpediaEntity(String s) {
-        List<String> result = executeSPARQLQuery(String.format("ASK { VALUES (?r) {(<%s>)} {?r ?p ?o} UNION {?s ?r ?o} UNION {?s ?p ?r} }", s)).getResultSet();
-        return result.size() == 1 && Boolean.valueOf(result.get(0));
+        if (s.contains("^^")) {
+            return false;
+        } else {
+            List<SPARQLResultSet> sparqlResultSets = executeSPARQLQuery(String.format("ASK { VALUES (?r) {(<%s>)} {?r ?p ?o} UNION {?s ?r ?o} UNION {?s ?p ?r} }", s));
+            if (sparqlResultSets.size() == 1) {
+                List<String> result = sparqlResultSets.get(0).getResultSet();
+                return result.size() == 1 && Boolean.valueOf(result.get(0));
+            } else {
+                return false;
+            }
+        }
     }
 
     /**
@@ -276,9 +350,10 @@ public class SPARQLUtilities {
      * @return The page rank of the resource.
      */
     public static Double getPageRank(String uri) {
-        if (uri.startsWith("http://dbpedia.org/resource/")) {
-            SPARQLResultSet sparqlResultSet = executeSPARQLQuery(String.format("PREFIX vrank:<http://purl.org/voc/vrank#> SELECT ?v FROM <http://people.aifb.kit.edu/ath/#DBpedia_PageRank> WHERE { <%s> vrank:hasRank/vrank:rankValue ?v. }", uri));
-            List<String> resultSet = sparqlResultSet.getResultSet();
+        if (isResource(uri)) {
+            List<SPARQLResultSet> sparqlResultSets = executeSPARQLQuery(String.format("PREFIX vrank:<http://purl.org/voc/vrank#> SELECT ?v FROM <http://people.aifb.kit.edu/ath/#DBpedia_PageRank> WHERE { <%s> vrank:hasRank/vrank:rankValue ?v. }", uri));
+            List<String> resultSet = new ArrayList<>();
+            sparqlResultSets.forEach(sparqlResultSet -> resultSet.addAll(sparqlResultSet.getResultSet()));
             if (resultSet.size() == 1) {
                 return Double.valueOf(resultSet.get(0).split("\\^")[0]);
             } else {
@@ -293,8 +368,9 @@ public class SPARQLUtilities {
         String[] split = uri.split("/");
         String entity = split[split.length - 1];
         if (uri.startsWith("http://dbpedia.org/ontology/") && Character.isUpperCase(entity.charAt(0))) {
-            SPARQLResultSet sparqlResultSet = executeSPARQLQuery(String.format("SELECT DISTINCT (COUNT(DISTINCT ?uri) as ?c) WHERE {  ?uri a <%s> . } ", uri));
-            List<String> resultSet = sparqlResultSet.getResultSet();
+            List<SPARQLResultSet> sparqlResultSets = executeSPARQLQuery(String.format("SELECT DISTINCT (COUNT(DISTINCT ?uri) as ?c) WHERE {  ?uri a <%s> . } ", uri));
+            List<String> resultSet = new ArrayList<>();
+            sparqlResultSets.forEach(sparqlResultSet -> resultSet.addAll(sparqlResultSet.getResultSet()));
             if (resultSet.size() == 1) {
                 return Double.valueOf(resultSet.get(0).split("\\^")[0]);
             } else {

@@ -19,65 +19,52 @@ import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.datastructure.Question;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
-import org.aksw.qa.commons.measure.AnswerBasedEvaluation;
 import org.apache.jena.query.QueryParseException;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static de.uni.leipzig.tebaqa.helper.OntologyMappingProvider.getOntologyMapping;
 import static java.util.Collections.emptyList;
 
 
 public class PipelineController {
 
-    private static Logger log = Logger.getLogger(PipelineController.class);
+    private static Logger log = Logger.getLogger(PipelineController.class.getName());
 
-    private List<Dataset> datasets = new ArrayList<>();
     private static SemanticAnalysisHelper semanticAnalysisHelper;
     private static boolean mockTemplates = false;
     private static boolean mockVariables = false;
-    private static boolean onlyDBO = false;
-    private static boolean useAggregation = true;
-    private static boolean useOnlyAggregation = false;
-    private static boolean useOnlyAnswerTypeResource = false;
+    private List<Dataset> trainDatasets = new ArrayList<>();
+    private List<Dataset> testDatasets = new ArrayList<>();
+    private Map<String, QueryTemplateMapping> mappings;
+    private HashSet<String> graphs = new HashSet<>();
 
 
-    public static void main(String args[]) {
+    public PipelineController(List<Dataset> trainDatasets, List<Dataset> testDatasets) {
         log.info("Configuring controller");
         log.info("Using mocked query templates: " + mockTemplates + " (default: false)");
         log.info("Using mocked query variables: " + mockVariables + " (default: false)");
-        log.info("Using only questions with onlyDBO=true: " + onlyDBO + " (default: false)");
-        log.info("Using questions with aggregations too: " + useAggregation + " (default: true)");
-        log.info("Using ONLY questions with aggregations: " + useOnlyAggregation + " (default: false)");
-        log.info("Using ONLY questions with answerType=resource: " + useOnlyAnswerTypeResource + " (default: false)");
         semanticAnalysisHelper = new SemanticAnalysisHelper();
+        getOntologyMapping();
+        trainDatasets.forEach(this::addTrainDataset);
+        testDatasets.forEach(this::addTestDataset);
 
-        PipelineController controller = new PipelineController();
-        controller.addDataset(Dataset.QALD7_Train_Multilingual);
-
-        log.info("Running controller");
-        controller.run();
-    }
-
-    private void addDatasets(Dataset[] values) {
-        datasets.addAll(Arrays.asList(values));
+        log.info("Starting controller...");
+        run();
     }
 
     private void run() {
-
         List<HAWKQuestion> questions = new ArrayList<>();
-        for (Dataset d : datasets) {
+        for (Dataset d : trainDatasets) {
             //Remove all questions without SPARQL query
             List<IQuestion> load = LoaderController.load(d);
             List<IQuestion> result = load.stream()
@@ -85,48 +72,58 @@ public class PipelineController {
                     .collect(Collectors.toList());
             questions.addAll(HAWKQuestionFactory.createInstances(result));
         }
-        HashMap<String, String> questionWithQuery = new HashMap<>();
+        HashMap<String, String> questionsWithQuery = new HashMap<>();
         for (HAWKQuestion q : questions) {
             //only use unique questions in case multiple datasets are used
             String questionText = q.getLanguageToQuestion().get("en");
-            if (!semanticAnalysisHelper.containsQuestionText(questionWithQuery, questionText)) {
-                questionWithQuery.put(q.getSparqlQuery(), questionText);
+            if (!semanticAnalysisHelper.containsQuestionText(questionsWithQuery, questionText)) {
+                questionsWithQuery.put(q.getSparqlQuery(), questionText);
             }
         }
+
+        log.info("Getting DBpedia properties from SPARQL endpoint...");
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+
+        log.info("Parsing DBpedia ontologies from file...");
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
 
         Map<String, String> idealQueryPatterns = new HashMap<>();
-        Map<String, String> idealQueries = new HashMap<>();
-        questionWithQuery.forEach((sparqlQuery, questionText) -> {
+        //Map<String, String> idealQueries = new HashMap<>();
+        log.info("Analysing queries from train dataset...");
+        questionsWithQuery.forEach((sparqlQuery, questionText) -> {
             String queryWithoutNS = SPARQLUtilities.resolveNamespaces(sparqlQuery);
             QueryMappingFactory queryMappingFactory = new QueryMappingFactory(questionText, queryWithoutNS, Lists.newArrayList(ontologyNodes), dBpediaProperties);
             String queryPattern = queryMappingFactory.getQueryPattern();
             idealQueryPatterns.put(questionText, queryPattern);
-            idealQueries.put(questionText, queryWithoutNS);
+            //idealQueries.put(questionText, queryWithoutNS);
         });
 
-        QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionWithQuery);
-        List<Cluster> clusters = queryIsomorphism.getClusters();
-
-        //only use clusters with at least x questions
-        List<Cluster> relevantClusters = clusters.stream()
-                .filter(cluster -> cluster.size() >= 0)
-                .collect(Collectors.toList());
         List<CustomQuestion> customQuestions = new ArrayList<>();
 
-        for (Cluster cluster : relevantClusters) {
+        List<HAWKQuestion> testQuestions = new ArrayList<>();
+        testDatasets.forEach(dataset -> {
+            List<IQuestion> load = LoaderController.load(dataset);
+            List<IQuestion> result = load.stream()
+                    .filter(question -> question.getSparqlQuery() != null)
+                    .collect(Collectors.toList());
+            testQuestions.addAll(HAWKQuestionFactory.createInstances(result));
+        });
+
+        log.info("Building query clusters...");
+        QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionsWithQuery);
+        List<Cluster> clusters = queryIsomorphism.getClusters();
+        for (Cluster cluster : clusters) {
             String graph = cluster.getGraph();
-            //log.info(graph);
             List<Question> questionList = cluster.getQuestions();
             for (Question question : questionList) {
                 String questionText = question.getLanguageToQuestion().get("en");
-                //log.info("\t" + questionText);
                 String sparqlQuery = question.getSparqlQuery();
                 List<String> simpleModifiers = getSimpleModifiers(sparqlQuery);
                 Map<String, List<String>> goldenAnswers = new HashMap<>();
-                SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(sparqlQuery);
-                goldenAnswers.put(sparqlQuery, sparqlResultSet.getResultSet());
+                List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(sparqlQuery);
+                List<String> resultSet = new ArrayList<>();
+                sparqlResultSets.forEach(sparqlResultSet -> resultSet.addAll(sparqlResultSet.getResultSet()));
+                goldenAnswers.put(sparqlQuery, resultSet);
                 customQuestions.add(new CustomQuestion(sparqlQuery, questionText, simpleModifiers, graph, goldenAnswers));
                 semanticAnalysisHelper.annotate(questionText);
             }
@@ -134,79 +131,39 @@ public class PipelineController {
         QueryBuilder queryBuilder = new QueryBuilder(customQuestions, semanticAnalysisHelper);
         customQuestions = queryBuilder.getQuestions();
 
-        Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, Lists.newArrayList(ontologyNodes), dBpediaProperties);
-        //log.info(mappings);
-        //Utilities.writeToFile("./src/main/resources/mappings.json", mappings);
+        log.info("Extract query templates...");
+        mappings = semanticAnalysisHelper.extractTemplates(customQuestions, Lists.newArrayList(ontologyNodes), dBpediaProperties);
 
+        log.info("Creating weka model...");
         ArffGenerator arffGenerator = new ArffGenerator(customQuestions);
 
-        HashSet<String> graphs = new HashSet<>();
+        graphs = new HashSet<>();
         customQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
 
-        List<Double> fMeasures = new ArrayList<>();
-        List<Double> precisions = new ArrayList<>();
-
         //TODO enable parallelization with customQuestions.parallelStream().forEach()
-        customQuestions.parallelStream().forEach(q -> {
-            StringBuilder logMessage = new StringBuilder();
-            HAWKQuestion hawkQuestion;
-            Optional<HAWKQuestion> hawkQuestionOptional = questions.stream()
-                    .filter(q1 -> q1.getLanguageToQuestion().get("en").equals(q.getQuestionText()))
-                    .findFirst();
-            if (hawkQuestionOptional.isPresent()) {
-                hawkQuestion = hawkQuestionOptional.get();
-                boolean dbo = !onlyDBO || hawkQuestion.getOnlydbo();
-                boolean aggregation = useAggregation || !hawkQuestion.getAggregation();
-                boolean onlyAggregation = !useOnlyAggregation || hawkQuestion.getAggregation();
-                boolean answerType = !useOnlyAnswerTypeResource || Objects.equals(hawkQuestion.getAnswerType(), "resource");
-                if (dbo
-                        && aggregation
-                        && onlyAggregation
-                        && answerType) {
-                    AnswerToQuestion answer = answerQuestion(q, questions, mappings, graphs, idealQueries, idealQueryPatterns, logMessage);
-                    double fMeasure = AnswerBasedEvaluation.fMeasure(answer.getAnswer(), hawkQuestion);
-                    fMeasures.add(fMeasure);
-                    double precision = AnswerBasedEvaluation.precision(answer.getAnswer(), hawkQuestion);
-                    precisions.add(precision);
-                    logMessage.append(String.format("Question: '%s'\nF-Measure: %.3f; Precision: %.3f", q.getQuestionText(), fMeasure, precision));
-                    logMessage.append("\nUndetected Entities: ");
-                    Pattern betweenLaceBraces = Pattern.compile("<(.*?)>");
-                    Matcher matcher = betweenLaceBraces.matcher(SPARQLUtilities.resolveNamespaces(hawkQuestion.getSparqlQuery()));
-                    Set<String> requiredDBpediaEntites = new HashSet<>();
-                    while (matcher.find()) {
-                        requiredDBpediaEntites.add(matcher.group().replace("<", "").replace(">", ""));
-                    }
-                    Set<String> rdfEntities = answer.getRdfEntities();
-
-                    requiredDBpediaEntites.forEach(s -> {
-                        if (!rdfEntities.contains(s)) {
-                            logMessage.append(s).append(" ");
-                        }
-                    });
-                    logMessage.append("\nBest result: ").append(Strings.join(answer.getAnswer(), "; "));
-                    log.info(logMessage + "\n---------------------------------------------------------------------");
-                }
-            } else {
-                logMessage.append(String.format("Unable to calculate F-Measure because question: '%s' isn't present in QALD-8", q.getQuestionText()));
-            }
-        });
-        log.info("Average F-Measure: " + fMeasures.stream().mapToDouble(Double::doubleValue).summaryStatistics().getAverage());
-        log.info("Average Precision: " + precisions.stream().mapToDouble(Double::doubleValue).summaryStatistics().getAverage());
+        testQuestions.parallelStream().forEach(q -> answerQuestion(idealQueryPatterns, graphs, q));
     }
 
-    private AnswerToQuestion answerQuestion(CustomQuestion question, List<HAWKQuestion> questions, Map<String,
-            QueryTemplateMapping> mappings, HashSet<String> graphs, Map<String, String> idealQueries,
-                                            Map<String, String> idealQueryPatterns, StringBuilder logMessage) {
+    public AnswerToQuestion answerQuestion(String question) {
+        return answerQuestion(question, graphs, new HashMap<>());
+    }
+
+    private void answerQuestion(Map<String, String> idealQueryPatterns, HashSet<String> graphs, HAWKQuestion q) {
+        AnswerToQuestion answer = answerQuestion(q.getLanguageToQuestion().get("en"), graphs, idealQueryPatterns);
+        log.debug("Best result: " + Strings.join(answer.getAnswer(), "; "));
+    }
+
+    private AnswerToQuestion answerQuestion(String question, HashSet<String> graphs, Map<String, String> idealQueries) {
         Set<String> bestAnswer;
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
-        QueryMappingFactory mappingFactory = new QueryMappingFactory(question.getQuestionText(), question.getQuery(), Lists.newArrayList(ontologyNodes), dBpediaProperties);
+        QueryMappingFactory mappingFactory = new QueryMappingFactory(question, "", Lists.newArrayList(ontologyNodes), dBpediaProperties);
         List<Map<Integer, List<String>>> results = new ArrayList<>();
         String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
         List<String> queries;
         List<String> mockedEntities = new ArrayList<>();
         if (mockVariables) {
-            String originalQuery = idealQueries.get(question.getQuestionText());
+            String originalQuery = idealQueries.get(question);
             String regex = "<(.+?)>";
             Pattern pattern = Pattern.compile(regex);
             Matcher m = pattern.matcher(originalQuery);
@@ -217,9 +174,10 @@ public class PipelineController {
         if (mockTemplates) {
             Map<String, QueryTemplateMapping> mockedMapping = new HashMap<>();
             QueryTemplateMapping queryTemplateMapping = new QueryTemplateMapping(0, 0);
-            String originalQuery = idealQueryPatterns.get(question.getQuestionText());
-            queryTemplateMapping.addSelectTemplate(originalQuery, question.getQuery());
-            queryTemplateMapping.addAskTemplate(originalQuery, question.getQuery());
+            //TODO fix or remove this mock
+            //String originalQuery = idealQueryPatterns.get(question.getQuestionText());
+            //queryTemplateMapping.addSelectTemplate(originalQuery, question.getQuery());
+            //queryTemplateMapping.addAskTemplate(originalQuery, question.getQuery());
             mockedMapping.put(graphPattern, queryTemplateMapping);
             queries = mappingFactory.generateQueries(mockedMapping, graphPattern, mockedEntities, false);
         } else {
@@ -228,45 +186,50 @@ public class PipelineController {
 
         //If the template from the predicted graph won't find suitable templates, try all other templates
         if (queries.isEmpty()) {
-            logMessage.append("There is no suitable query template for this graph, using all templates now...\n");
+            log.debug("There is no suitable query template for this graph, using all templates now...");
             queries = mappingFactory.generateQueries(mappings, false);
         }
 
-        results.addAll(executeQueries(queries, logMessage));
+        results.addAll(executeQueries(queries));
 
-        final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question.getQuestionText());
-        bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, false);
+        final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question);
+        bestAnswer = semanticAnalysisHelper.getBestAnswer(results, expectedAnswerType, false);
 
         //If there still is no suitable answer, use all query templates to find one
         if (bestAnswer.isEmpty()) {
-            logMessage.append("There is no suitable answer, using all query templates instead...\n");
+            log.debug("There is no suitable answer, using all query templates instead...");
             queries = mappingFactory.generateQueries(mappings, false);
-            results.addAll(executeQueries(queries, logMessage));
-            bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, false);
+            results.addAll(executeQueries(queries));
+            bestAnswer = semanticAnalysisHelper.getBestAnswer(results, expectedAnswerType, false);
         }
 
         //If there still is no suitable answer, use synonyms to find one
         if (bestAnswer.isEmpty()) {
-            logMessage.append("There is no suitable answer, using synonyms to find one...\n");
+            log.debug("There is no suitable answer, using synonyms to find one...");
             queries = mappingFactory.generateQueries(mappings, true);
-            results.addAll(executeQueries(queries, logMessage));
-            bestAnswer = semanticAnalysisHelper.getBestAnswer(results, logMessage, expectedAnswerType, true);
+            results.addAll(executeQueries(queries));
+            bestAnswer = semanticAnalysisHelper.getBestAnswer(results, expectedAnswerType, true);
         }
         return new AnswerToQuestion(bestAnswer, mappingFactory.getRdfEntities());
     }
 
 
-    private List<Map<Integer, List<String>>> executeQueries(List<String> queries, StringBuilder logMessage) {
+    private List<Map<Integer, List<String>>> executeQueries(List<String> queries) {
         List<Map<Integer, List<String>>> results = new ArrayList<>();
         for (String s : queries) {
-            SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(s);
-            List<String> result = sparqlResultSet.getResultSet();
-            if (!result.isEmpty()) {
-                Map<Integer, List<String>> classifiedResult = new HashMap<>();
-                classifiedResult.put(sparqlResultSet.getType(), result);
-                results.add(classifiedResult);
-            }
-            logMessage.append(s).append("\nResult: ").append(String.join("; ", result)).append("\n\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append("Query: ").append(s);
+            List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(s);
+            sparqlResultSets.forEach(sparqlResultSet -> {
+                List<String> result = sparqlResultSet.getResultSet();
+                if (!result.isEmpty()) {
+                    Map<Integer, List<String>> classifiedResult = new HashMap<>();
+                    classifiedResult.put(sparqlResultSet.getType(), result);
+                    results.add(classifiedResult);
+                }
+                sb.append("\nResult: ").append(String.join("; ", result));
+                log.debug(sb.toString());
+            });
         }
         return results;
     }
@@ -315,11 +278,11 @@ public class PipelineController {
         return emptyList();
     }
 
-    private void setDatasets(List<Dataset> datasets) {
-        this.datasets = datasets;
+    private void addTrainDataset(Dataset dataset) {
+        this.trainDatasets.add(dataset);
     }
 
-    private void addDataset(Dataset dataset) {
-        this.datasets.add(dataset);
+    private void addTestDataset(Dataset dataset) {
+        this.testDatasets.add(dataset);
     }
 }
