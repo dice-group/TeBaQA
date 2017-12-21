@@ -362,6 +362,14 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
+    @Ignore
+    //TODO implement
+    public void testDetectQuestionAnswerTypeNumberAnswer5() {
+        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("What is the percentage of area water in Brazil?");
+        assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, answerType);
+    }
+
+    @Test
     public void testDetectQuestionAnswerTypeDateAnswer() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("When was the Titanic completed?");
         assertEquals(SPARQLResultSet.DATE_ANSWER_TYPE, answerType);

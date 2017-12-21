@@ -21,6 +21,7 @@ import edu.stanford.nlp.util.CoreMap;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.Classifier;
 import weka.core.Attribute;
@@ -486,43 +487,10 @@ public class SemanticAnalysisHelper {
 
         if (expectedAnswerType == SPARQLResultSet.SINGLE_RESOURCE_TYPE) {
             //A list might contain the correct answer too
-            results.forEach(result -> {
-                if (result.containsKey(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE)) {
-                    List<String> resultWithMatchingType = result.get(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE);
-                    if (!resultWithMatchingType.isEmpty()) {
-                        Map<Integer, List<String>> answer = new HashMap<>();
-                        answer.put(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE, resultWithMatchingType);
-                        suitableAnswers.add(answer);
-                    }
-
-                } else if (result.containsKey(SPARQLResultSet.STRING_ANSWER_TYPE)) {
-                    List<String> stringAnswers = result.get(SPARQLResultSet.STRING_ANSWER_TYPE);
-                    if (!stringAnswers.isEmpty()) {
-                        Map<Integer, List<String>> answer = new HashMap<>();
-                        answer.put(SPARQLResultSet.STRING_ANSWER_TYPE, stringAnswers);
-                        suitableAnswers.add(answer);
-                    }
-                }
-            });
+            suitableAnswers.addAll(getPossibleAnswer(results, SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE));
         } else if (expectedAnswerType == SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE) {
             //A single answer might be a partly correct answer
-            results.forEach(result -> {
-                if (result.containsKey(SPARQLResultSet.SINGLE_RESOURCE_TYPE)) {
-                    List<String> resultWithMatchingType = result.get(SPARQLResultSet.SINGLE_RESOURCE_TYPE);
-                    if (!resultWithMatchingType.isEmpty()) {
-                        Map<Integer, List<String>> answer = new HashMap<>();
-                        answer.put(SPARQLResultSet.SINGLE_RESOURCE_TYPE, resultWithMatchingType);
-                        suitableAnswers.add(answer);
-                    }
-                } else if (result.containsKey(SPARQLResultSet.STRING_ANSWER_TYPE)) {
-                    List<String> stringAnswers = result.get(SPARQLResultSet.STRING_ANSWER_TYPE);
-                    if (!stringAnswers.isEmpty()) {
-                        Map<Integer, List<String>> answer = new HashMap<>();
-                        answer.put(SPARQLResultSet.STRING_ANSWER_TYPE, stringAnswers);
-                        suitableAnswers.add(answer);
-                    }
-                }
-            });
+            suitableAnswers.addAll(getPossibleAnswer(results, SPARQLResultSet.SINGLE_RESOURCE_TYPE));
         }
 
         results.forEach(result -> {
@@ -540,35 +508,7 @@ public class SemanticAnalysisHelper {
             Optional<List<String>> first = answer.values().stream().findFirst();
             Set<String> suitableAnswer = first.<Set<String>>map(Sets::newHashSet).orElseGet(HashSet::new);
             if (expectedAnswerType == SPARQLResultSet.DATE_ANSWER_TYPE && suitableAnswer.size() > 1) {
-                Map<LocalDate, String> uniqueDates = new HashMap<>();
-                suitableAnswer.forEach(s -> {
-                    if (s.contains("-")) {
-                        LocalDate dateTime = null;
-                        try {
-                            dateTime = LocalDate.parse(s, dateTimeFormatterLong);
-                        } catch (DateTimeParseException ignored) {
-                        }
-                        try {
-                            dateTime = LocalDate.parse(s, dateTimeFormatterShortDay);
-                        } catch (DateTimeParseException ignored) {
-                        }
-                        try {
-                            dateTime = LocalDate.parse(s, dateTimeFormatterShortMonth);
-                        } catch (DateTimeParseException ignored) {
-                        }
-                        if (dateTime != null && !uniqueDates.containsKey(dateTime)) {
-                            uniqueDates.put(dateTime, s);
-                        } else if (dateTime != null && uniqueDates.containsKey(dateTime)) {
-                            String s1 = uniqueDates.get(dateTime);
-                            //Update the date if the dates are equivalent and the new date is longer e.g. 1616-04-23 instead of 1616-4-23
-                            //TODO What happens if a year is requested?
-                            if (s1.length() < s.length()) {
-                                uniqueDates.put(dateTime, s);
-                            }
-                        }
-                    }
-                });
-                return Sets.newHashSet(uniqueDates.values());
+                return Sets.newHashSet(getDateAnswer(suitableAnswer).values());
             }
             return first.<Set<String>>map(Sets::newHashSet).orElseGet(HashSet::new);
         } else if (suitableAnswers.isEmpty() && forceResult) {
@@ -587,15 +527,7 @@ public class SemanticAnalysisHelper {
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
             if (expectedAnswerType == SPARQLResultSet.BOOLEAN_ANSWER_TYPE) {
-                int trueCount = Math.toIntExact(answersWithMatchingType.stream().filter(Boolean::valueOf).count());
-                int falseCount = Math.toIntExact(answersWithMatchingType.stream().filter(a -> !Boolean.valueOf(a)).count());
-                Set<String> set = new HashSet<>();
-                if (trueCount >= falseCount) {
-                    set.add("true");
-                } else {
-                    set.add("false");
-                }
-                return set;
+                return getMostFrequentBooleanAnswer(answersWithMatchingType);
             } else if (expectedAnswerType == SPARQLResultSet.DATE_ANSWER_TYPE) {
                 Optional<String> max = answersWithMatchingType.stream().max(Comparator.comparingInt(String::length));
                 if (max.isPresent()) {
@@ -610,6 +542,74 @@ public class SemanticAnalysisHelper {
             }
         }
         return Sets.newHashSet(bestAnswer);
+    }
+
+    @NotNull
+    private Map<LocalDate, String> getDateAnswer(Set<String> suitableAnswer) {
+        Map<LocalDate, String> uniqueDates = new HashMap<>();
+        suitableAnswer.forEach(s -> {
+            if (s.contains("-")) {
+                LocalDate dateTime = null;
+                try {
+                    dateTime = LocalDate.parse(s, dateTimeFormatterLong);
+                } catch (DateTimeParseException ignored) {
+                }
+                try {
+                    dateTime = LocalDate.parse(s, dateTimeFormatterShortDay);
+                } catch (DateTimeParseException ignored) {
+                }
+                try {
+                    dateTime = LocalDate.parse(s, dateTimeFormatterShortMonth);
+                } catch (DateTimeParseException ignored) {
+                }
+                if (dateTime != null && !uniqueDates.containsKey(dateTime)) {
+                    uniqueDates.put(dateTime, s);
+                } else if (dateTime != null && uniqueDates.containsKey(dateTime)) {
+                    String s1 = uniqueDates.get(dateTime);
+                    //Update the date if the dates are equivalent and the new date is longer e.g. 1616-04-23 instead of 1616-4-23
+                    //TODO What happens if a year is requested?
+                    if (s1.length() < s.length()) {
+                        uniqueDates.put(dateTime, s);
+                    }
+                }
+            }
+        });
+        return uniqueDates;
+    }
+
+    @NotNull
+    private Set<String> getMostFrequentBooleanAnswer(List<String> answersWithMatchingType) {
+        int trueCount = Math.toIntExact(answersWithMatchingType.stream().filter(Boolean::valueOf).count());
+        int falseCount = Math.toIntExact(answersWithMatchingType.stream().filter(a -> !Boolean.valueOf(a)).count());
+        Set<String> set = new HashSet<>();
+        if (trueCount >= falseCount) {
+            set.add("true");
+        } else {
+            set.add("false");
+        }
+        return set;
+    }
+
+    private List<Map<Integer, List<String>>> getPossibleAnswer(List<Map<Integer, List<String>>> results, int singleResourceType) {
+        List<Map<Integer, List<String>>> a = new ArrayList<>();
+        results.forEach(result -> {
+            if (result.containsKey(singleResourceType)) {
+                List<String> resultWithMatchingType = result.get(singleResourceType);
+                if (!resultWithMatchingType.isEmpty()) {
+                    Map<Integer, List<String>> answer = new HashMap<>();
+                    answer.put(singleResourceType, resultWithMatchingType);
+                    a.add(answer);
+                }
+            } else if (result.containsKey(SPARQLResultSet.STRING_ANSWER_TYPE)) {
+                List<String> stringAnswers = result.get(SPARQLResultSet.STRING_ANSWER_TYPE);
+                if (!stringAnswers.isEmpty()) {
+                    Map<Integer, List<String>> answer = new HashMap<>();
+                    answer.put(SPARQLResultSet.STRING_ANSWER_TYPE, stringAnswers);
+                    a.add(answer);
+                }
+            }
+        });
+        return a;
     }
 
     private Set<String> getBestAnswerByPageRank(List<List<String>> suitableAnswers) {

@@ -16,12 +16,12 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.HashSet;
 
 import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipeline;
+import static de.uni.leipzig.tebaqa.spring.ExtendedQALDAnswer.extractAnswerString;
 
 @RestController
 public class QuestionAnsweringController {
 
     private static Logger log = Logger.getLogger(QuestionAnsweringController.class.getName());
-
 
     @RequestMapping(method = RequestMethod.POST, path = "/qa")
     public String answerQuestion(@RequestParam String query,
@@ -57,9 +57,7 @@ public class QuestionAnsweringController {
                 AnswerToQuestion answer = qaPipeline.answerQuestion(query);
                 JsonArrayBuilder resultArray = Json.createArrayBuilder();
                 answer.getAnswer().forEach(a -> {
-                    if (!a.isEmpty() && a.startsWith("'") && a.contains("'@")) {
-                        a = a.substring(0, a.lastIndexOf("'@") + 1);
-                    }
+                    a = extractAnswerString(a);
                     resultArray.add(a);
                 });
                 result = Json.createObjectBuilder().add("answers", resultArray).build().toString();
