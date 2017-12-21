@@ -1,0 +1,522 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+<link rel="stylesheet" href="GERBIL%20-%20TeBaQA%20-%20QALD8%20Test%20Multilingual%20lokal%2021.12.2017-Dateien/bootstrap.css">
+<link rel="stylesheet" href="GERBIL%20-%20TeBaQA%20-%20QALD8%20Test%20Multilingual%20lokal%2021.12.2017-Dateien/bootstrap-multiselect.css">
+<link rel="icon" type="image/png" href="http://localhost:5004/gerbil/webResources/gerbilicon_transparent.png">
+<style type="text/css">
+/* making the buttons wide enough and right-aligned */
+.btn-group>.btn {
+	float: none;
+	width: 100%;
+	text-align: right;
+}
+
+.btn-group {
+	width: 100%;
+}
+
+#type {
+	text-align: right;
+}
+
+#type>option {
+	text-align: right;
+}
+</style>
+
+</head>
+<body class="container">
+	<!-- mappings to URLs in back-end controller -->
+	
+
+	<script src="GERBIL%20-%20TeBaQA%20-%20QALD8%20Test%20Multilingual%20lokal%2021.12.2017-Dateien/jquery_002.js"></script>
+	<script src="GERBIL%20-%20TeBaQA%20-%20QALD8%20Test%20Multilingual%20lokal%2021.12.2017-Dateien/bootstrap.js"></script>
+	<script src="GERBIL%20-%20TeBaQA%20-%20QALD8%20Test%20Multilingual%20lokal%2021.12.2017-Dateien/jquery.js"></script>
+
+	<script type="application/ld+json">
+	{
+  "@graph" : [ {
+    "@id" : "http://localhost:5004/gerbil/experiment?id=201712210003",
+    "@type" : [ "gerbil:Experiment", "qb:Dataset" ],
+    "structure" : "gerbil:dsd",
+    "experimentType" : "gerbil:QA",
+    "matching" : "gerbil:StrongEntityMatch",
+    "label" : "Experiment 201712210003"
+  }, {
+    "@id" : "http://localhost:5004/gerbil/experimentTask_48",
+    "@type" : "qb:Observation",
+    "qb:dataset" : "http://localhost:5004/gerbil/experiment?id=201712210003",
+    "Macro_F1_QALD" : "0.39867010548179166",
+    "annotator" : "http://localhost:5004/gerbil/dataId/annotators/QALD8",
+    "doc" : "38975.04255319149",
+    "dataset" : "http://localhost:5004/gerbil/dataId/corpora/TeBaQA_(WS)",
+    "errorCount" : "0",
+    "language" : "http://localhost:5004/gerbil/dataId/languages/en",
+    "macroF1" : "0.3034278959810875",
+    "macroPrecision" : "0.29488031914893614",
+    "macroRecall" : "0.3377659574468085",
+    "microF1" : "0.0011482110871262573",
+    "microPrecision" : "5.751357320327598E-4",
+    "microRecall" : "0.32051282051282054",
+    "statusCode" : "0",
+    "timestamp" : "2017-12-21T21:27:37.131Z"
+  }, {
+    "@id" : "http://localhost:5004/gerbil/experimentTask_49",
+    "@type" : "qb:Observation",
+    "qb:dataset" : "http://localhost:5004/gerbil/experiment?id=201712210003",
+    "Macro_F1_QALD" : "0.0",
+    "annotator" : "http://localhost:5004/gerbil/dataId/annotators/QALD8",
+    "dataset" : "http://localhost:5004/gerbil/dataId/corpora/TeBaQA_(WS)",
+    "errorCount" : "0",
+    "language" : "http://localhost:5004/gerbil/dataId/languages/en",
+    "macroF1" : "0.0",
+    "macroPrecision" : "0.0",
+    "macroRecall" : "0.0",
+    "microF1" : "0.0",
+    "microPrecision" : "0.0",
+    "microRecall" : "0.0",
+    "statusCode" : "0",
+    "subExperimentOf" : "http://localhost:5004/gerbil/experimentTask_48",
+    "timestamp" : "2017-12-21T21:27:37.131Z"
+  }, {
+    "@id" : "http://localhost:5004/gerbil/experimentTask_50",
+    "@type" : "qb:Observation",
+    "qb:dataset" : "http://localhost:5004/gerbil/experiment?id=201712210003",
+    "EE_Macro_F1_score" : "0.574468085106383",
+    "EE_Macro_Precision" : "0.574468085106383",
+    "EE_Macro_Recall" : "0.574468085106383",
+    "EE_Micro_F1_score" : "0.0",
+    "EE_Micro_Precision" : "0.0",
+    "EE_Micro_Recall" : "0.0",
+    "InKB_Macro_F1_score" : "0.0",
+    "InKB_Macro_Precision" : "0.0",
+    "InKB_Macro_Recall" : "0.0",
+    "InKB_Micro_F1_score" : "0.0",
+    "InKB_Micro_Precision" : "0.0",
+    "InKB_Micro_Recall" : "0.0",
+    "annotator" : "http://localhost:5004/gerbil/dataId/annotators/QALD8",
+    "confidence_threshold" : "0.0",
+    "dataset" : "http://localhost:5004/gerbil/dataId/corpora/TeBaQA_(WS)",
+    "errorCount" : "0",
+    "language" : "http://localhost:5004/gerbil/dataId/languages/en",
+    "macroF1" : "0.0",
+    "macroPrecision" : "0.0",
+    "macroRecall" : "0.0",
+    "microF1" : "0.0",
+    "microPrecision" : "0.0",
+    "microRecall" : "0.0",
+    "statusCode" : "0",
+    "subExperimentOf" : "http://localhost:5004/gerbil/experimentTask_48",
+    "timestamp" : "2017-12-21T21:27:37.131Z"
+  }, {
+    "@id" : "http://localhost:5004/gerbil/experimentTask_51",
+    "@type" : "qb:Observation",
+    "qb:dataset" : "http://localhost:5004/gerbil/experiment?id=201712210003",
+    "EE_Macro_F1_score" : "0.574468085106383",
+    "EE_Macro_Precision" : "0.574468085106383",
+    "EE_Macro_Recall" : "0.574468085106383",
+    "EE_Micro_F1_score" : "0.0",
+    "EE_Micro_Precision" : "0.0",
+    "EE_Micro_Recall" : "0.0",
+    "InKB_Macro_F1_score" : "0.3617021276595745",
+    "InKB_Macro_Precision" : "0.3617021276595745",
+    "InKB_Macro_Recall" : "0.3617021276595745",
+    "InKB_Micro_F1_score" : "0.0",
+    "InKB_Micro_Precision" : "0.0",
+    "InKB_Micro_Recall" : "0.0",
+    "annotator" : "http://localhost:5004/gerbil/dataId/annotators/QALD8",
+    "confidence_threshold" : "0.0",
+    "dataset" : "http://localhost:5004/gerbil/dataId/corpora/TeBaQA_(WS)",
+    "errorCount" : "0",
+    "language" : "http://localhost:5004/gerbil/dataId/languages/en",
+    "macroF1" : "0.0",
+    "macroPrecision" : "0.0",
+    "macroRecall" : "0.0",
+    "microF1" : "0.0",
+    "microPrecision" : "0.0",
+    "microRecall" : "0.0",
+    "statusCode" : "0",
+    "subExperimentOf" : "http://localhost:5004/gerbil/experimentTask_48",
+    "timestamp" : "2017-12-21T21:27:37.131Z"
+  }, {
+    "@id" : "http://localhost:5004/gerbil/experimentTask_52",
+    "@type" : "qb:Observation",
+    "qb:dataset" : "http://localhost:5004/gerbil/experiment?id=201712210003",
+    "Macro_F1_QALD" : "0.0",
+    "annotator" : "http://localhost:5004/gerbil/dataId/annotators/QALD8",
+    "dataset" : "http://localhost:5004/gerbil/dataId/corpora/TeBaQA_(WS)",
+    "errorCount" : "0",
+    "language" : "http://localhost:5004/gerbil/dataId/languages/en",
+    "macroF1" : "0.0",
+    "macroPrecision" : "0.0",
+    "macroRecall" : "0.0",
+    "microF1" : "0.0",
+    "microPrecision" : "0.0",
+    "microRecall" : "0.0",
+    "statusCode" : "0",
+    "subExperimentOf" : "http://localhost:5004/gerbil/experimentTask_48",
+    "timestamp" : "2017-12-21T21:27:37.131Z"
+  } ],
+  "@context" : {
+    "statusCode" : {
+      "@id" : "http://w3id.org/gerbil/vocab#statusCode",
+      "@type" : "http://www.w3.org/2001/XMLSchema#int"
+    },
+    "EE_Macro_F1_score" : {
+      "@id" : "http://w3id.org/gerbil/vocab#EE_Macro_F1_score",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "InKB_Macro_Recall" : {
+      "@id" : "http://w3id.org/gerbil/vocab#InKB_Macro_Recall",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "EE_Macro_Recall" : {
+      "@id" : "http://w3id.org/gerbil/vocab#EE_Macro_Recall",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "annotator" : {
+      "@id" : "http://w3id.org/gerbil/vocab#annotator"
+    },
+    "subExperimentOf" : {
+      "@id" : "http://w3id.org/gerbil/vocab#subExperimentOf",
+      "@type" : "@id"
+    },
+    "timestamp" : {
+      "@id" : "http://w3id.org/gerbil/vocab#timestamp",
+      "@type" : "http://www.w3.org/2001/XMLSchema#dateTime"
+    },
+    "InKB_Micro_F1_score" : {
+      "@id" : "http://w3id.org/gerbil/vocab#InKB_Micro_F1_score",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "macroRecall" : {
+      "@id" : "http://w3id.org/gerbil/vocab#macroRecall",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "InKB_Macro_Precision" : {
+      "@id" : "http://w3id.org/gerbil/vocab#InKB_Macro_Precision",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "macroF1" : {
+      "@id" : "http://w3id.org/gerbil/vocab#macroF1",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "dataset" : {
+      "@id" : "http://w3id.org/gerbil/vocab#dataset"
+    },
+    "microF1" : {
+      "@id" : "http://w3id.org/gerbil/vocab#microF1",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "InKB_Micro_Precision" : {
+      "@id" : "http://w3id.org/gerbil/vocab#InKB_Micro_Precision",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "EE_Micro_F1_score" : {
+      "@id" : "http://w3id.org/gerbil/vocab#EE_Micro_F1_score",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "language" : {
+      "@id" : "http://w3id.org/gerbil/vocab#language"
+    },
+    "EE_Micro_Precision" : {
+      "@id" : "http://w3id.org/gerbil/vocab#EE_Micro_Precision",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "InKB_Macro_F1_score" : {
+      "@id" : "http://w3id.org/gerbil/vocab#InKB_Macro_F1_score",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "microPrecision" : {
+      "@id" : "http://w3id.org/gerbil/vocab#microPrecision",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "confidence_threshold" : {
+      "@id" : "http://w3id.org/gerbil/vocab#confidence_threshold",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "EE_Micro_Recall" : {
+      "@id" : "http://w3id.org/gerbil/vocab#EE_Micro_Recall",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "EE_Macro_Precision" : {
+      "@id" : "http://w3id.org/gerbil/vocab#EE_Macro_Precision",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "macroPrecision" : {
+      "@id" : "http://w3id.org/gerbil/vocab#macroPrecision",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "microRecall" : {
+      "@id" : "http://w3id.org/gerbil/vocab#microRecall",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "InKB_Micro_Recall" : {
+      "@id" : "http://w3id.org/gerbil/vocab#InKB_Micro_Recall",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "errorCount" : {
+      "@id" : "http://w3id.org/gerbil/vocab#errorCount"
+    },
+    "matching" : {
+      "@id" : "http://w3id.org/gerbil/vocab#matching",
+      "@type" : "@id"
+    },
+    "experimentType" : {
+      "@id" : "http://w3id.org/gerbil/vocab#experimentType",
+      "@type" : "@id"
+    },
+    "structure" : {
+      "@id" : "http://purl.org/linked-data/cube#structure",
+      "@type" : "@id"
+    },
+    "label" : {
+      "@id" : "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "doc" : {
+      "@id" : "http://w3id.org/gerbil/vocab#avg_millis/doc",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "Macro_F1_QALD" : {
+      "@id" : "http://w3id.org/gerbil/vocab#Macro_F1_QALD",
+      "@type" : "http://www.w3.org/2001/XMLSchema#decimal"
+    },
+    "qb" : "http://purl.org/linked-data/cube#",
+    "rdf" : "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "gerbil" : "http://w3id.org/gerbil/vocab#",
+    "xsd" : "http://www.w3.org/2001/XMLSchema#",
+    "rdfs" : "http://www.w3.org/2000/01/rdf-schema#"
+  }
+}
+
+	</script>
+
+	<nav class="navbar navbar-default" role="navigation">
+	<div class="container-fluid">
+		<!-- Brand and toggle get grouped for better mobile display -->
+		<div class="navbar-header">
+			<a class="navbar-brand" style="padding-top: 0px" href="http://localhost:5004/gerbil/"> <img style="height: 50px" src="GERBIL%20-%20TeBaQA%20-%20QALD8%20Test%20Multilingual%20lokal%2021.12.2017-Dateien/gerbil_logo_transparent.png" alt="Logo of Gerbil">
+			</a>
+		</div>
+		<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+			<ul class="nav navbar-nav">
+				<li class="active"><a href="http://localhost:5004/gerbil/">Home</a></li>
+				<li><a href="http://localhost:5004/gerbil/config">Configure Experiment</a></li>
+				<li><a href="http://localhost:5004/gerbil/overview">Experiment Overview</a></li>
+				<li><a href="http://localhost:5004/gerbil/about">About Us</a></li>
+			</ul>
+		</div>
+	</div>
+</nav>
+
+	<h1>GERBIL Experiment</h1>
+	
+		
+		
+			
+				
+			
+		
+	Experiment URI: <span id="experimentUri"><a href="http://localhost:5004/gerbil/experiment?id=201712210003">http://localhost:5004/gerbil/experiment?id=201712210003</a></span>
+		<br>
+	Type: QA
+		<br>
+	Matching: Me - strong entity match
+		<table id="resultTable" class="table  table-hover table-condensed tableScroll tablesorter tablesorter-default" role="grid">
+			<!--<table id="resultTable"
+			class="table  table-hover table-condensed tablesorter tableScroll">-->
+			<thead>
+				<tr class="tablesorter-headerRow" role="row">
+					<th data-column="0" class="tablesorter-header tablesorter-headerAsc" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="ascending" aria-label="Annotator: Ascending sort applied, activate to apply a descending sort"><div class="tablesorter-header-inner">Annotator</div></th>
+					<th data-column="1" class="tablesorter-header tablesorter-headerAsc" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="ascending" aria-label="Dataset: Ascending sort applied, activate to apply a descending sort"><div class="tablesorter-header-inner">Dataset</div></th>
+					<th data-column="2" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Language: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Language</div></th>
+					
+						<th data-column="3" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label=": No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner"></div></th>
+					
+					<th data-column="4" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Micro F1: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Micro F1</div></th>
+					<th data-column="5" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Micro Precision: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Micro Precision</div></th>
+					<th data-column="6" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Micro Recall: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Micro Recall</div></th>
+					<th data-column="7" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Macro F1: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Macro F1</div></th>
+					<th data-column="8" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Macro Precision: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Macro Precision</div></th>
+					<th data-column="9" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Macro Recall: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Macro Recall</div></th>
+					<!-- <th>State</th> -->
+					<th data-column="10" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Error Count: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Error Count</div></th>
+					<!-- for every additional result -->
+					
+						<th data-column="11" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="avg millis/doc: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">avg millis/doc</div></th>
+					
+						<th data-column="12" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Macro F1 QALD: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Macro F1 QALD</div></th>
+					
+					<th data-column="13" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="Timestamp: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">Timestamp</div></th>
+					<th data-column="14" class="tablesorter-header tablesorter-headerUnSorted" tabindex="0" scope="col" role="columnheader" aria-disabled="false" aria-controls="resultTable" unselectable="on" style="-moz-user-select: none;" aria-sort="none" aria-label="GERBIL version: No sort applied, activate to apply an ascending sort"><div class="tablesorter-header-inner">GERBIL version</div></th>
+				</tr>
+			</thead>
+			<tbody aria-live="polite" aria-relevant="all">
+				
+					
+						
+						
+							
+						
+							
+						
+							
+						
+							
+						
+					
+					
+				
+			<tr>
+							<td>TeBaQA (WS)</td>
+							<td>QALD8 Test Multilingual</td>
+							<td>en</td>
+							
+								<td></td>
+							
+							<td>0,0011</td>
+							<td>0,0006</td>
+							<td>0,3205</td>
+							<td>0,3034</td>
+							<td>0,2949</td>
+							<td>0,3378</td>
+							<!-- <td>0</td> -->
+							<td>0</td>
+							<!-- for every additional result -->
+							
+								<td>
+										38.975,0426
+									</td>
+							
+								<td>
+										0,3987
+									</td>
+							
+							<td>2017-12-21 22:27:37</td>
+							<td>0.2.1</td>
+						</tr><tr>
+								<td>TeBaQA (WS)</td>
+								<td>QALD8 Test Multilingual</td>
+								<td>en</td>
+								<td>Answer Type</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<!--<td colspan="3"></td> -->
+								<td>0</td>
+								<!-- for every additional result -->
+								
+									<td></td>
+								
+									<td></td>
+								
+								<td>2017-12-21 22:27:37</td>
+								<td>0.2.1</td>
+							</tr><tr>
+								<td>TeBaQA (WS)</td>
+								<td>QALD8 Test Multilingual</td>
+								<td>en</td>
+								<td>C2KB</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<!--<td colspan="3"></td> -->
+								<td>0</td>
+								<!-- for every additional result -->
+								
+									<td></td>
+								
+									<td></td>
+								
+								<td>2017-12-21 22:27:37</td>
+								<td>0.2.1</td>
+							</tr><tr>
+								<td>TeBaQA (WS)</td>
+								<td>QALD8 Test Multilingual</td>
+								<td>en</td>
+								<td>P2KB</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<!--<td colspan="3"></td> -->
+								<td>0</td>
+								<!-- for every additional result -->
+								
+									<td></td>
+								
+									<td></td>
+								
+								<td>2017-12-21 22:27:37</td>
+								<td>0.2.1</td>
+							</tr><tr>
+								<td>TeBaQA (WS)</td>
+								<td>QALD8 Test Multilingual</td>
+								<td>en</td>
+								<td>RE2KB</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<td>0</td>
+								<!--<td colspan="3"></td> -->
+								<td>0</td>
+								<!-- for every additional result -->
+								
+									<td></td>
+								
+									<td></td>
+								
+								<td>2017-12-21 22:27:37</td>
+								<td>0.2.1</td>
+							</tr></tbody>
+		</table>
+	
+
+
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$("#resultTable").tablesorter({
+				sortList : [ [ 0, 0 ], [ 1, 0 ] ]
+			});
+
+			// print the URI of the experiment
+			var origin = window.location.origin;
+			var experimentId = window.location.search;
+			var content = "<a href=\"/gerbil/experiment"
+				+ experimentId
+				+ "\">"
+				+ origin
+				+ "/gerbil/experiment"
+				+ experimentId
+				+ "</a>";
+			// If this is the AKSW instance of GERBIL
+			if(origin == "http://gerbil.aksw.org") {
+				content += " and <a href=\"http://w3id.org/gerbil/experiment"
+					+ experimentId
+					+ "\">http://w3id.org/gerbil/experiment"
+					+ experimentId
+					+ "</a>";
+			}
+			// If this is the AKSW instance of GERBIL QA
+			if(origin == "http://gerbil-qa.aksw.org") {
+				content += " and <a href=\"http://w3id.org/gerbil/qa/experiment"
+					+ experimentId
+					+ "\">http://w3id.org/gerbil/qa/experiment"
+					+ experimentId
+					+ "</a>";
+			}
+			$("#experimentUri").html(content);
+		});
+	</script>
+</body></html>
