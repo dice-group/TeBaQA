@@ -18,6 +18,7 @@ import java.util.Set;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class QueryMappingFactoryTest {
@@ -407,11 +408,11 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractEntities(question, false);
-        assertTrue(!actual.contains("http://dbpedia.org/resource/Are"));
-        assertTrue(!actual.contains("http://dbpedia.org/resource/E85_in_the_United_States"));
-        assertTrue(!actual.contains("http://dbpedia.org/resource/Zen_in_the_United_States"));
-        assertTrue(!actual.contains("http://dbpedia.org/resource/DDT_in_the_United_States"));
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/Earthquake"));
+        assertFalse(actual.contains("http://dbpedia.org/resource/Are"));
+        assertFalse(actual.contains("http://dbpedia.org/resource/E85_in_the_United_States"));
+        assertFalse(actual.contains("http://dbpedia.org/resource/Zen_in_the_United_States"));
+        assertFalse(actual.contains("http://dbpedia.org/resource/DDT_in_the_United_States"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/Earthquake"));
     }
 
     @Test
@@ -1114,14 +1115,14 @@ public class QueryMappingFactoryTest {
 
         Set<String> actual = queryMappingFactory.extractEntities(question, false);
         assertTrue(actual.contains("http://dbpedia.org/ontology/officialLanguage"));
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/ProgrammingLanguage"));
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/languageCode"));
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/namedByLanguage"));
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/titleLanguage"));
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/languageFamily"));
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/deFactoLanguage"));
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/regionalLanguage"));
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/programmingLanguage"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/ProgrammingLanguage"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/languageCode"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/namedByLanguage"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/titleLanguage"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/languageFamily"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/deFactoLanguage"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/regionalLanguage"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/programmingLanguage"));
     }
 
     @Test
@@ -1147,8 +1148,8 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractEntities(question, false);
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/birthPlace"));
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/deathPlace"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/birthPlace"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/deathPlace"));
     }
 
     @Test
@@ -1161,7 +1162,7 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractEntities(question, false);
-        assertTrue(!actual.contains("http://dbpedia.org/property/be"));
+        assertFalse(actual.contains("http://dbpedia.org/property/be"));
     }
 
     @Test
@@ -1174,7 +1175,7 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractEntities(question, true);
-        assertTrue(!actual.contains("http://dbpedia.org/property/be"));
+        assertFalse(actual.contains("http://dbpedia.org/property/be"));
     }
 
     @Test
@@ -1187,7 +1188,7 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractEntities(question, false);
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/cost"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/cost"));
     }
 
     @Test
@@ -1200,7 +1201,7 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractEntities(question, true);
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/cost"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/cost"));
     }
 
     @Test
@@ -1213,7 +1214,7 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractEntities(question, true);
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/map"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/map"));
     }
 
     @Test
@@ -1226,7 +1227,7 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractEntities(question, true);
-        assertTrue(!actual.contains("http://dbpedia.org/resource/Where"));
+        assertFalse(actual.contains("http://dbpedia.org/resource/Where"));
     }
 
     @Test
@@ -1239,7 +1240,7 @@ public class QueryMappingFactoryTest {
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
         Set<String> actual = queryMappingFactory.extractEntities(question, true);
-        assertTrue(!actual.contains("http://dbpedia.org/ontology/deathPlace"));
+        assertFalse(actual.contains("http://dbpedia.org/ontology/deathPlace"));
     }
 
     @Test

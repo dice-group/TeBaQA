@@ -14,6 +14,7 @@ import org.springframework.boot.web.support.SpringBootServletInitializer;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 
+import static de.uni.leipzig.tebaqa.helper.HypernymMappingProvider.getHypernymMapping;
 import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipeline;
 
 @SpringBootApplication
@@ -28,6 +29,7 @@ public class Application extends SpringBootServletInitializer {
     public void init() {
         getQAPipeline();
         Logger logger = Logger.getRootLogger();
+        getHypernymMapping();
         logger.info("Initialisation of TeBaQA finished.");
     }
 

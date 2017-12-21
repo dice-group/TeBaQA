@@ -46,7 +46,7 @@ public class PipelineController {
     private List<Dataset> trainDatasets = new ArrayList<>();
     private List<Dataset> testDatasets = new ArrayList<>();
     private Map<String, QueryTemplateMapping> mappings;
-    HashSet<String> graphs = new HashSet<>();
+    private HashSet<String> graphs = new HashSet<>();
 
 
     public PipelineController(List<Dataset> trainDatasets, List<Dataset> testDatasets) {

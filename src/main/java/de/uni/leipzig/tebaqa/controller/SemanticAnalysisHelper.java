@@ -282,7 +282,7 @@ public class SemanticAnalysisHelper {
     }
 
 
-    public static boolean hasCountAggregation(String sentence) {
+    private static boolean hasCountAggregation(String sentence) {
         return sentence.toLowerCase().trim().startsWith("how many") || sentence.toLowerCase().trim().startsWith("how much");
     }
 
@@ -494,6 +494,14 @@ public class SemanticAnalysisHelper {
                         answer.put(SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE, resultWithMatchingType);
                         suitableAnswers.add(answer);
                     }
+
+                } else if (result.containsKey(SPARQLResultSet.STRING_ANSWER_TYPE)) {
+                    List<String> stringAnswers = result.get(SPARQLResultSet.STRING_ANSWER_TYPE);
+                    if (!stringAnswers.isEmpty()) {
+                        Map<Integer, List<String>> answer = new HashMap<>();
+                        answer.put(SPARQLResultSet.STRING_ANSWER_TYPE, stringAnswers);
+                        suitableAnswers.add(answer);
+                    }
                 }
             });
         } else if (expectedAnswerType == SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE) {
@@ -504,6 +512,13 @@ public class SemanticAnalysisHelper {
                     if (!resultWithMatchingType.isEmpty()) {
                         Map<Integer, List<String>> answer = new HashMap<>();
                         answer.put(SPARQLResultSet.SINGLE_RESOURCE_TYPE, resultWithMatchingType);
+                        suitableAnswers.add(answer);
+                    }
+                } else if (result.containsKey(SPARQLResultSet.STRING_ANSWER_TYPE)) {
+                    List<String> stringAnswers = result.get(SPARQLResultSet.STRING_ANSWER_TYPE);
+                    if (!stringAnswers.isEmpty()) {
+                        Map<Integer, List<String>> answer = new HashMap<>();
+                        answer.put(SPARQLResultSet.STRING_ANSWER_TYPE, stringAnswers);
                         suitableAnswers.add(answer);
                     }
                 }
