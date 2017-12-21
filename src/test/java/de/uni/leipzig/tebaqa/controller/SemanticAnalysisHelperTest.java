@@ -355,6 +355,7 @@ public class SemanticAnalysisHelperTest {
 
     @Test
     //TODO implement
+    @Ignore
     public void testDetectQuestionAnswerTypeNumberAnswer4() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("What is the population of Cairo?");
         assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, answerType);
