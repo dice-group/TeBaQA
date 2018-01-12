@@ -91,17 +91,6 @@ public class PipelineController {
         log.info("Parsing DBpedia n-triples from file...");
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
 
-        Map<String, String> idealQueryPatterns = new HashMap<>();
-        //Map<String, String> idealQueries = new HashMap<>();
-        log.info("Analysing queries from train dataset...");
-        questionsWithQuery.forEach((sparqlQuery, questionText) -> {
-            String queryWithoutNS = SPARQLUtilities.resolveNamespaces(sparqlQuery);
-            QueryMappingFactory queryMappingFactory = new QueryMappingFactory(questionText, queryWithoutNS, Lists.newArrayList(ontologyNodes), dBpediaProperties);
-            String queryPattern = queryMappingFactory.getQueryPattern();
-            idealQueryPatterns.put(questionText, queryPattern);
-            //idealQueries.put(questionText, queryWithoutNS);
-        });
-
         List<CustomQuestion> customQuestions = new ArrayList<>();
 
         List<HAWKQuestion> testQuestions = new ArrayList<>();
@@ -139,13 +128,13 @@ public class PipelineController {
         mappings = semanticAnalysisHelper.extractTemplates(customQuestions, Lists.newArrayList(ontologyNodes), dBpediaProperties);
 
         log.info("Creating weka model...");
-        ArffGenerator arffGenerator = new ArffGenerator(customQuestions);
+        new ArffGenerator(customQuestions);
 
         graphs = new HashSet<>();
         customQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
 
         //TODO enable parallelization with customQuestions.parallelStream().forEach()
-        testQuestions.parallelStream().forEach(q -> answerQuestion(idealQueryPatterns, graphs, q));
+        testQuestions.parallelStream().forEach(q -> answerQuestion(graphs, q));
     }
 
     private void createOntologyMapping(Map<String, String> questionsWithQuery) {
@@ -204,15 +193,15 @@ public class PipelineController {
     }
 
     public AnswerToQuestion answerQuestion(String question) {
-        return answerQuestion(question, graphs, new HashMap<>());
+        return answerQuestion(question, graphs);
     }
 
-    private void answerQuestion(Map<String, String> idealQueryPatterns, HashSet<String> graphs, HAWKQuestion q) {
-        AnswerToQuestion answer = answerQuestion(q.getLanguageToQuestion().get("en"), graphs, idealQueryPatterns);
+    private void answerQuestion(HashSet<String> graphs, HAWKQuestion q) {
+        AnswerToQuestion answer = answerQuestion(q.getLanguageToQuestion().get("en"), graphs);
         log.debug("Best result: " + Strings.join(answer.getAnswer(), "; "));
     }
 
-    private AnswerToQuestion answerQuestion(String question, HashSet<String> graphs, Map<String, String> idealQueries) {
+    private AnswerToQuestion answerQuestion(String question, HashSet<String> graphs) {
         Set<String> bestAnswer;
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
@@ -270,26 +259,6 @@ public class PipelineController {
             });
         }
         return results;
-    }
-
-    private void addUnresolvedEntities(Map<String, List<String>> from, Map<String, Map<String, Integer>> to) {
-        from.forEach((entity, posSequence) -> {
-            if (to.containsKey(entity)) {
-                Map<String, Integer> tmp = to.get(entity);
-                posSequence.forEach(s -> {
-                    if (tmp.containsKey(s)) {
-                        tmp.put(s, tmp.get(s) + 1);
-                    } else {
-                        tmp.put(s, 1);
-                    }
-                });
-                to.put(entity, tmp);
-            } else {
-                HashMap<String, Integer> tmp = new HashMap<>();
-                posSequence.forEach(s -> tmp.put(s, 1));
-                to.put(entity, tmp);
-            }
-        });
     }
 
     private List<String> getSimpleModifiers(String queryString) {

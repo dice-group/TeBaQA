@@ -331,8 +331,8 @@ public class QueryMappingFactory {
             Map<String, String> lemmas = getLemmas(word);
             Map<String, String> pos = SemanticAnalysisHelper.getPOS(word);
             if (!Stopwords.isStopword(word)
-                    && !lemmas.getOrDefault(word, "").toLowerCase().equals("be")
-                    && !lemmas.getOrDefault(word, "").toLowerCase().equals("the")
+                    && !lemmas.getOrDefault(word, "").equalsIgnoreCase("be")
+                    && !lemmas.getOrDefault(word, "").equalsIgnoreCase("the")
                     && !pos.getOrDefault(word, "").equalsIgnoreCase("WP")
                     && !pos.getOrDefault(word, "").equalsIgnoreCase("DT")
                     && !pos.getOrDefault(word, "").equalsIgnoreCase("IN")) {

@@ -14,9 +14,18 @@ function SubForm(s) {
                 ul.append('<li><span class="tab">No answer were found.</span></li>');
             } else {
                 for (var i in answer) {
-                    ul.append('<li><span class="tab">' + answer[i] + '</span></li>');
+                    if ({}.hasOwnProperty.call(answer, i)) {
+                        ul.append('<li><span class="tab">' + answer[i] + '</span></li>');
+                    }
                 }
             }
         }
+    });
+}
+
+function init() {
+    $('#search-form-id').submit(function () {
+        SubForm($('#search-bar').val());
+        return false;
     });
 }

@@ -84,21 +84,6 @@ public class SemanticAnalysisHelper {
     public Annotation annotate(String text) {
         Annotation annotation = new Annotation(text);
         pipeline.annotate(annotation);
-
-        //List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
-        //for (CoreMap sentence : sentences) {
-        //SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
-        //if (dependencyGraph == null) {
-        //dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
-        //}
-        //dependencyGraph.prettyPrint();
-        //String compactGraph = dependencyGraph.toCompactString();
-
-        //log.info(compactGraph);
-        //}
-
-
-        //pipeline.prettyPrint(annotation, System.out);
         return annotation;
     }
 
@@ -338,31 +323,16 @@ public class SemanticAnalysisHelper {
         Instance instance = analyzer.analyze(question);
         instance.setDataset(dataset);
         instance.setMissing(classAttribute);
-        String[] classes = new String[graphList.size()];
-        int i = 0;
-        for (Enumeration<Object> e = classAttribute.enumerateValues(); e.hasMoreElements(); ) {
-            String graph = (String) e.nextElement();
-            classes[i] = graph;
-            i++;
-        }
 
         String predictedGraph = "";
         try {
             Classifier cls = (Classifier) SerializationHelper.read(new FileInputStream(new ClassPathResource("randomCommittee.model").getFile()));
             double predictedClass = cls.classifyInstance(instance);
-
             predictedGraph = instance.classAttribute().value((int) predictedClass);
-            //log.info(String.format("Question: '%s' \nPredicted class: %s", question.getQuestionText(), predictedGraph));
-            //log.info("Classified instance: " + instance);
 
         } catch (Exception e) {
             log.error("Unable to load weka model file!", e);
         }
-        // if (predictedGraph.equals(question.getGraph())) {
-        //log.info("Predicted class is correct.");
-        //} else {
-        //log.info("Predicted class is incorrect! Predicted: " + predictedGraph + "; actual: " + question.getGraph());
-        //}
         return predictedGraph;
     }
 
@@ -610,23 +580,6 @@ public class SemanticAnalysisHelper {
             }
         });
         return a;
-    }
-
-    private Set<String> getBestAnswerByPageRank(List<List<String>> suitableAnswers) {
-        Set<String> bestAnswer = new HashSet<>();
-        //If there are multiple suitable answers, use the one(s) with the best avg page rank
-        final Double[] bestAvgPageRank = {0.0};
-        suitableAnswers.forEach(values -> {
-            List<Double> pageRanks = new ArrayList<>();
-            values.forEach(s -> pageRanks.add(SPARQLUtilities.getPageRank(s)));
-            OptionalDouble average = pageRanks.stream().mapToDouble(value -> value).average();
-            Double avgPageRank = average.isPresent() ? average.getAsDouble() : 0.0;
-            if (avgPageRank >= bestAvgPageRank[0]) {
-                bestAnswer.addAll(new ArrayList<>(values));
-                bestAvgPageRank[0] = avgPageRank;
-            }
-        });
-        return bestAnswer;
     }
 
     public static List<String> getHypernymsFromWiktionary(String s) {
