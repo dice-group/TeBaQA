@@ -1,12 +1,17 @@
 function SubForm(s) {
     $.ajax({
-        url: '/qa-simple',
+        beforeSend: function () {
+            $('#loaderDiv').show()
+        },
+        url: 'qa-simple',
+        timeout: 30000,
         type: 'post',
         data: {
             'query': s,
             'lang': 'en'
         },
         success: function (msg) {
+            $('#loaderDiv').hide();
             var answer = JSON.parse(msg)['answers'];
             var ul = $("#answers").find("ul");
             ul.empty();
@@ -19,11 +24,21 @@ function SubForm(s) {
                     }
                 }
             }
+        },
+        error: function (xhr, status, error) {
+            $('#loaderDiv').hide();
+            console.error('Error while executing AJAX call: ' + xhr.responseText);
+            alert('Error while sending request. Please try again later!');
+        }
+    }).fail(function (jqXHR, textStatus) {
+        if (textStatus === 'timeout') {
+            alert('Timeout reached. Please try again later!');
         }
     });
 }
 
 function init() {
+    $('#loaderDiv').hide();
     $('#search-form-id').submit(function () {
         SubForm($('#search-bar').val());
         return false;
