@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import weka.core.Stopwords;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -74,7 +75,7 @@ public class QueryMappingFactory {
     private List<String> properties = new ArrayList<>();
     private Set<String> rdfEntities = new HashSet<>();
     private Set<String> ontologyURIs;
-    public final static String NON_WORD_CHARACTERS_REGEX = "[^a-zA-Z0-9_äÄöÖüÜ]";
+    public final static String NON_WORD_CHARACTERS_REGEX = "[^a-zA-Z0-9_äÄöÖüÜ']";
 
     /**
      * Default constructor. Tries to create a mapping between a word or group of words and a resource in it's SPARQL
@@ -248,6 +249,10 @@ public class QueryMappingFactory {
         return permutations;
     }
 
+    private List<String> getNeighborCoOccurrencePermutations(List<String> s) {
+        return getNeighborCoOccurrencePermutations(s.toArray(new String[0]));
+    }
+
     private List<List<Integer>> createDownwardCountingPermutations(int a, int b) {
         List<List<Integer>> permutations = new ArrayList<>();
         for (int i = a; i >= 0; i--) {
@@ -311,19 +316,23 @@ public class QueryMappingFactory {
     }
 
     Set<String> extractEntities(String question, boolean useSynonyms) {
-        Map<String, List<String>> ontologyMapping = OntologyMappingProvider.getOntologyMapping();
+        Map<String, Set<String>> ontologyMapping = OntologyMappingProvider.getOntologyMapping();
         Set<String> rdfEntities = new HashSet<>();
+
+        question = SemanticAnalysisHelper.removeQuestionWords(question);
 
         Map<String, List<Entity>> spotlightEntities = extractSpotlightEntities(question);
         if (spotlightEntities.size() > 0) {
             spotlightEntities.get("en").forEach(entity -> entity.getUris().forEach(resource -> rdfEntities.add(resource.getURI())));
         }
 
-        String[] wordsFromQuestion = question.split(NON_WORD_CHARACTERS_REGEX);
+        List<String> wordsFromQuestion = Arrays.asList(question.split(NON_WORD_CHARACTERS_REGEX));
         for (String word : wordsFromQuestion) {
             Map<String, String> lemmas = getLemmas(word);
             Map<String, String> pos = SemanticAnalysisHelper.getPOS(word);
-            if (!lemmas.getOrDefault(word, "").toLowerCase().equals("be") && !lemmas.getOrDefault(word, "").toLowerCase().equals("the")
+            if (!Stopwords.isStopword(word)
+                    && !lemmas.getOrDefault(word, "").toLowerCase().equals("be")
+                    && !lemmas.getOrDefault(word, "").toLowerCase().equals("the")
                     && !pos.getOrDefault(word, "").equalsIgnoreCase("WP")
                     && !pos.getOrDefault(word, "").equalsIgnoreCase("DT")
                     && !pos.getOrDefault(word, "").equalsIgnoreCase("IN")) {
@@ -335,7 +344,13 @@ public class QueryMappingFactory {
                 List<String> ontologies = getOntologies(word);
                 rdfEntities.addAll(ontologies);
             }
-            List<String> ontologiesFromMapping = ontologyMapping.getOrDefault(lemmas.getOrDefault(word, "").toLowerCase(), new ArrayList<>());
+            Set<String> ontologiesFromMapping = new HashSet<>();
+            if (ontologyMapping == null) {
+                log.error("Ontology mapping is empty! (This should only happen during tests)");
+            } else {
+                ontologiesFromMapping = ontologyMapping.getOrDefault(lemmas.getOrDefault(word, "").toLowerCase(), new HashSet<>());
+            }
+
             if (!ontologiesFromMapping.isEmpty()) {
                 rdfEntities.addAll(ontologiesFromMapping);
             }
@@ -418,7 +433,7 @@ public class QueryMappingFactory {
         List<String> questionWords = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which|is|are|did|was|does|a".split("\\|"));
         Set<String> result = new HashSet<>();
         //SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(String.format("select distinct ?s { ?s ?p ?o. ?s <http://www.w3.org/2000/01/rdf-schema#label> ?l. filter(langmatches(lang(?l), 'en')) ?l <bif:contains> \"'%s'\" }", s));
-        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(String.format("SELECT DISTINCT ?s ?label WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?label . FILTER (lang(?label) = 'en'). ?label <bif:contains> \"'%s'\" . ?s <http://purl.org/dc/terms/subject> ?sub }", s));
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(String.format("SELECT DISTINCT ?s ?label WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?label . FILTER (lang(?label) = 'en'). ?label <bif:contains> \"'%s'\" . ?s <http://purl.org/dc/terms/subject> ?sub }", s.replace("'", "\\\\'")));
         List<String> resultSet = new ArrayList<>();
         sparqlResultSets.forEach(sparqlResultSet -> resultSet.addAll(sparqlResultSet.getResultSet()));
         resultSet.stream().filter(s1 -> s1.startsWith("http://")).forEach(uri -> {

@@ -18,6 +18,7 @@ public class Utilities {
 
     public static Pattern BETWEEN_CIRCUMFLEX = Pattern.compile("\\^(.*?)\\^");
     public static Pattern SPARQL_VARIABLE = Pattern.compile("\\?\\w+");
+    public static Pattern BETWEEN_LACE_BRACES = Pattern.compile("<(.*?)>");
     public static Pattern BETWEEN_CURLY_BRACES = Pattern.compile("\\{(.*?)\\}");
     public static Pattern ARGUMENTS_BETWEEN_SPACES = Pattern.compile("\\S+");
 

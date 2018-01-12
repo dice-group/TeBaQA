@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Source: https://github.com/AKSW/NLIWOD/blob/master/qa.hawk/src/main/java/org/aksw/hawk/experiment/QueryIsomorphism.java
@@ -31,7 +32,7 @@ public class QueryIsomorphism {
 
     private List<Cluster> clusters;
 
-    QueryIsomorphism(HashMap<String, String> queries) {
+    QueryIsomorphism(Map<String, String> queries) {
         log.debug("Generating SPARQL Query graphs...");
         BiMap<String, String> inverseQueryMap = HashBiMap.create(queries).inverse();
         clusters = new ArrayList<>(new ArrayList<>());

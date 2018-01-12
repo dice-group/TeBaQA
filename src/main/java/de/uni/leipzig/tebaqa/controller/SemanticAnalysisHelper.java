@@ -633,4 +633,20 @@ public class SemanticAnalysisHelper {
         Map<String, List<String>> hypernymMapping = getHypernymMapping();
         return hypernymMapping.getOrDefault(s, new ArrayList<>());
     }
+
+
+    static long countUpperCase(String s) {
+        return s.chars().filter(Character::isUpperCase).count();
+    }
+
+    public static String removeQuestionWords(String question) {
+        List<String> questionWords = Arrays.asList("list|give me|give|show me|show|who|when|were|what|why|whose|how|where|which|is|are|did|was|does".split("\\|"));
+
+        for (String questionWord : questionWords) {
+            if (question.toLowerCase().startsWith(questionWord)) {
+                return question.substring(questionWord.length(), question.length()).trim();
+            }
+        }
+        return question;
+    }
 }
