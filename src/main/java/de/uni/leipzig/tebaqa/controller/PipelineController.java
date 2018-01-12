@@ -4,14 +4,19 @@ import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.helper.DBpediaPropertiesProvider;
 import de.uni.leipzig.tebaqa.helper.NTripleParser;
+import de.uni.leipzig.tebaqa.helper.OntologyMappingProvider;
+import de.uni.leipzig.tebaqa.helper.PosTransformation;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
+import de.uni.leipzig.tebaqa.helper.Utilities;
 import de.uni.leipzig.tebaqa.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.model.Cluster;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryBuilder;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
+import de.uni.leipzig.tebaqa.model.WordNetWrapper;
+import edu.cmu.lti.jawjaw.pobj.POS;
 import joptsimple.internal.Strings;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
@@ -32,7 +37,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static de.uni.leipzig.tebaqa.helper.OntologyMappingProvider.getOntologyMapping;
+import static de.uni.leipzig.tebaqa.helper.QueryMappingFactory.NON_WORD_CHARACTERS_REGEX;
 import static java.util.Collections.emptyList;
 
 
@@ -41,8 +46,6 @@ public class PipelineController {
     private static Logger log = Logger.getLogger(PipelineController.class.getName());
 
     private static SemanticAnalysisHelper semanticAnalysisHelper;
-    private static boolean mockTemplates = false;
-    private static boolean mockVariables = false;
     private List<Dataset> trainDatasets = new ArrayList<>();
     private List<Dataset> testDatasets = new ArrayList<>();
     private Map<String, QueryTemplateMapping> mappings;
@@ -51,10 +54,7 @@ public class PipelineController {
 
     public PipelineController(List<Dataset> trainDatasets, List<Dataset> testDatasets) {
         log.info("Configuring controller");
-        log.info("Using mocked query templates: " + mockTemplates + " (default: false)");
-        log.info("Using mocked query variables: " + mockVariables + " (default: false)");
         semanticAnalysisHelper = new SemanticAnalysisHelper();
-        getOntologyMapping();
         trainDatasets.forEach(this::addTrainDataset);
         testDatasets.forEach(this::addTestDataset);
 
@@ -72,7 +72,7 @@ public class PipelineController {
                     .collect(Collectors.toList());
             questions.addAll(HAWKQuestionFactory.createInstances(result));
         }
-        HashMap<String, String> questionsWithQuery = new HashMap<>();
+        Map<String, String> questionsWithQuery = new HashMap<>();
         for (HAWKQuestion q : questions) {
             //only use unique questions in case multiple datasets are used
             String questionText = q.getLanguageToQuestion().get("en");
@@ -81,22 +81,15 @@ public class PipelineController {
             }
         }
 
+        log.info("Generating ontology mapping...");
+        createOntologyMapping(questionsWithQuery);
+        log.debug("Ontology Mapping: " + OntologyMappingProvider.getOntologyMapping());
+
         log.info("Getting DBpedia properties from SPARQL endpoint...");
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
 
-        log.info("Parsing DBpedia ontologies from file...");
+        log.info("Parsing DBpedia n-triples from file...");
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
-
-        Map<String, String> idealQueryPatterns = new HashMap<>();
-        //Map<String, String> idealQueries = new HashMap<>();
-        log.info("Analysing queries from train dataset...");
-        questionsWithQuery.forEach((sparqlQuery, questionText) -> {
-            String queryWithoutNS = SPARQLUtilities.resolveNamespaces(sparqlQuery);
-            QueryMappingFactory queryMappingFactory = new QueryMappingFactory(questionText, queryWithoutNS, Lists.newArrayList(ontologyNodes), dBpediaProperties);
-            String queryPattern = queryMappingFactory.getQueryPattern();
-            idealQueryPatterns.put(questionText, queryPattern);
-            //idealQueries.put(questionText, queryWithoutNS);
-        });
 
         List<CustomQuestion> customQuestions = new ArrayList<>();
 
@@ -135,54 +128,88 @@ public class PipelineController {
         mappings = semanticAnalysisHelper.extractTemplates(customQuestions, Lists.newArrayList(ontologyNodes), dBpediaProperties);
 
         log.info("Creating weka model...");
-        ArffGenerator arffGenerator = new ArffGenerator(customQuestions);
+        new ArffGenerator(customQuestions);
 
         graphs = new HashSet<>();
         customQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
 
         //TODO enable parallelization with customQuestions.parallelStream().forEach()
-        testQuestions.parallelStream().forEach(q -> answerQuestion(idealQueryPatterns, graphs, q));
+        testQuestions.parallelStream().forEach(q -> answerQuestion(graphs, q));
+    }
+
+    private void createOntologyMapping(Map<String, String> questionsWithQuery) {
+        Map<String, Set<String>> lemmaOntologyMapping = new HashMap<>();
+        questionsWithQuery.forEach((sparqlQuery, questionText) -> {
+            WordNetWrapper wordNetWrapper = new WordNetWrapper();
+            ArrayList<String> words = Lists.newArrayList(questionText.split(NON_WORD_CHARACTERS_REGEX));
+            Matcher matcher = Utilities.BETWEEN_LACE_BRACES.matcher(SPARQLUtilities.resolveNamespaces(sparqlQuery));
+            while (matcher.find()) {
+                String entity = matcher.group().replace("<", "").replace(">", "");
+                if (!entity.startsWith("http://dbpedia.org/resource/")) {
+                    for (String word : words) {
+                        Map<String, String> lemmas = SemanticAnalysisHelper.getLemmas(word);
+                        String lemma;
+                        if (lemmas.size() == 1 && lemmas.containsKey(word)) {
+                            lemma = lemmas.get(word);
+                        } else {
+                            lemma = word;
+                        }
+                        String[] entityParts = entity.split("/");
+                        String entityName = entityParts[entityParts.length - 1];
+                        if (word.equals(entityName)) {
+                            //Equal ontologies like parent -> http://dbpedia.org/ontology/parent are detected already
+                            continue;
+                        }
+                        String wordPosString = SemanticAnalysisHelper.getPOS(lemma).getOrDefault(lemma, "");
+                        POS currentWordPOS = PosTransformation.transform(wordPosString);
+                        String posStringOfEntity = SemanticAnalysisHelper.getPOS(entityName).getOrDefault(entityName, "");
+                        POS entityPOS = PosTransformation.transform(posStringOfEntity);
+                        Double similarity;
+                        if (entityPOS == null || currentWordPOS == null) {
+                            continue;
+
+                        }
+                        if (entityName.length() > 1 && SemanticAnalysisHelper.countUpperCase(entityName.substring(1, entityName.length() - 1)) > 0) {
+                            similarity = wordNetWrapper.semanticWordSimilarity(entityName, lemma, currentWordPOS);
+                        } else {
+                            similarity = wordNetWrapper.semanticWordSimilarity(lemma, currentWordPOS, entityName, entityPOS);
+                        }
+
+                        if (similarity.compareTo(0.33) > 0) {
+                            Set<String> entities;
+                            if (lemmaOntologyMapping.containsKey(lemma)) {
+                                entities = lemmaOntologyMapping.get(lemma);
+                            } else {
+                                entities = new HashSet<>();
+                            }
+                            entities.add(entity);
+                            lemmaOntologyMapping.put(lemma, entities);
+                        }
+                    }
+                }
+            }
+        });
+        OntologyMappingProvider.setOntologyMapping(lemmaOntologyMapping);
     }
 
     public AnswerToQuestion answerQuestion(String question) {
-        return answerQuestion(question, graphs, new HashMap<>());
+        return answerQuestion(question, graphs);
     }
 
-    private void answerQuestion(Map<String, String> idealQueryPatterns, HashSet<String> graphs, HAWKQuestion q) {
-        AnswerToQuestion answer = answerQuestion(q.getLanguageToQuestion().get("en"), graphs, idealQueryPatterns);
+    private void answerQuestion(HashSet<String> graphs, HAWKQuestion q) {
+        AnswerToQuestion answer = answerQuestion(q.getLanguageToQuestion().get("en"), graphs);
         log.debug("Best result: " + Strings.join(answer.getAnswer(), "; "));
     }
 
-    private AnswerToQuestion answerQuestion(String question, HashSet<String> graphs, Map<String, String> idealQueries) {
+    private AnswerToQuestion answerQuestion(String question, HashSet<String> graphs) {
         Set<String> bestAnswer;
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
         QueryMappingFactory mappingFactory = new QueryMappingFactory(question, "", Lists.newArrayList(ontologyNodes), dBpediaProperties);
         List<Map<Integer, List<String>>> results = new ArrayList<>();
         String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
-        List<String> queries;
         List<String> mockedEntities = new ArrayList<>();
-        if (mockVariables) {
-            String originalQuery = idealQueries.get(question);
-            String regex = "<(.+?)>";
-            Pattern pattern = Pattern.compile(regex);
-            Matcher m = pattern.matcher(originalQuery);
-            while (m.find()) {
-                mockedEntities.add(m.group().replace("<", "").replace(">", ""));
-            }
-        }
-        if (mockTemplates) {
-            Map<String, QueryTemplateMapping> mockedMapping = new HashMap<>();
-            QueryTemplateMapping queryTemplateMapping = new QueryTemplateMapping(0, 0);
-            //TODO fix or remove this mock
-            //String originalQuery = idealQueryPatterns.get(question.getQuestionText());
-            //queryTemplateMapping.addSelectTemplate(originalQuery, question.getQuery());
-            //queryTemplateMapping.addAskTemplate(originalQuery, question.getQuery());
-            mockedMapping.put(graphPattern, queryTemplateMapping);
-            queries = mappingFactory.generateQueries(mockedMapping, graphPattern, mockedEntities, false);
-        } else {
-            queries = mappingFactory.generateQueries(mappings, graphPattern, mockedEntities, false);
-        }
+        List<String> queries = mappingFactory.generateQueries(mappings, graphPattern, mockedEntities, false);
 
         //If the template from the predicted graph won't find suitable templates, try all other templates
         if (queries.isEmpty()) {
@@ -232,26 +259,6 @@ public class PipelineController {
             });
         }
         return results;
-    }
-
-    private void addUnresolvedEntities(Map<String, List<String>> from, Map<String, Map<String, Integer>> to) {
-        from.forEach((entity, posSequence) -> {
-            if (to.containsKey(entity)) {
-                Map<String, Integer> tmp = to.get(entity);
-                posSequence.forEach(s -> {
-                    if (tmp.containsKey(s)) {
-                        tmp.put(s, tmp.get(s) + 1);
-                    } else {
-                        tmp.put(s, 1);
-                    }
-                });
-                to.put(entity, tmp);
-            } else {
-                HashMap<String, Integer> tmp = new HashMap<>();
-                posSequence.forEach(s -> tmp.put(s, 1));
-                to.put(entity, tmp);
-            }
-        });
     }
 
     private List<String> getSimpleModifiers(String queryString) {

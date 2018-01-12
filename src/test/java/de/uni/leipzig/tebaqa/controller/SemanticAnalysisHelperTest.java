@@ -728,4 +728,22 @@ public class SemanticAnalysisHelperTest {
         List<String> actual = SemanticAnalysisHelper.getHypernymsFromWiktionary("wife");
         assertTrue(actual.contains("spouse"));
     }
+
+    @Test
+    public void testRemoveQuestionWords() {
+        String actual = SemanticAnalysisHelper.removeQuestionWords("Give me something.");
+        assertTrue(actual.equals("something."));
+    }
+
+    @Test
+    public void testRemoveQuestionWords2() {
+        String actual = SemanticAnalysisHelper.removeQuestionWords("Who invented Slack?");
+        assertTrue(actual.equals("invented Slack?"));
+    }
+
+    @Test
+    public void testRemoveQuestionWordsOnlyRemovesFirstQuestionWord() {
+        String actual = SemanticAnalysisHelper.removeQuestionWords("Who plays in the Who?");
+        assertTrue(actual.equals("plays in the Who?"));
+    }
 }

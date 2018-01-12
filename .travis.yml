@@ -1,2 +1,2 @@
 language: java
-script: travis_wait 60 mvn clean test
+script: travis_wait 60 mvn test
