@@ -1,7 +1,7 @@
-function SubForm(s) {
+function submitForm(s) {
     $.ajax({
-        beforeSend: function () {
-            $('#loaderDiv').show()
+        beforeSend() {
+            $('#loaderDiv').show();
         },
         url: 'qa-simple',
         timeout: 30000,
@@ -10,24 +10,23 @@ function SubForm(s) {
             'query': s,
             'lang': 'en'
         },
-        success: function (msg) {
+        success(msg) {
             $('#loaderDiv').hide();
-            var answer = JSON.parse(msg)['answers'];
-            var ul = $("#answers").find("ul");
+            const answer = JSON.parse(msg)['answers'];
+            const ul = $("#answers").find("ul");
             ul.empty();
             if (!$.isArray(answer) || !answer.length) {
                 ul.append('<li><span class="tab">No answer were found.</span></li>');
             } else {
-                for (var i in answer) {
-                    if ({}.hasOwnProperty.call(answer, i)) {
+                for (let i in answer) {
+                    if (answer.hasOwnProperty(i)) {
                         ul.append('<li><span class="tab">' + answer[i] + '</span></li>');
                     }
                 }
             }
         },
-        error: function (xhr, status, error) {
+        error() {
             $('#loaderDiv').hide();
-            console.error('Error while executing AJAX call: ' + xhr.responseText);
             alert('Error while sending request. Please try again later!');
         }
     }).fail(function (jqXHR, textStatus) {
@@ -40,7 +39,7 @@ function SubForm(s) {
 function init() {
     $('#loaderDiv').hide();
     $('#search-form-id').submit(function () {
-        SubForm($('#search-bar').val());
+        submitForm($('#search-bar').val());
         return false;
     });
 }
