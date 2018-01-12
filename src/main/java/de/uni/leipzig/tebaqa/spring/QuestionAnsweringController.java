@@ -45,6 +45,13 @@ public class QuestionAnsweringController {
         }
     }
 
+    @RequestMapping(method = RequestMethod.GET, path = "/qa")
+    public String answerQuestion2(@RequestParam String query,
+                                  @RequestParam(required = false, defaultValue = "en") String lang,
+                                  HttpServletResponse response) {
+        return this.answerQuestion(query, lang, response);
+    }
+
     @RequestMapping(method = RequestMethod.POST, path = "/qa-simple")
     public String answerQuestionSimple(@RequestParam String query,
                                        @RequestParam(required = false, defaultValue = "en") String lang,
