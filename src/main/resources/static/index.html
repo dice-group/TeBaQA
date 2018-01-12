@@ -4,13 +4,23 @@
     <title>TeBaQA: Template Based Question Answering</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <link rel="stylesheet" type="text/css" href="main.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <script src="jquery-3.2.1.min.js"></script>
     <script src="main.js"></script>
 </head>
 <body>
+<h1 style="text-align: center">TeBaQA: Template Based Question Answering</h1>
 <form class="search-container form-wrapper cf" id="search-form-id" onsubmit="return SubForm($('#search-bar').val());">
-    <input type="text" id="search-bar" placeholder="What do you want to know?" required>
+    <input type="text" id="search-bar" placeholder="What do you want to know?" required pattern=".*\S+.*" autofocus>
     <button type="submit">Answer</button>
 </form>
+<div class="container">
+    <div id="answers">
+        <h3>Answer(s):</h3>
+        <ul id="answers-ul-id">
+        </ul>
+    </div>
+</div>
+
 </body>
 </html>

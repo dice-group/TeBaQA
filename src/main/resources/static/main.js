@@ -7,7 +7,16 @@ function SubForm(s) {
             'lang': 'en'
         },
         success: function (msg) {
-            alert(msg);
+            var answer = JSON.parse(msg)['answers'];
+            var ul = $("#answers").find("ul");
+            ul.empty();
+            if (!$.isArray(answer) || !answer.length) {
+                ul.append('<li><span class="tab">No answer were found.</span></li>');
+            } else {
+                for (var i in answer) {
+                    ul.append('<li><span class="tab">' + answer[i] + '</span></li>');
+                }
+            }
         }
     });
 }

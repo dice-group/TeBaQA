@@ -28,7 +28,7 @@ public class QuestionAnsweringController {
                                  @RequestParam(required = false, defaultValue = "en") String lang,
                                  HttpServletResponse response) {
         log.debug(String.format("Received POST request with: query='%s' and lang='%s'", query, lang));
-        if (!query.isEmpty()) {
+        if (!query.isEmpty() && isValidQuestion(query)) {
             PipelineController qaPipeline = getQAPipeline();
             String result;
             try {
@@ -57,7 +57,7 @@ public class QuestionAnsweringController {
                                        @RequestParam(required = false, defaultValue = "en") String lang,
                                        HttpServletResponse response) {
         log.debug(String.format("Received POST request with: query='%s' and lang='%s'", query, lang));
-        if (!query.isEmpty()) {
+        if (!query.isEmpty() && isValidQuestion(query)) {
             PipelineController qaPipeline = getQAPipeline();
             String result;
             try {
@@ -79,5 +79,9 @@ public class QuestionAnsweringController {
             log.error("Received request with empty query parameter!");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter query cannot be empty!").toString();
         }
+    }
+
+    private boolean isValidQuestion(String q) {
+        return q.trim().length() > 0;
     }
 }

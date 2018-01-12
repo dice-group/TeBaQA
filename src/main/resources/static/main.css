@@ -1,3 +1,12 @@
+body {
+    font-family: 'Roboto', sans-serif;
+}
+
+.container {
+    margin:0 auto;
+    width:480px;
+}
+
 .cf:before, .cf:after{
     content:"";
     display:table;
@@ -15,7 +24,7 @@
 .form-wrapper {
     width: 450px;
     padding: 15px;
-    margin: 150px auto 50px auto;
+    margin: 50px auto 50px auto;
     background: #444;
     background: rgba(0,0,0,.2);
     /*border-radius: 10px;*/
@@ -29,7 +38,7 @@
     height: 20px;
     padding: 10px 5px;
     float: left;
-    font: bold 15px 'lucida sans', 'trebuchet MS', 'Tahoma';
+    font: bold 15px 'Roboto', 'lucida sans', 'trebuchet MS', 'Tahoma';
     border: 0;
     background: #eee;
     border-radius: 3px 0 0 3px;
@@ -69,21 +78,21 @@
     cursor: pointer;
     height: 40px;
     width: 110px;
-    font: bold 15px/40px 'lucida sans', 'trebuchet MS', 'Tahoma';
+    font: bold 18px/40px 'Roboto', 'lucida sans', 'trebuchet MS', 'Tahoma';
     color: #fff;
-    text-transform: uppercase;
-    background: #d83c3c;
+    /*text-transform: uppercase;*/
+    background: #00897B;
     border-radius: 0 3px 3px 0;
-    text-shadow: 0 -1px 0 rgba(0, 0 ,0, .3);
+    /*text-shadow: 0 -1px 0 rgba(0, 0 ,0, .3);*/
 }
 
 .form-wrapper button:hover{
-    background: #e54040;
+    background: #009688;
 }
 
 .form-wrapper button:active,
 .form-wrapper button:focus{
-    background: #c42f2f;
+    background: #00796B;
     outline: 0;
 }
 
@@ -92,18 +101,18 @@
     position: absolute;
     border-width: 8px 8px 8px 0;
     border-style: solid solid solid none;
-    border-color: transparent #d83c3c transparent;
+    border-color: transparent #00897B transparent;
     top: 12px;
     left: -6px;
 }
 
 .form-wrapper button:hover:before{
-    border-right-color: #e54040;
+    border-right-color: #009688;
 }
 
 .form-wrapper button:focus:before,
 .form-wrapper button:active:before{
-    border-right-color: #c42f2f;
+    border-right-color: #00796B;
 }
 
 .form-wrapper button::-moz-focus-inner { /* remove extra button spacing for Mozilla Firefox */
