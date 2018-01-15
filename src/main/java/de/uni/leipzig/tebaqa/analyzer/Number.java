@@ -10,10 +10,9 @@ import org.aksw.mlqa.analyzer.IAnalyzer;
 import weka.core.Attribute;
 
 import java.util.List;
-import java.util.Properties;
 
 public class Number implements IAnalyzer {
-    private Attribute attribute = null;
+    private Attribute attribute;
     private StanfordCoreNLP pipeline;
 
     public Number() {

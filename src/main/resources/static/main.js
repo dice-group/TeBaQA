@@ -1,7 +1,21 @@
+function showSpinner() {
+    $('#loaderDiv').show();
+    $('#overlay').show();
+}
+
+function hideSpinner() {
+    $('#loaderDiv').hide();
+    $('#overlay').hide();
+}
+
+function emptyAnswerList() {
+    $("#answers").find("ul").empty();
+}
+
 function submitForm(s) {
     $.ajax({
         beforeSend() {
-            $('#loaderDiv').show();
+            showSpinner();
         },
         url: 'qa-simple',
         timeout: 30000,
@@ -11,10 +25,9 @@ function submitForm(s) {
             'lang': 'en'
         },
         success(msg) {
-            $('#loaderDiv').hide();
+            emptyAnswerList();
             const answer = JSON.parse(msg)['answers'];
             const ul = $("#answers").find("ul");
-            ul.empty();
             if (!$.isArray(answer) || !answer.length) {
                 ul.append('<li><span class="tab">No answer were found.</span></li>');
             } else {
@@ -24,12 +37,16 @@ function submitForm(s) {
                     }
                 }
             }
+            hideSpinner();
         },
         error() {
-            $('#loaderDiv').hide();
+            emptyAnswerList();
+            hideSpinner();
             alert('Error while sending request. Please try again later!');
         }
     }).fail(function (jqXHR, textStatus) {
+        emptyAnswerList();
+        hideSpinner();
         if (textStatus === 'timeout') {
             alert('Timeout reached. Please try again later!');
         }
@@ -37,7 +54,7 @@ function submitForm(s) {
 }
 
 function init() {
-    $('#loaderDiv').hide();
+    hideSpinner();
     $('#search-form-id').submit(function () {
         submitForm($('#search-bar').val());
         return false;

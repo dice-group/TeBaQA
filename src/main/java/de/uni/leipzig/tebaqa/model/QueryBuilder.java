@@ -12,7 +12,6 @@ import java.util.Map;
 import static edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
 
 public class QueryBuilder {
-    private static Logger log = Logger.getLogger(QueryBuilder.class);
     private SemanticAnalysisHelper analysis;
     private List<CustomQuestion> questions;
 

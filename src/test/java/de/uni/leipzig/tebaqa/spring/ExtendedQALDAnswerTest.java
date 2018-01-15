@@ -16,8 +16,8 @@ public class ExtendedQALDAnswerTest {
     public void testExtendedQALDAnswerGeneration() throws IOException {
         Set<String> answer = new HashSet<>();
         answer.add("http://dbpedia.org/resource/Michelle_Obama");
-        ExtendedQALDAnswer extendedQALDAnswer = new ExtendedQALDAnswer("Who is the spouse of Barack Obama?",
-                new AnswerToQuestion(answer, new HashSet<>()), "en");
+        ExtendedQALDAnswer extendedQALDAnswer = new ExtendedQALDAnswer(
+                new AnswerToQuestion(answer, new HashSet<>()));
         String result = extendedQALDAnswer.getResult();
         ByteArrayInputStream in = new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8.name()));
         ExtendedQALDJSONLoader.readJson(in);
@@ -28,8 +28,8 @@ public class ExtendedQALDAnswerTest {
         Set<String> answer = new HashSet<>();
         answer.add("http://dbpedia.org/resource/Michelle_Obama");
         answer.add("http://dbpedia.org/resource/Michelle_Obama_2");
-        ExtendedQALDAnswer extendedQALDAnswer = new ExtendedQALDAnswer("Who is the spouse of Barack Obama?",
-                new AnswerToQuestion(answer, new HashSet<>()), "en");
+        ExtendedQALDAnswer extendedQALDAnswer = new ExtendedQALDAnswer(
+                new AnswerToQuestion(answer, new HashSet<>()));
         String result = extendedQALDAnswer.getResult();
         ByteArrayInputStream in = new ByteArrayInputStream(result.getBytes(StandardCharsets.UTF_8.name()));
         ExtendedQALDJSONLoader.readJson(in);

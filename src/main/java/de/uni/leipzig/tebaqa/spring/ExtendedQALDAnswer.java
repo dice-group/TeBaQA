@@ -12,7 +12,7 @@ public class ExtendedQALDAnswer {
 
     private String result;
 
-    ExtendedQALDAnswer(String question, AnswerToQuestion answer, String lang) {
+    ExtendedQALDAnswer(AnswerToQuestion answer) {
         JsonArrayBuilder resultBindings = Json.createArrayBuilder();
         Set<String> answers = answer.getAnswer();
         answers.forEach(a -> {

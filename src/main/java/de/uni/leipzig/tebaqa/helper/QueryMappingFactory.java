@@ -389,7 +389,7 @@ public class QueryMappingFactory {
                             isImportantEntity = false;
                         }
                     }
-                    String coOccurrenceJoinedWithUnderScore = "http://dbpedia.org/resource/" + String.join("_", coOccurrenceSplitted);
+                    String coOccurrenceJoinedWithUnderScore = "http://dbpedia.org/resource/" + join("_", coOccurrenceSplitted);
                     if (isImportantEntity && existsAsEntity(coOccurrenceJoinedWithUnderScore)) {
                         rdfEntities.add(coOccurrenceJoinedWithUnderScore);
                     }
@@ -539,7 +539,7 @@ public class QueryMappingFactory {
                     .filter(s -> {
                         String[] split = s.split("/");
                         String baseResourceName = split[split.length - 1];
-                        double ratio = Utilities.getLevenshteinRatio(coOccurrence, baseResourceName);
+                        double ratio = getLevenshteinRatio(coOccurrence, baseResourceName);
                         return ratio <= 0.5;
                     })
                     .collect(Collectors.toSet());

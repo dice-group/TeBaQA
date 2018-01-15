@@ -41,7 +41,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -101,11 +100,7 @@ public class ArffGenerator {
         Instances trainingSet = new Instances("training_classifier: -C 4", fvfinal, questions.size());
         Instances testSet = new Instances("training_classifier: -C 4", fvfinal, questions.size());
         log.debug("Start collection of training data for each class");
-        Map<Integer, CustomQuestion> idGraph = new HashMap<>();
-        for (int i = 0; i < questions.size(); i++) {
-            CustomQuestion question = questions.get(i);
-            idGraph.put(i, question);
-
+        for (CustomQuestion question : questions) {
             Instance instance = analyzer.analyze(question.getQuestionText());
             List<String> modifiers = question.getModifiers();
 
@@ -474,8 +469,6 @@ public class ArffGenerator {
             String correctGraph = idGraph.get(i).getGraph();
             if (classifiedGraph.equals(correctGraph)) {
                 correctlyClassified++;
-            } else {
-                //log.info("False classified: " + idGraph.get(i).getQuestionText() + "\t" + classifiedGraph + "\t" + idGraph.get(i).getGraph());
             }
         }
         return (float) correctlyClassified / classified;
