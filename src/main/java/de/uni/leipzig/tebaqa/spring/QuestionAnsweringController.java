@@ -32,9 +32,9 @@ public class QuestionAnsweringController {
             PipelineController qaPipeline = getQAPipeline();
             String result;
             try {
-                result = new ExtendedQALDAnswer(query, qaPipeline.answerQuestion(query), lang).getResult();
+                result = new ExtendedQALDAnswer(qaPipeline.answerQuestion(query)).getResult();
             } catch (Exception e) {
-                result = new ExtendedQALDAnswer(query, new AnswerToQuestion(new HashSet<>(), new HashSet<>()), lang).getResult();
+                result = new ExtendedQALDAnswer(new AnswerToQuestion(new HashSet<>(), new HashSet<>())).getResult();
                 log.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);
             }
             log.debug("Answer:" + result);

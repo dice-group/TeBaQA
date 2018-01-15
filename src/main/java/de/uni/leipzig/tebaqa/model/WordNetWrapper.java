@@ -82,7 +82,7 @@ public class WordNetWrapper {
                 String lemma = token.get(CoreAnnotations.LemmaAnnotation.class);
                 if (lemma != null && pos != null && pos.length() > 0 && ner != null
                         && !ner.equals("PERSON") && !ner.equals("ORGANIZATION") && !ner.equals("LOCATION")
-                        && !lemma.toLowerCase().equals("be")
+                        && !lemma.equalsIgnoreCase("be")
                         && !pos.equals("WP") && !pos.equals("WRB") && !pos.equals(".")) {
                     char posTag = Character.toUpperCase(pos.charAt(0));
                     if (Character.compare(posTag, 'N') == 0 || Character.compare(posTag, 'V') == 0
