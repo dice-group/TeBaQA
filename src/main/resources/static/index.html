@@ -1,15 +1,26 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <title>TeBaQA: Template Based Question Answering</title>
+    <title>TeBaQA: Semantic Search</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <link rel="stylesheet" type="text/css" href="main.css">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <script src="jquery-3.2.1.min.js"></script>
     <script src="main.js"></script>
+    <!-- Material Design fonts -->
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:500"/>
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" href="assets/bootstrap.min.css"/>
+    <link rel="stylesheet" type="text/css" href="assets/bootstrap-material-design.min.css"/>
+    <link rel="stylesheet" type="text/css" href="assets/ripples.min.css"/>
+    <link rel="stylesheet" type="text/css" href="assets/snackbar.min.css"/>
+    <link rel="stylesheet" type="text/css" href="assets/main.css">
+
+
 </head>
 <body onload="init()">
-<h1 style="text-align: center">TeBaQA: Template Based Question Answering</h1>
+<h1 style="text-align: center">TeBaQA: Semantic Search</h1>
 <form class="search-container form-wrapper cf" id="search-form-id">
     <input type="text" id="search-bar" placeholder="What do you want to know?" required pattern=".*\S+.*" autofocus>
     <button type="submit">Answer</button>
@@ -19,9 +30,8 @@
 <div class="container">
     <div id="answers">
         <h3>Answer(s):</h3>
-        <ul id="answers-ul-id">
-        </ul>
     </div>
+    <div id="infoboxes"></div>
 </div>
 
 </body>
