@@ -15,3 +15,6 @@
   - `lang`: The language of the question (default:`en`) *Note: Other languages than English haven't been implemented yet.*
 - An example request could look like this: 
   - `http://localhost:8181/qa?query=What is the original title of the interpretation of dreams?&lang=en`
+  
+## Credit
+- [DBpedia Chatbot](https://github.com/dbpedia/chatbot): Styling of the result cards.
