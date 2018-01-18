@@ -2,6 +2,94 @@ body {
     font-family: 'Roboto', sans-serif;
 }
 
+h1 {
+    margin-top: 20px !important;
+}
+
+@media screen and (max-width: 400px) {
+    .card {
+        float: none;
+        margin-right: 0;
+        width: auto;
+        border: 0;
+        border-bottom: 2px solid #000;
+    }
+}
+
+#infoboxes {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    -webkit-flex-wrap: wrap;
+    flex-wrap: wrap;
+    flex-flow: row wrap;
+    max-height: 800px;
+    margin-left: -8px;
+}
+
+.img-wrapper {
+    text-align: center;
+    display: inline-block;
+    padding: 5px;
+    max-width: 30%;
+}
+
+img {
+    /*width: 100%;*/
+    vertical-align: initial;
+    max-width: 100px;
+    max-height: 100px;
+    width: auto;
+    height: auto;
+}
+
+.content {
+    padding: 5px 10px;
+    display: inline-block;
+    max-width: 70%;
+    position: inherit;
+}
+
+.content-no-image {
+    padding: 10px 10px;
+    display: inline-block;
+}
+
+.title {
+    font-size: 18px;
+    line-height: 24px;
+    margin-bottom: 5px;
+}
+
+.card {
+    display: inline-block;
+    min-width: unset !important;
+    max-width: 550px;
+    margin: 0 10px 10px 0;
+    box-shadow: 0 8px 17px 0 rgba(0,0,0,.2), 0 6px 20px 0 rgba(0,0,0,.19);
+    /*flex: 1;*/
+}
+
+.text {
+    font-size: 13px;
+    line-height: 15px;
+}
+
+.summary {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.button-group .btn i {
+    font-size: 1.8rem;
+    position: absolute;
+    left: 90%;
+}
+
+.btn {
+    font-size: 1.3rem;
+}
+
 #loaderDiv {
     position: absolute;
     top: 50%;
@@ -22,8 +110,8 @@ body {
 }
 
 .container {
-    margin:0 auto;
-    width:480px;
+    /*margin:0 auto;*/
+    /*width:480px;*/
 }
 
 .cf:before, .cf:after{
@@ -53,7 +141,8 @@ body {
 /* Form text input */
 
 .form-wrapper input {
-    width: 330px;
+    width: 300px;
+    box-sizing: content-box;
     height: 20px;
     padding: 10px 5px;
     float: left;
@@ -70,6 +159,28 @@ body {
 }
 
 .form-wrapper input::-webkit-input-placeholder {
+    font-size: 15px;
+    color: #999;
+    font-weight: normal;
+    font-style: italic;
+}
+
+input::-webkit-input-placeholder {
+    font-size: 15px;
+    color: #999;
+    font-weight: normal;
+    font-style: italic;
+}
+
+input:-ms-input-placeholder {
+    font-size: 15px;
+    color: #999;
+    font-weight: normal;
+    font-style: italic;
+}
+
+input::-moz-placeholder {
+    font-size: 15px;
     color: #999;
     font-weight: normal;
     font-style: italic;
