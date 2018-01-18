@@ -1,5 +1,6 @@
 body {
     font-family: 'Roboto', sans-serif;
+    background-color: rgb(245, 241, 238);
 }
 
 h1 {
@@ -35,19 +36,16 @@ h1 {
 }
 
 img {
-    /*width: 100%;*/
     vertical-align: initial;
-    max-width: 100px;
-    max-height: 100px;
-    width: auto;
-    height: auto;
+    width: 100%;
 }
 
 .content {
     padding: 5px 10px;
-    display: inline-block;
+    display: block;
     max-width: 70%;
     position: inherit;
+
 }
 
 .content-no-image {
@@ -66,18 +64,28 @@ img {
     min-width: unset !important;
     max-width: 550px;
     margin: 0 10px 10px 0;
-    box-shadow: 0 8px 17px 0 rgba(0,0,0,.2), 0 6px 20px 0 rgba(0,0,0,.19);
-    /*flex: 1;*/
+    box-shadow: 0 8px 17px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19);
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 20px;
+    padding: 5px 10px;
+    text-size-adjust: 100%;
+    visibility: visible;
+    width: 334px;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
 .text {
     font-size: 13px;
-    line-height: 15px;
+    color: #ed7109;
+    line-height: 20px;
+    font-weight: 300;
+    word-break: normal;
+    word-wrap: normal;
 }
 
 .summary {
-    margin-left: 10px;
-    margin-right: 10px;
+    display: flex;
 }
 
 .button-group .btn i {
@@ -87,7 +95,7 @@ img {
 }
 
 .btn {
-    font-size: 1.3rem;
+    font-size: 14px;
 }
 
 #loaderDiv {
@@ -95,36 +103,46 @@ img {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index:1002;
+    z-index: 1002;
 }
+
 #overlay {
-    position:fixed;
-    top:0;
-    bottom:0;
-    left:0;
-    right:0;
-    background-color:#000;
-    opacity:0.8;
-    display:block;
-    z-index:1001;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #000;
+    opacity: 0.8;
+    display: block;
+    z-index: 1001;
 }
 
 .container {
-    /*margin:0 auto;*/
-    /*width:480px;*/
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px 5px 15px;
 }
 
-.cf:before, .cf:after{
-    content:"";
-    display:table;
+.title {
+    font-size: 18px;
+    color: #074764;
+    line-height: 24px;
+    margin-bottom: 5px;
 }
 
-.cf:after{
-    clear:both;
+.cf:before, .cf:after {
+    content: "";
+    display: table;
 }
 
-.cf{
-    zoom:1;
+.cf:after {
+    clear: both;
+}
+
+.cf {
+    zoom: 1;
 }
 
 /* Form wrapper styling */
@@ -132,10 +150,6 @@ img {
     width: 450px;
     padding: 15px;
     margin: 50px auto 50px auto;
-    background: #444;
-    background: rgba(0,0,0,.2);
-    /*border-radius: 10px;*/
-/* box-shadow: 0 1px 1px rgba(0,0,0,.4) inset, 0 1px 0 rgba(255,255,255,.2); */
 }
 
 /* Form text input */
@@ -150,12 +164,13 @@ img {
     border: 0;
     background: #eee;
     border-radius: 3px 0 0 3px;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19) !important;
 }
 
 .form-wrapper input:focus {
     outline: 0;
     background: #fff;
-    box-shadow: 0 0 2px rgba(0,0,0,.8) inset;
+    box-shadow: 0 0 2px rgba(0, 0, 0, .8) inset;
 }
 
 .form-wrapper input::-webkit-input-placeholder {
@@ -210,20 +225,19 @@ input::-moz-placeholder {
     width: 110px;
     font: bold 18px/40px 'Roboto', 'lucida sans', 'trebuchet MS', 'Tahoma';
     color: #fff;
-    /*text-transform: uppercase;*/
     background: #00897B;
     border-radius: 0 3px 3px 0;
-    /*text-shadow: 0 -1px 0 rgba(0, 0 ,0, .3);*/
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19) !important;
 }
 
-.form-wrapper button:hover{
+.form-wrapper button:hover {
     background: #009688;
 }
 
 .form-wrapper button:active,
-.form-wrapper button:focus{
+.form-wrapper button:focus {
     background: #00796B;
-    outline: 0;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19) !important;
 }
 
 .form-wrapper button:before { /* left arrow */
@@ -236,12 +250,12 @@ input::-moz-placeholder {
     left: -6px;
 }
 
-.form-wrapper button:hover:before{
+.form-wrapper button:hover:before {
     border-right-color: #009688;
 }
 
 .form-wrapper button:focus:before,
-.form-wrapper button:active:before{
+.form-wrapper button:active:before {
     border-right-color: #00796B;
 }
 
