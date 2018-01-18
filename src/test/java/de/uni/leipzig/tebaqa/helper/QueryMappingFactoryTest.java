@@ -1197,6 +1197,19 @@ public class QueryMappingFactoryTest {
     }
 
     @Test
+    public void testExtractResourcesWontUseStopwordThe() {
+        String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
+        String question = "Give me all members of the The Prodigy!";
+
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+
+        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        assertFalse(actual.contains("http://dbpedia.org/resource/The_The"));
+    }
+
+    @Test
     public void testExtractResourcesWontUseBeWithSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "What is Batman's real name?";

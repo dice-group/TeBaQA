@@ -369,48 +369,58 @@ public class QueryMappingFactory {
                             && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("WP")
                             && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("EX")
                             && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("IN")))) {
-                Map<String, Double> currentResources = new HashMap<>();
-                Map<String, Double> currentOntologies = new HashMap<>();
-
-                String lemmasJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, true);
-                Consumer<String> addResourceWithLevenshteinRatio = s -> {
-                    if (isResource(s)) {
-                        currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
-                    } else {
-                        currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
-                    }
-                };
-                if (coOccurrenceSplitted.length > 1 || (!wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("DT") && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").startsWith("W"))) {
-                    boolean isImportantEntity = true;
-                    if (coOccurrenceSplitted.length == 1) {
-                        Map<String, String> lemmas = getLemmas(coOccurrenceSplitted[0]);
-                        if (lemmas.getOrDefault(coOccurrenceSplitted[0], "").equals("be")
-                                || lemmas.getOrDefault(coOccurrenceSplitted[0], "").equals("the")) {
-                            isImportantEntity = false;
-                        }
-                    }
-                    String coOccurrenceJoinedWithUnderScore = "http://dbpedia.org/resource/" + join("_", coOccurrenceSplitted);
-                    if (isImportantEntity && existsAsEntity(coOccurrenceJoinedWithUnderScore)) {
-                        rdfEntities.add(coOccurrenceJoinedWithUnderScore);
+                boolean containsOnlyStopwords = true;
+                for (String word : coOccurrenceSplitted) {
+                    if (!Stopwords.isStopword(word)) {
+                        containsOnlyStopwords = false;
                     }
                 }
-                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoined).forEach(addResourceWithLevenshteinRatio);
+                if (!containsOnlyStopwords) {
+                    Map<String, Double> currentResources = new HashMap<>();
+                    Map<String, Double> currentOntologies = new HashMap<>();
 
-                String lemmasJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, true);
-                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoinedCapitalized).forEach(addResourceWithLevenshteinRatio);
+                    String lemmasJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, true);
+                    Consumer<String> addResourceWithLevenshteinRatio = s -> {
+                        if (isResource(s)) {
+                            currentResources.put(s, getLevenshteinRatio(s, coOccurrence));
+                        } else {
+                            currentOntologies.put(s, getLevenshteinRatio(s, coOccurrence));
+                        }
+                    };
+                    if (coOccurrenceSplitted.length > 1 || (!wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("DT") && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").startsWith("W"))) {
+                        boolean isImportantEntity = true;
+                        if (coOccurrenceSplitted.length == 1) {
+                            Map<String, String> lemmas = getLemmas(coOccurrenceSplitted[0]);
+                            if (lemmas.getOrDefault(coOccurrenceSplitted[0], "").equals("be")
+                                    || lemmas.getOrDefault(coOccurrenceSplitted[0], "").equals("the")) {
+                                isImportantEntity = false;
+                            }
+                        }
+                        String coOccurrenceJoinedWithUnderScore = "http://dbpedia.org/resource/" + join("_", coOccurrenceSplitted);
+                        if (isImportantEntity && existsAsEntity(coOccurrenceJoinedWithUnderScore)) {
+                            rdfEntities.add(coOccurrenceJoinedWithUnderScore);
+                        }
+                    }
+                    tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoined).forEach(addResourceWithLevenshteinRatio);
 
-                String wordsJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, false);
-                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined).forEach(addResourceWithLevenshteinRatio);
+                    String lemmasJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, true);
+                    tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoinedCapitalized).forEach(addResourceWithLevenshteinRatio);
 
-                String wordsJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, false);
-                tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized).forEach(addResourceWithLevenshteinRatio);
-                searchInDBOIndex(coOccurrence).forEach(addResourceWithLevenshteinRatio);
-                List<String> bestOntologies = getKeyByLowestValue(currentOntologies);
-                List<String> bestResources = getKeyByLowestValue(currentResources);
-                Set<String> resourcesFoundInFullText = findResourcesInFullText(coOccurrence);
-                rdfEntities.addAll(bestResources);
-                rdfEntities.addAll(bestOntologies);
-                rdfEntities.addAll(resourcesFoundInFullText);
+                    String wordsJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, false);
+                    tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined).forEach(addResourceWithLevenshteinRatio);
+
+                    String wordsJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, false);
+                    tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized).forEach(addResourceWithLevenshteinRatio);
+                    searchInDBOIndex(coOccurrence).forEach(addResourceWithLevenshteinRatio);
+                    List<String> bestOntologies = getKeyByLowestValue(currentOntologies);
+                    List<String> bestResources = getKeyByLowestValue(currentResources);
+                    Set<String> resourcesFoundInFullText = findResourcesInFullText(coOccurrence);
+                    rdfEntities.addAll(bestResources);
+                    rdfEntities.addAll(bestOntologies);
+                    rdfEntities.addAll(resourcesFoundInFullText);
+                }
+
+
             }
         };
         ForkJoinPool forkJoinPool = new ForkJoinPool(8);
@@ -548,8 +558,7 @@ public class QueryMappingFactory {
             List<String> indexDBO_classesSearch = indexDBO_classes.search(coOccurrence);
             Set<String> resultsInDBOIndexClass = getResultsInDBOIndexFilteredByRatio(coOccurrence, indexDBO_classesSearch);
             List<String> indexDBO_propertySearch = new ArrayList<>();
-            List<String> stopwords = ImmutableList.of("the", "of", "on", "in", "for", "at", "to");
-            if (!stopwords.contains(coOccurrence.toLowerCase())) {
+            if (!Stopwords.isStopword(coOccurrence)) {
                 IndexDBO_properties indexDBO_properties = new IndexDBO_properties();
                 indexDBO_propertySearch = indexDBO_properties.search(coOccurrence);
                 try {
