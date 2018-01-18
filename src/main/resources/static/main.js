@@ -57,8 +57,8 @@ function createInfobox(msg) {
     } else {
         text = '';
     }
-    if (text.length > 350) {
-        text = text.substring(0, 350) + '...'
+    if (text.length > 200) {
+        text = text.substring(0, 200) + '...'
     }
     divTemplate = divTemplate.replace('?text', text);
     divTemplate += '</div>';
