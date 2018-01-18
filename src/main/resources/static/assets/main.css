@@ -39,10 +39,29 @@ h1,h2,h3 {
     max-width: 30%;
 }
 
-img {
+img.wiki-image {
     vertical-align: initial;
     width: 100%;
 }
+
+.examples-container {
+    width: 100%;
+}
+
+ul.nav {
+    text-align: center;
+}
+
+.nav {
+    display: list-item;
+}
+
+li.nav-item {
+    float: none;
+    display: inline-block;
+}
+
+
 
 .content {
     padding: 5px 10px;
@@ -103,7 +122,7 @@ img {
 }
 
 #loaderDiv {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -151,15 +170,15 @@ img {
 
 /* Form wrapper styling */
 .form-wrapper {
-    width: 450px;
+    width: 550px;
     padding: 15px;
-    margin: 50px auto 50px auto;
+    margin: 50px auto auto auto;
 }
 
 /* Form text input */
 
 .form-wrapper input {
-    width: 300px;
+    width: 400px;
     box-sizing: content-box;
     height: 20px;
     padding: 10px 5px;
