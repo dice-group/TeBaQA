@@ -4,8 +4,11 @@ body {
 }
 
 h1 {
-    margin-top: 10%;
+    margin-top: 5%;
     font-size: 40px;
+}
+h1,h2,h3 {
+    text-align: center;
 }
 
 @media screen and (max-width: 400px) {
