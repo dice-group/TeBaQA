@@ -63,7 +63,11 @@ public class InfoboxController {
             final SPARQLResultSet sparqlResultSet = sparqlResultSets.get(0);
             final List<String> resultSet = sparqlResultSet.getResultSet();
             if (resultSet.size() > 0) {
-                objectBuilder.add(name, stripWikipediaContent(extractAnswerString(resultSet.get(0))));
+                if (stripContent) {
+                    objectBuilder.add(name, stripWikipediaContent(extractAnswerString(resultSet.get(0))));
+                } else {
+                    objectBuilder.add(name, extractAnswerString(resultSet.get(0)));
+                }
             }
         }
         return objectBuilder;

@@ -13,7 +13,8 @@ public class WikiTextUtilities {
      * @return The text without pronunciation information
      */
     public static String stripWikipediaContent(String text) {
-        int indexStart = text.indexOf("("), indexEnd;
+        int indexStart = text.indexOf("(");
+        int indexEnd;
         if (indexStart > 0) {
             indexEnd = text.indexOf(")", indexStart) + 2;
             if (indexEnd != -1) {

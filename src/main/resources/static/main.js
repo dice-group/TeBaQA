@@ -12,6 +12,50 @@ function emptyAnswerList() {
     $("#infoboxes").empty();
 }
 
+function createInfobox(msg) {
+    let divTemplate = '<div class="card"><div class="summary">';
+    if (msg.hasOwnProperty('image')) {
+        divTemplate += '<div class="img-wrapper"><img src="?image"></div><div class="content">'.replace('?image', msg.image);
+    } else {
+        divTemplate += '<div class="content-no-image">';
+    }
+    divTemplate += '<div class="title wrap-word">?title</div>' +
+        '<div class="text wrap-word"><div>?text</div><div></div></div>' +
+        '</div>';
+
+    if (msg.hasOwnProperty('title')) {
+        divTemplate = divTemplate.replace("?title", msg.title);
+    } else {
+        divTemplate = divTemplate.replace('?title', 'N/A');
+    }
+    let text = '';
+    if (msg.hasOwnProperty('description')) {
+        text = msg.description;
+    } else if (msg.hasOwnProperty('abstract')) {
+        text = msg.abstract;
+    } else {
+        text = '';
+    }
+    if (text.length > 200) {
+        text = text.substring(0, 200) + '...';
+    }
+    divTemplate = divTemplate.replace('?text', text);
+    divTemplate += '</div>';
+    let buttons = msg.buttons;
+    if (buttons && buttons.length > 0) {
+        let buttonsDiv = '<div class="button-group">';
+        for (let i in buttons) {
+            if (buttons.hasOwnProperty(i)) {
+                buttonsDiv += '<a href="' + buttons[i].uri + '" target="_blank" class="btn btn-block btn-primary">' + buttons[i].title + '<i class="material-icons">launch</i></a>';
+            }
+        }
+        buttonsDiv += '</div>';
+        divTemplate += buttonsDiv;
+    }
+    divTemplate += '</div>';
+    return divTemplate;
+}
+
 function getInfoboxValues(resource) {
     return $.ajax({
         url: 'infobox',
@@ -33,49 +77,7 @@ function createEmptyInfobox(title) {
     })).hide());
 }
 
-function createInfobox(msg) {
-    let divTemplate = '<div class="card"><div class="summary">';
-    if (msg.hasOwnProperty('image')) {
-        divTemplate += '<div class="img-wrapper"><img src="?image"></div><div class="content">'.replace('?image', msg.image);
-    } else {
-        divTemplate += '<div class="content-no-image">'
-    }
-    divTemplate += '<div class="title wrap-word">?title</div>' +
-        '<div class="text wrap-word"><div>?text</div><div></div></div>' +
-        '</div>';
 
-    if (msg.hasOwnProperty('title')) {
-        divTemplate = divTemplate.replace("?title", msg.title);
-    } else {
-        divTemplate = divTemplate.replace('?title', 'N/A');
-    }
-    let text = '';
-    if (msg.hasOwnProperty('description')) {
-        text = msg.description;
-    } else if (msg.hasOwnProperty('abstract')) {
-        text = msg.abstract;
-    } else {
-        text = '';
-    }
-    if (text.length > 200) {
-        text = text.substring(0, 200) + '...'
-    }
-    divTemplate = divTemplate.replace('?text', text);
-    divTemplate += '</div>';
-    let buttons = msg.buttons;
-    if (buttons && buttons.length > 0) {
-        let buttonsDiv = '<div class="button-group">';
-        for (let i in buttons) {
-            if (buttons.hasOwnProperty(i)) {
-                buttonsDiv += '<a href="' + buttons[i].uri + '" target="_blank" class="btn btn-block btn-primary">' + buttons[i].title + '<i class="material-icons">launch</i></a>';
-            }
-        }
-        buttonsDiv += '</div>';
-        divTemplate += buttonsDiv;
-    }
-    divTemplate += '</div>';
-    return divTemplate;
-}
 function submitForm(s) {
     $.ajax({
         beforeSend() {
@@ -109,7 +111,7 @@ function submitForm(s) {
             $.when.apply(undefined, ajaxRequests).then(function () {
                 $('.card').each(function (index) {
                     $(this).delay(400 * index).fadeIn(300);
-                })
+                });
             });
             hideSpinner();
 
