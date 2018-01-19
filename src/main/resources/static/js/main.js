@@ -24,7 +24,8 @@ function createInfobox(msg) {
         divTemplate += '<div class="content-no-image">';
     }
     divTemplate += '<div class="title wrap-word">?title</div>' +
-        '<div class="text wrap-word"><div>?text</div><div></div></div>' +
+        '<div class="text wrap-word font-weight-bold"><div>?description</div><div></div></div>' +
+        '<div class="text wrap-word font-weight-normal"><div>?abstract</div><div></div></div>' +
         '</div>';
 
     if (msg.hasOwnProperty('title')) {
@@ -34,16 +35,19 @@ function createInfobox(msg) {
     }
     let text = '';
     if (msg.hasOwnProperty('description')) {
-        text = msg.description;
-    } else if (msg.hasOwnProperty('abstract')) {
-        text = msg.abstract;
+        divTemplate = divTemplate.replace('?description', msg.description);
     } else {
-        text = '';
+        divTemplate = divTemplate.replace('?description', '');
     }
-    if (text.length > 200) {
-        text = text.substring(0, 200) + '...';
+    if (msg.hasOwnProperty('abstract')) {
+        let abstractText = '';
+        if (msg.abstract.length > 200) {
+            abstractText = msg.abstract.substring(0, 200) + '...';
+        }
+        divTemplate = divTemplate.replace('?abstract', abstractText);
+    } else {
+        divTemplate = divTemplate.replace('?abstract', '');
     }
-    divTemplate = divTemplate.replace('?text', text);
     divTemplate += '</div>';
     let buttons = msg.buttons;
     if (buttons && buttons.length > 0) {
@@ -140,7 +144,7 @@ function submitForm(s) {
 function initExamples() {
     $('#example-1').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('Where is Angela Merkel born?');
+        $('#search-bar').val('Where was Angela Merkel born?');
         return false;
     });
     $('#example-2').click(function (e) {

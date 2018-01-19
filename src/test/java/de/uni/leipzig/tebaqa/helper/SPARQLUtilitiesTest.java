@@ -173,4 +173,10 @@ public class SPARQLUtilitiesTest {
         Double pageRank = SPARQLUtilities.getPageRank("http://dbpedia.org/ontology/Bird");
         assertEquals(Double.MAX_VALUE, pageRank, 0);
     }
+
+    @Test
+    public void testGetRedirect() {
+        String actual = SPARQLUtilities.getRedirect("http://dbpedia.org/resource/G._W._F._Hegel");
+        assertEquals("http://dbpedia.org/resource/Georg_Wilhelm_Friedrich_Hegel",actual);
+    }
 }
