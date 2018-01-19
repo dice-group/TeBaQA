@@ -28,7 +28,6 @@ h1,h2,h3 {
     -webkit-flex-wrap: wrap;
     flex-wrap: wrap;
     flex-flow: row wrap;
-    max-height: 800px;
     margin-left: -8px;
 }
 
@@ -37,6 +36,10 @@ h1,h2,h3 {
     display: inline-block;
     padding: 5px;
     max-width: 30%;
+}
+
+div.toast-message{
+    font-size: 13px;
 }
 
 img.wiki-image {

@@ -1,6 +1,5 @@
 package de.uni.leipzig.tebaqa.helper;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hp.hpl.jena.rdf.model.RDFNode;

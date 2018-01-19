@@ -30,7 +30,7 @@ public class InfoboxController {
         JsonObjectBuilder resultObject = Json.createObjectBuilder();
         resultObject = addIfExisting(resultObject, "title", String.format(SPARQLUtilities.LABEL_SPARQL, resource), false);
         resultObject = addIfExisting(resultObject, "description", String.format(SPARQLUtilities.DESCRIPTION_SPARQL, resource), true);
-        resultObject = addIfExisting(resultObject, "abstract", String.format(SPARQLUtilities.ABSTRACT_SPARQL, resource), true);
+        resultObject = addIfExisting(resultObject, "abstract", String.format(SPARQLUtilities.ABSTRACT_SPARQL, resource), false);
         resultObject = addIfExisting(resultObject, "image", String.format(SPARQLUtilities.IMAGE_SPARQL, resource), false);
         JsonArrayBuilder buttonBuilder = addWikiButtonIfExisting(Json.createArrayBuilder(), resource);
         resultObject.add("buttons", buttonBuilder.add(Json.createObjectBuilder()
