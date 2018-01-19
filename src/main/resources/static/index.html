@@ -3,9 +3,12 @@
 <head>
     <title>TeBaQA: Question Answering</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="shortcut icon" href="about:blank">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-    <script src="jquery-3.2.1.min.js"></script>
-    <script src="main.js"></script>
+    <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/toastr.min.js"></script>
+    <script src="js/main.js"></script>
     <!-- Material Design fonts -->
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:500"/>
     <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
@@ -15,6 +18,7 @@
     <link rel="stylesheet" type="text/css" href="assets/bootstrap-material-design.min.css"/>
     <link rel="stylesheet" type="text/css" href="assets/ripples.min.css"/>
     <link rel="stylesheet" type="text/css" href="assets/snackbar.min.css"/>
+    <link rel="stylesheet" type="text/css" href="assets/toastr.min.css"/>
     <link rel="stylesheet" type="text/css" href="assets/main.css">
 
 
@@ -49,12 +53,15 @@
         <li class="nav-item">
             <a class="nav-link active" href="#" id="example-7">Example 7</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="#" id="example-8">Example 8</a>
+        </li>
     </ul>
 </div>
 <div id="overlay" disabled="true"></div>
 <div id="loaderDiv" disabled="true"><img src="img/spinner.gif" alt="Please wait..."/></div>
 <div class="container">
-    <div id="answers">
+    <div id="answer-header">
         <h3>Answer(s):</h3>
     </div>
     <div id="infoboxes"></div>

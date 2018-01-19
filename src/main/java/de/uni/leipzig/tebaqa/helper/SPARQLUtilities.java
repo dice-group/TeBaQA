@@ -33,6 +33,7 @@ public class SPARQLUtilities {
     public final static String WIKI_LINK_SPARQL = "SELECT ?primaryTopic WHERE { <%1$s> <http://xmlns.com/foaf/0.1/isPrimaryTopicOf> ?primaryTopic  . }";
     public final static String DESCRIPTION_SPARQL = "SELECT ?description WHERE { <%1$s> <http://purl.org/dc/terms/description> ?description . FILTER(lang(?description)=\"en\") }";
     public final static String ABSTRACT_SPARQL = "SELECT ?abstract WHERE { <%1$s> <http://dbpedia.org/ontology/abstract> ?abstract .  FILTER(lang(?abstract)=\"en\")  }";
+    private final static String GET_REDIRECTS_SPARQL = "SELECT ?redirectsTo WHERE { <%1$s> <http://dbpedia.org/ontology/wikiPageRedirects> ?redirectsTo }";
     private static Pattern SPLIT_TRIPLE_PATTERN = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
     private static Logger log = Logger.getLogger(SPARQLUtilities.class);
     public static int QUERY_TYPE_UNKNOWN = -1;
@@ -384,5 +385,17 @@ public class SPARQLUtilities {
         } else {
             return Double.MAX_VALUE;
         }
+    }
+
+    public static String getRedirect(String resource) {
+        List<SPARQLResultSet> sparqlResultSets = executeSPARQLQuery(String.format(GET_REDIRECTS_SPARQL, resource));
+        if (sparqlResultSets.size() >= 1) {
+            List<String> resultSet = sparqlResultSets.get(0).getResultSet();
+            if (resultSet.size() > 0) {
+                //There should be only one redirection
+                return resultSet.get(0);
+            }
+        }
+        return "";
     }
 }

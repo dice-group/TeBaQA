@@ -24,7 +24,8 @@ function createInfobox(msg) {
         divTemplate += '<div class="content-no-image">';
     }
     divTemplate += '<div class="title wrap-word">?title</div>' +
-        '<div class="text wrap-word"><div>?text</div><div></div></div>' +
+        '<div class="text wrap-word font-weight-bold"><div>?description</div><div></div></div>' +
+        '<div class="text wrap-word font-weight-normal"><div>?abstract</div><div></div></div>' +
         '</div>';
 
     if (msg.hasOwnProperty('title')) {
@@ -34,16 +35,19 @@ function createInfobox(msg) {
     }
     let text = '';
     if (msg.hasOwnProperty('description')) {
-        text = msg.description;
-    } else if (msg.hasOwnProperty('abstract')) {
-        text = msg.abstract;
+        divTemplate = divTemplate.replace('?description', msg.description);
     } else {
-        text = '';
+        divTemplate = divTemplate.replace('?description', '');
     }
-    if (text.length > 200) {
-        text = text.substring(0, 200) + '...';
+    if (msg.hasOwnProperty('abstract')) {
+        let abstractText = '';
+        if (msg.abstract.length > 200) {
+            abstractText = msg.abstract.substring(0, 200) + '...';
+        }
+        divTemplate = divTemplate.replace('?abstract', abstractText);
+    } else {
+        divTemplate = divTemplate.replace('?abstract', '');
     }
-    divTemplate = divTemplate.replace('?text', text);
     divTemplate += '</div>';
     let buttons = msg.buttons;
     if (buttons && buttons.length > 0) {
@@ -112,18 +116,24 @@ function submitForm(s) {
                 }
             }
 
-            $.when.apply(undefined, ajaxRequests).then(function () {
+            $.when.apply(undefined, ajaxRequests).then(
+                function () {
                 $('.card').each(function (index) {
                     $(this).delay(400 * index).fadeIn(300);
                 });
-            });
+                }, function (data, textStatus, jqXHR) {
+                    toastr.error('Error while fetching data from one or more answers. Please try again later or contact the admin.');
+                    $('.card').each(function (index) {
+                        $(this).delay(400 * index).fadeIn(300);
+                    });
+                });
             hideSpinner();
 
         },
         error(jqXHR, textStatus) {
             emptyAnswerList();
             hideSpinner();
-            alert('Error while sending request or request took too long. Please try again later!');
+            toastr.error('Error while sending request or request took too long. Please try again later!');
         }
     }).fail(function (jqXHR, textStatus) {
         emptyAnswerList();
@@ -134,7 +144,7 @@ function submitForm(s) {
 function initExamples() {
     $('#example-1').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('Where is Angela Merkel born?');
+        $('#search-bar').val('Where was Angela Merkel born?');
         return false;
     });
     $('#example-2').click(function (e) {
@@ -163,6 +173,11 @@ function initExamples() {
         return false;
     });
     $('#example-7').click(function (e) {
+        e.preventDefault();
+        $('#search-bar').val('From who was Adorno influenced by?');
+        return false;
+    });
+    $('#example-8').click(function (e) {
         e.preventDefault();
         $('#search-bar').val('Give me all members of the The Prodigy!');
         return false;

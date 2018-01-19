@@ -27,11 +27,31 @@ public class InfoboxController {
     @RequestMapping(method = RequestMethod.GET, path = "/infobox")
     public String retrieveInfoboxValues(@RequestParam String resource, HttpServletResponse response) {
         log.debug(String.format("/infobox received GET request with: resource='%s'", resource));
+        return buildInfobox(resource);
+    }
+
+    private String buildInfobox(String resource) {
         JsonObjectBuilder resultObject = Json.createObjectBuilder();
-        resultObject = addIfExisting(resultObject, "title", String.format(SPARQLUtilities.LABEL_SPARQL, resource), false);
-        resultObject = addIfExisting(resultObject, "description", String.format(SPARQLUtilities.DESCRIPTION_SPARQL, resource), true);
-        resultObject = addIfExisting(resultObject, "abstract", String.format(SPARQLUtilities.ABSTRACT_SPARQL, resource), true);
-        resultObject = addIfExisting(resultObject, "image", String.format(SPARQLUtilities.IMAGE_SPARQL, resource), false);
+        String title = getProperty(String.format(SPARQLUtilities.LABEL_SPARQL, resource), false);
+        if (!title.isEmpty()) {
+            resultObject.add("title", title);
+        }
+
+        String description = getProperty(String.format(SPARQLUtilities.DESCRIPTION_SPARQL, resource), false);
+        if (!description.isEmpty()) {
+            resultObject.add("description", description);
+        }
+
+        String abstractInfo = getProperty(String.format(SPARQLUtilities.ABSTRACT_SPARQL, resource), true);
+        if (!abstractInfo.isEmpty()) {
+            resultObject.add("abstract", abstractInfo);
+        }
+
+        String image = getProperty(String.format(SPARQLUtilities.IMAGE_SPARQL, resource), false);
+        if (!image.isEmpty()) {
+            resultObject.add("image", image);
+        }
+
         JsonArrayBuilder buttonBuilder = addWikiButtonIfExisting(Json.createArrayBuilder(), resource);
         resultObject.add("buttons", buttonBuilder.add(Json.createObjectBuilder()
                 .add("title", "View in DBpedia")
@@ -71,5 +91,21 @@ public class InfoboxController {
             }
         }
         return objectBuilder;
+    }
+
+    private String getProperty(String sparql, boolean stripContent) {
+        final List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(sparql);
+        if (sparqlResultSets.size() > 0) {
+            final SPARQLResultSet sparqlResultSet = sparqlResultSets.get(0);
+            final List<String> resultSet = sparqlResultSet.getResultSet();
+            if (resultSet.size() > 0) {
+                if (stripContent) {
+                    return stripWikipediaContent(extractAnswerString(resultSet.get(0)));
+                } else {
+                    return extractAnswerString(resultSet.get(0));
+                }
+            }
+        }
+        return "";
     }
 }

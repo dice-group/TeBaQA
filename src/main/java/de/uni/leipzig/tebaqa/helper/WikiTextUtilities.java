@@ -16,9 +16,9 @@ public class WikiTextUtilities {
         int indexStart = text.indexOf("(");
         int indexEnd;
         if (indexStart > 0) {
-            indexEnd = text.indexOf(")", indexStart) + 2;
+            indexEnd = text.indexOf(")", indexStart) + 1;
             if (indexEnd != -1) {
-                return normalizeSpace(text.replace(text.substring(indexStart, indexEnd), ""));
+                return normalizeSpace(text.replace(text.substring(indexStart, indexEnd), "").replace(" ,", ","));
             }
         } else if (indexStart == 0) {
             // When abstract starts with info on Disambiguation

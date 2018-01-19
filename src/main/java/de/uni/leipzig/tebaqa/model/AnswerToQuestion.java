@@ -1,7 +1,9 @@
 package de.uni.leipzig.tebaqa.model;
 
+import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashSet;
 import java.util.Set;
 
 public class AnswerToQuestion {
@@ -10,13 +12,23 @@ public class AnswerToQuestion {
     private String answerType;
 
     public AnswerToQuestion(Set<String> answer, Set<String> rdfEntities) {
-        this.answer = answer;
+        this.answer = new HashSet<>();
+        answer.forEach(s -> {
+            if (s.startsWith("http://dbpedia.org/")) {
+                String redirect = SPARQLUtilities.getRedirect(s);
+                if (!redirect.isEmpty()) {
+                    s = redirect;
+                }
+            }
+            this.answer.add(s);
+        });
+
         this.rdfEntities = rdfEntities;
-        if (!answer.isEmpty() && answer.stream().allMatch(a -> a.startsWith("http://dbpedia.org/"))) {
+        if (!this.answer.isEmpty() && this.answer.stream().allMatch(a -> a.startsWith("http://dbpedia.org/"))) {
             this.answerType = "uri";
-            //NO uri but date, string or number
         } else {
-            if (!answer.stream().allMatch(StringUtils::isNumeric)) {
+            //NO uri but date, string or number
+            if (!this.answer.stream().allMatch(StringUtils::isNumeric)) {
                 this.answerType = "number";
             } else {
                 this.answerType = "literal";

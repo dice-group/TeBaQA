@@ -63,10 +63,7 @@ public class QuestionAnsweringController {
             try {
                 AnswerToQuestion answer = qaPipeline.answerQuestion(query);
                 JsonArrayBuilder resultArray = Json.createArrayBuilder();
-                answer.getAnswer().forEach(a -> {
-                    a = extractAnswerString(a);
-                    resultArray.add(a);
-                });
+                answer.getAnswer().forEach(a -> resultArray.add(extractAnswerString(a)));
                 result = Json.createObjectBuilder().add("answers", resultArray).build().toString();
 
             } catch (Exception e) {
