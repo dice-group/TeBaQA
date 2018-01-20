@@ -1,6 +1,5 @@
 package de.uni.leipzig.tebaqa.model;
 
-import edu.cmu.lti.jawjaw.pobj.POS;
 import org.junit.Test;
 
 import java.util.Set;
@@ -20,23 +19,15 @@ public class WordNetWrapperTest {
     @Test
     public void testJwiSimilarity() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticWordSimilarity("war", POS.n, "battle", POS.n);
-        Double expected = 0.5;
-        assertEquals(expected, similarity);
-    }
-
-    @Test
-    public void testJwiSimilarityWithInvalidPOS() {
-        WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticWordSimilarity("war", POS.n, "battle", POS.a);
-        Double expected = 0.0;
+        Double similarity = wordNetWrapper.semanticWordSimilarity("war", "battle");
+        Double expected = 0.8888888888888888;
         assertEquals(expected, similarity);
     }
 
     @Test
     public void testJwiSimilarity2() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticWordSimilarity("movie", POS.n, "film", POS.n);
+        Double similarity = wordNetWrapper.semanticWordSimilarity("movie", "film");
         Double expected = 1.0;
         assertEquals(expected, similarity);
     }
@@ -44,7 +35,7 @@ public class WordNetWrapperTest {
     @Test
     public void testJwiSimilarity3() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticWordSimilarity("mayor", POS.n, "party", POS.n);
+        Double similarity = wordNetWrapper.semanticWordSimilarity("mayor", "party");
         Double expected = 0.2;
         assertEquals(expected, similarity);
     }
@@ -52,24 +43,48 @@ public class WordNetWrapperTest {
     @Test
     public void testJwiSimilarityWithWordgroup() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticWordSimilarity("bodyOfWater", "river", POS.n);
-        Double expected = 0.3333333333333333;
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("bodyOfWater", "river");
+        Double expected = 0.42857142857142855;
         assertEquals(expected, similarity);
     }
 
     @Test
     public void testJwiSimilarityWithWordgroupBetweenDifferentPOS() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticWordSimilarity("deathDate", "die", POS.v);
-        Double expected = 0.3333333333333333;
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("deathDate", "die");
+        Double expected = 0.25;
         assertEquals(expected, similarity);
     }
 
     @Test
     public void testJwiSimilarityIgnoresStopwords() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticWordSimilarity("deathDate", "be", POS.v);
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("deathDate", "be");
         Double expected = 0.0;
+        assertEquals(expected, similarity);
+    }
+
+    @Test
+    public void testJwiSimilarityIgnoresStopwords2() {
+        WordNetWrapper wordNetWrapper = new WordNetWrapper();
+        Double similarity = wordNetWrapper.semanticWordSimilarity("creator", "do");
+        Double expected = 0.0;
+        assertEquals(expected, similarity);
+    }
+
+    @Test
+    public void testJwiSimilarity4() {
+        WordNetWrapper wordNetWrapper = new WordNetWrapper();
+        Double similarity = wordNetWrapper.semanticWordSimilarity("president", "spouse");
+        Double expected = 0.6666666666666666;
+        assertEquals(expected, similarity);
+    }
+
+    @Test
+    public void testJwiSimilarity5() {
+        WordNetWrapper wordNetWrapper = new WordNetWrapper();
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("firstAscentPerson", "climb");
+        Double expected = 1.06;
         assertEquals(expected, similarity);
     }
 }

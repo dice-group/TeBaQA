@@ -170,12 +170,12 @@ public class PipelineController {
 
                         }
                         if (entityName.length() > 1 && SemanticAnalysisHelper.countUpperCase(entityName.substring(1, entityName.length() - 1)) > 0) {
-                            similarity = wordNetWrapper.semanticWordSimilarity(entityName, lemma, currentWordPOS);
+                            similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord(entityName, lemma);
                         } else {
-                            similarity = wordNetWrapper.semanticWordSimilarity(lemma, currentWordPOS, entityName, entityPOS);
+                            similarity = wordNetWrapper.semanticWordSimilarity(lemma, entityName);
                         }
 
-                        if (similarity.compareTo(0.33) > 0) {
+                        if (similarity.compareTo(0.5) > 0) {
                             Set<String> entities;
                             if (lemmaOntologyMapping.containsKey(lemma)) {
                                 entities = lemmaOntologyMapping.get(lemma);
