@@ -8,6 +8,7 @@ import de.uni.leipzig.tebaqa.helper.OntologyMappingProvider;
 import de.uni.leipzig.tebaqa.helper.PosTransformation;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
+import de.uni.leipzig.tebaqa.helper.TextUtilities;
 import de.uni.leipzig.tebaqa.helper.Utilities;
 import de.uni.leipzig.tebaqa.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.model.Cluster;
@@ -67,7 +68,7 @@ public class PipelineController {
         for (Dataset d : trainDatasets) {
             //Remove all questions without SPARQL query
             List<IQuestion> load = LoaderController.load(d);
-            List<IQuestion> result = load.stream()
+            List<IQuestion> result = load.parallelStream()
                     .filter(question -> question.getSparqlQuery() != null)
                     .collect(Collectors.toList());
             questions.addAll(HAWKQuestionFactory.createInstances(result));
@@ -96,7 +97,7 @@ public class PipelineController {
         List<HAWKQuestion> testQuestions = new ArrayList<>();
         testDatasets.forEach(dataset -> {
             List<IQuestion> load = LoaderController.load(dataset);
-            List<IQuestion> result = load.stream()
+            List<IQuestion> result = load.parallelStream()
                     .filter(question -> question.getSparqlQuery() != null)
                     .collect(Collectors.toList());
             testQuestions.addAll(HAWKQuestionFactory.createInstances(result));
@@ -175,7 +176,7 @@ public class PipelineController {
                             similarity = wordNetWrapper.semanticWordSimilarity(lemma, entityName);
                         }
 
-                        if (similarity.compareTo(0.5) > 0) {
+                        if (similarity.compareTo(1.0) > 0) {
                             Set<String> entities;
                             if (lemmaOntologyMapping.containsKey(lemma)) {
                                 entities = lemmaOntologyMapping.get(lemma);
@@ -202,6 +203,7 @@ public class PipelineController {
     }
 
     private AnswerToQuestion answerQuestion(String question, HashSet<String> graphs) {
+        question = TextUtilities.trim(question);
         Set<String> bestAnswer;
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
@@ -243,7 +245,7 @@ public class PipelineController {
 
     private List<Map<Integer, List<String>>> executeQueries(List<String> queries) {
         List<Map<Integer, List<String>>> results = new ArrayList<>();
-        for (String s : queries) {
+        queries.parallelStream().forEach(s -> {
             StringBuilder sb = new StringBuilder();
             sb.append("Query: ").append(s);
             List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(s);
@@ -257,7 +259,7 @@ public class PipelineController {
                 sb.append("\nResult: ").append(String.join("; ", result));
                 log.debug(sb.toString());
             });
-        }
+        });
         return results;
     }
 

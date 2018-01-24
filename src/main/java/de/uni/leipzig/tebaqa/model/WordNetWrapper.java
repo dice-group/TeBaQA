@@ -4,7 +4,7 @@ import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.helper.PosTransformation;
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
 import edu.cmu.lti.lexical_db.NictWordNet;
-import edu.cmu.lti.ws4j.impl.WuPalmer;
+import edu.cmu.lti.ws4j.impl.HirstStOnge;
 import edu.cmu.lti.ws4j.util.WordSimilarityCalculator;
 import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
@@ -102,7 +102,7 @@ public class WordNetWrapper {
         }
 
         WordSimilarityCalculator wordSimilarityCalculator = new WordSimilarityCalculator();
-        return wordSimilarityCalculator.calcRelatednessOfWords(word1, word2, new WuPalmer(new NictWordNet()));
+        return wordSimilarityCalculator.calcRelatednessOfWords(word1, word2, new HirstStOnge(new NictWordNet()));
     }
 
     public double semanticSimilarityBetweenWordgroupAndWord(String entity, String word2) {

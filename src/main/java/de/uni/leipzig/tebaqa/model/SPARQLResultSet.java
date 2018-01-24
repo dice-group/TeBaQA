@@ -24,12 +24,12 @@ public class SPARQLResultSet {
 
     public SPARQLResultSet(List<String> resultSet) {
         this.type = -1;
-        this.resultSet = resultSet.stream().map(s -> s.contains("^^") ? s.split("\\^\\^")[0] : s).collect(Collectors.toList());
+        this.resultSet = resultSet.parallelStream().map(s -> s.contains("^^") ? s.split("\\^\\^")[0] : s).collect(Collectors.toList());
     }
 
     public SPARQLResultSet(List<String> resultSet, int type) {
         this.type = type;
-        this.resultSet = resultSet.stream().map(s -> s.contains("^^") ? s.split("\\^\\^")[0] : s).collect(Collectors.toList());
+        this.resultSet = resultSet.parallelStream().map(s -> s.contains("^^") ? s.split("\\^\\^")[0] : s).collect(Collectors.toList());
     }
 
     public int getType() {

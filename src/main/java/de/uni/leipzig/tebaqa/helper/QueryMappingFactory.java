@@ -357,7 +357,7 @@ public class QueryMappingFactory {
 
         Map<String, String> wordPosMap = SemanticAnalysisHelper.getPOS(question);
         List<String> coOccurrences = getNeighborCoOccurrencePermutations(wordsFromQuestion);
-        coOccurrences = coOccurrences.stream()
+        coOccurrences = coOccurrences.parallelStream()
                 .filter(s -> s.split(NON_WORD_CHARACTERS_REGEX).length <= 6)
                 .collect(Collectors.toList());
 
@@ -445,7 +445,7 @@ public class QueryMappingFactory {
         List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(String.format("SELECT DISTINCT ?s ?label WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?label . FILTER (lang(?label) = 'en'). ?label <bif:contains> \"'%s'\" . ?s <http://purl.org/dc/terms/subject> ?sub }", s.replace("'", "\\\\'")));
         List<String> resultSet = new ArrayList<>();
         sparqlResultSets.forEach(sparqlResultSet -> resultSet.addAll(sparqlResultSet.getResultSet()));
-        resultSet.stream().filter(s1 -> s1.startsWith("http://")).forEach(uri -> {
+        resultSet.parallelStream().filter(s1 -> s1.startsWith("http://")).forEach(uri -> {
             String[] split = uri.split("/");
             String resourceName = split[split.length - 1];
             if (!questionWords.contains(resourceName.toLowerCase())) {
@@ -500,12 +500,12 @@ public class QueryMappingFactory {
         Set<List<String>> matchingWords = new HashSet<>();
         coOccurrenceEntityMappings.forEach(mapping -> matchingWords.add(mapping.getMatchingWords()));
         //All all entities who have no direct match in the question
-        result.addAll(coOccurrenceEntityMappings.stream().filter(mapping -> mapping.getSize() == 0).map(CoOccurrenceEntityMapping::getEntity).collect(Collectors.toList()));
+        result.addAll(coOccurrenceEntityMappings.parallelStream().filter(mapping -> mapping.getSize() == 0).map(CoOccurrenceEntityMapping::getEntity).collect(Collectors.toList()));
 
         //Add only the match with the highest similarity with the question
         for (List<String> words : matchingWords) {
-            int maxSize = coOccurrenceEntityMappings.stream().max(Comparator.comparingInt(CoOccurrenceEntityMapping::getSize)).get().getSize();
-            result.addAll(coOccurrenceEntityMappings.stream().filter(mapping -> mapping.getSize() == maxSize && !Collections.disjoint(mapping.getMatchingWords(), words)).map(CoOccurrenceEntityMapping::getEntity).collect(Collectors.toList()));
+            int maxSize = coOccurrenceEntityMappings.parallelStream().max(Comparator.comparingInt(CoOccurrenceEntityMapping::getSize)).get().getSize();
+            result.addAll(coOccurrenceEntityMappings.parallelStream().filter(mapping -> mapping.getSize() == maxSize && !Collections.disjoint(mapping.getMatchingWords(), words)).map(CoOccurrenceEntityMapping::getEntity).collect(Collectors.toList()));
         }
         return result;
     }
@@ -522,13 +522,13 @@ public class QueryMappingFactory {
         if (map.isEmpty()) {
             return Collections.emptyList();
         }
-        Optional<Double> maxOptional = map.values().stream().min(Comparator.naturalOrder());
+        Optional<Double> maxOptional = map.values().parallelStream().min(Comparator.naturalOrder());
         double min = Double.MAX_VALUE;
         if (maxOptional.isPresent()) {
             min = maxOptional.get();
         }
         double finalMin = min;
-        return map.entrySet().stream()
+        return map.entrySet().parallelStream()
                 .filter(e -> e.getValue() == finalMin)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
@@ -544,7 +544,7 @@ public class QueryMappingFactory {
             return new HashSet<>();
         } else {
             List<String> search = dboIndex.search(coOccurrence);
-            Set<String> resultsInDBOIndex = search.stream()
+            Set<String> resultsInDBOIndex = search.parallelStream()
                     .filter(s -> {
                         String[] split = s.split("/");
                         String baseResourceName = split[split.length - 1];
@@ -575,7 +575,7 @@ public class QueryMappingFactory {
     }
 
     private Set<String> getResultsInDBOIndexFilteredByRatio(String coOccurrence, List<String> indexDBO_classesSearch) {
-        return indexDBO_classesSearch.stream()
+        return indexDBO_classesSearch.parallelStream()
                 .filter(s -> {
                     String[] split = s.split("/");
                     String baseResourceName = split[split.length - 1];
@@ -604,7 +604,7 @@ public class QueryMappingFactory {
     private String joinCapitalizedLemmas(String[] strings, boolean capitalizeFirstLetter, boolean useLemma) {
         final String[] result = {""};
         List<String> list = Arrays.asList(strings);
-        list = list.stream().filter(s -> !s.isEmpty()).collect(Collectors.toList());
+        list = list.parallelStream().filter(s -> !s.isEmpty()).collect(Collectors.toList());
         if (useLemma) {
             list.forEach(s -> result[0] += StringUtils.capitalize(new Sentence(s).lemma(0)));
         } else {
@@ -685,25 +685,25 @@ public class QueryMappingFactory {
         }
         List<String> result = new ArrayList<>();
         if (queryType == SPARQLUtilities.SELECT_SUPERLATIVE_ASC_QUERY) {
-            result = templatesForGraph.stream()
+            result = templatesForGraph.parallelStream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectSuperlativeAscTemplate)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
         } else if (queryType == SPARQLUtilities.SELECT_SUPERLATIVE_DESC_QUERY) {
-            result = templatesForGraph.stream()
+            result = templatesForGraph.parallelStream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectSuperlativeDescTemplate)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
         } else if (queryType == SPARQLUtilities.SELECT_COUNT_QUERY) {
-            result = templatesForGraph.stream()
+            result = templatesForGraph.parallelStream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectCountTemplates)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
         } else if (queryType == SPARQLUtilities.ASK_QUERY) {
-            result = templatesForGraph.stream()
+            result = templatesForGraph.parallelStream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getAskTemplates)
                     .filter(Objects::nonNull)
@@ -712,7 +712,7 @@ public class QueryMappingFactory {
             //templatesForGraph.forEach(queryTemplateMapping -> result.addAll(queryTemplateMapping.getAskTemplates()));
         } else if (queryType == SPARQLUtilities.SELECT_QUERY) {
 
-            result = templatesForGraph.stream()
+            result = templatesForGraph.parallelStream()
                     // .filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectTemplates)
                     .filter(Objects::nonNull)
@@ -720,12 +720,12 @@ public class QueryMappingFactory {
 
             //templatesForGraph.forEach(queryTemplateMapping -> result.addAll(queryTemplateMapping.getSelectTemplates()));
         } else {
-            result.addAll(templatesForGraph.stream()
+            result.addAll(templatesForGraph.parallelStream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getAskTemplates)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList()));
-            result.addAll(templatesForGraph.stream()
+            result.addAll(templatesForGraph.parallelStream()
                     //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectTemplates)
                     .filter(Objects::nonNull)
@@ -754,10 +754,10 @@ public class QueryMappingFactory {
                 String pos = token.get(PartOfSpeechAnnotation.class);
                 String lemma = token.get(LemmaAnnotation.class);
                 if (pos.matches(relevantPos)) {
-                    result.addAll(properties.stream()
+                    result.addAll(properties.parallelStream()
                             .filter(property -> property.equalsIgnoreCase(String.format("http://dbpedia.org/property/%s", lemma)))
                             .collect(Collectors.toSet()));
-                    result.addAll(properties.stream()
+                    result.addAll(properties.parallelStream()
                             .filter(property -> property.equalsIgnoreCase(String.format("http://dbpedia.org/property/%s", word)))
                             .collect(Collectors.toSet()));
                 }
@@ -781,7 +781,7 @@ public class QueryMappingFactory {
                 String pos = token.get(PartOfSpeechAnnotation.class);
                 String lemma = token.get(LemmaAnnotation.class);
                 if (pos.matches(relevantPos)) {
-                    result.addAll(ontologyNodes.stream()
+                    result.addAll(ontologyNodes.parallelStream()
                             .filter(rdfNode -> rdfNode.toString().equalsIgnoreCase(String.format("http://dbpedia.org/ontology/%s", lemma)))
                             .map(RDFNode::toString)
                             .collect(Collectors.toSet()));

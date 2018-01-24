@@ -13,22 +13,26 @@ public class AnswerToQuestion {
 
     public AnswerToQuestion(Set<String> answer, Set<String> rdfEntities) {
         this.answer = new HashSet<>();
-        answer.forEach(s -> {
-            if (s.startsWith("http://dbpedia.org/")) {
-                String redirect = SPARQLUtilities.getRedirect(s);
-                if (!redirect.isEmpty()) {
-                    s = redirect;
+        if (answer.size() < 50) {
+            answer.parallelStream().forEach(s -> {
+                if (s.startsWith("http://dbpedia.org/")) {
+                    String redirect = SPARQLUtilities.getRedirect(s);
+                    if (!redirect.isEmpty()) {
+                        s = redirect;
+                    }
                 }
-            }
-            this.answer.add(s);
-        });
+                this.answer.add(s);
+            });
+        } else {
+            this.answer.addAll(answer);
+        }
 
         this.rdfEntities = rdfEntities;
-        if (!this.answer.isEmpty() && this.answer.stream().allMatch(a -> a.startsWith("http://dbpedia.org/"))) {
+        if (!this.answer.isEmpty() && this.answer.parallelStream().allMatch(a -> a.startsWith("http://dbpedia.org/"))) {
             this.answerType = "uri";
         } else {
             //NO uri but date, string or number
-            if (!this.answer.stream().allMatch(StringUtils::isNumeric)) {
+            if (!this.answer.parallelStream().allMatch(StringUtils::isNumeric)) {
                 this.answerType = "number";
             } else {
                 this.answerType = "literal";

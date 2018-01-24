@@ -72,9 +72,9 @@ public class SemanticAnalysisHelper {
             return SPARQLUtilities.SELECT_SUPERLATIVE_DESC_QUERY;
         } else if (SemanticAnalysisHelper.hasCountAggregation(q)) {
             return SPARQLUtilities.SELECT_COUNT_QUERY;
-        } else if (firstThreeWords.stream().anyMatch(s -> selectIndicatorsList.contains(s.toLowerCase()))) {
+        } else if (firstThreeWords.parallelStream().anyMatch(s -> selectIndicatorsList.contains(s.toLowerCase()))) {
             return SPARQLUtilities.SELECT_QUERY;
-        } else if (firstThreeWords.stream().anyMatch(s -> askIndicatorsList.contains(s.toLowerCase()))) {
+        } else if (firstThreeWords.parallelStream().anyMatch(s -> askIndicatorsList.contains(s.toLowerCase()))) {
             return SPARQLUtilities.ASK_QUERY;
         } else {
             return SPARQLUtilities.QUERY_TYPE_UNKNOWN;
@@ -452,7 +452,7 @@ public class SemanticAnalysisHelper {
     }
 
     Set<String> getBestAnswer(List<Map<Integer, List<String>>> results, int expectedAnswerType, boolean forceResult) {
-        List<Map<Integer, List<String>>> suitableAnswers = new ArrayList<>();
+        Set<Map<Integer, List<String>>> suitableAnswers = new HashSet<>();
         List<String> bestAnswer = new ArrayList<>();
 
         if (expectedAnswerType == SPARQLResultSet.SINGLE_RESOURCE_TYPE) {
@@ -474,24 +474,29 @@ public class SemanticAnalysisHelper {
             }
         });
         if (suitableAnswers.size() == 1) {
-            Map<Integer, List<String>> answer = suitableAnswers.get(0);
-            Optional<List<String>> first = answer.values().stream().findFirst();
+            Optional<Map<Integer, List<String>>> firstElement = suitableAnswers.parallelStream().findFirst();
+            Map<Integer, List<String>> answer = firstElement.get();
+            Optional<List<String>> first = answer.values().parallelStream().findFirst();
             Set<String> suitableAnswer = first.<Set<String>>map(Sets::newHashSet).orElseGet(HashSet::new);
             if (expectedAnswerType == SPARQLResultSet.DATE_ANSWER_TYPE && suitableAnswer.size() > 1) {
                 return Sets.newHashSet(getDateAnswer(suitableAnswer).values());
+            }
+            if (expectedAnswerType == SPARQLResultSet.NUMBER_ANSWER_TYPE && suitableAnswer.contains("0")) {
+                //The answer to most questions who demand a number isn't 0. In case 0 was found as an answer, search for other answers.
+                return new HashSet<>();
             }
             return first.<Set<String>>map(Sets::newHashSet).orElseGet(HashSet::new);
         } else if (suitableAnswers.isEmpty() && forceResult) {
             //If there is no suitable result fallback to the other results
             List<String> finalBestAnswer = bestAnswer;
-            results.stream()
+            results.parallelStream()
                     .map(Map::values)
-                    .forEach(values -> finalBestAnswer.addAll(values.stream()
+                    .forEach(values -> finalBestAnswer.addAll(values.parallelStream()
                             .flatMap(List::stream)
                             .collect(Collectors.toList())));
             bestAnswer = finalBestAnswer;
         } else if (suitableAnswers.size() > 1) {
-            List<String> answersWithMatchingType = suitableAnswers.stream()
+            List<String> answersWithMatchingType = suitableAnswers.parallelStream()
                     .filter(answer -> answer.containsKey(expectedAnswerType))
                     .map(answer -> answer.getOrDefault(expectedAnswerType, new ArrayList<>()))
                     .flatMap(Collection::stream)
@@ -499,14 +504,14 @@ public class SemanticAnalysisHelper {
             if (expectedAnswerType == SPARQLResultSet.BOOLEAN_ANSWER_TYPE) {
                 return getMostFrequentBooleanAnswer(answersWithMatchingType);
             } else if (expectedAnswerType == SPARQLResultSet.DATE_ANSWER_TYPE) {
-                Optional<String> max = answersWithMatchingType.stream().max(Comparator.comparingInt(String::length));
+                Optional<String> max = answersWithMatchingType.parallelStream().max(Comparator.comparingInt(String::length));
                 if (max.isPresent()) {
                     bestAnswer.add(max.get());
                 }
             } else if (answersWithMatchingType.size() != 0) {
                 return Sets.newHashSet(answersWithMatchingType);
             } else {
-                return suitableAnswers.stream().map(answer -> answer.getOrDefault(expectedAnswerType, new ArrayList<>()))
+                return suitableAnswers.parallelStream().map(answer -> answer.getOrDefault(expectedAnswerType, new ArrayList<>()))
                         .flatMap(Collection::stream)
                         .collect(Collectors.toSet());
             }
@@ -549,8 +554,8 @@ public class SemanticAnalysisHelper {
 
     @NotNull
     private Set<String> getMostFrequentBooleanAnswer(List<String> answersWithMatchingType) {
-        int trueCount = Math.toIntExact(answersWithMatchingType.stream().filter(Boolean::valueOf).count());
-        int falseCount = Math.toIntExact(answersWithMatchingType.stream().filter(a -> !Boolean.valueOf(a)).count());
+        int trueCount = Math.toIntExact(answersWithMatchingType.parallelStream().filter(Boolean::valueOf).count());
+        int falseCount = Math.toIntExact(answersWithMatchingType.parallelStream().filter(a -> !Boolean.valueOf(a)).count());
         Set<String> set = new HashSet<>();
         if (trueCount >= falseCount) {
             set.add("true");
