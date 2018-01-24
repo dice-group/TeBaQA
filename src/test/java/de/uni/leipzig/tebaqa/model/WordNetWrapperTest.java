@@ -140,7 +140,7 @@ public class WordNetWrapperTest {
     public void testJwiSimilarityUnrelated6() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
         Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("numberOfPages", "peace");
-        Double expected = 2.0;
+        Double expected = 0.0;
         assertEquals(expected, similarity);
     }
 
