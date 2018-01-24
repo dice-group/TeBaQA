@@ -344,11 +344,11 @@ public class QueryMappingFactory {
                 rdfEntities.addAll(ontologies);
             }
             Set<String> ontologiesFromMapping = new HashSet<>();
-            if (ontologyMapping == null) {
-                log.error("Ontology mapping is empty! (This should only happen during tests)");
-            } else {
+            if (ontologyMapping != null) {
                 ontologiesFromMapping = ontologyMapping.getOrDefault(lemmas.getOrDefault(word, "").toLowerCase(), new HashSet<>());
-            }
+            }// else {
+//                log.error("Ontology mapping is empty! (This should only happen during tests)");
+           // }
 
             if (!ontologiesFromMapping.isEmpty()) {
                 rdfEntities.addAll(ontologiesFromMapping);
