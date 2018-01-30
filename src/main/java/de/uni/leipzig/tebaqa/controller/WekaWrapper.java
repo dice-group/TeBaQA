@@ -10,6 +10,7 @@ import weka.core.converters.ConverterUtils.DataSource;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -25,7 +26,9 @@ class WekaWrapper {
 
     WekaWrapper() {
         try {
-            DataSource source = new DataSource(new ClassPathResource("Train.arff").getFile().getPath());
+            File trainFile = new File(new ClassPathResource("Train.arff").getFile().getAbsolutePath());
+            trainFile.createNewFile();
+            DataSource source = new DataSource(trainFile.getPath());
             data = source.getDataSet();
             // setting class attribute if the data format does not provide this information
             // For example, the XRFF format saves the class attribute information as well
