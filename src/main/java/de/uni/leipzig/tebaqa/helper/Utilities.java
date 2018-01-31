@@ -99,7 +99,7 @@ public class Utilities {
 
     public static String fillPattern(String pattern, List<String> classResources, List<String> propertyResources) {
         List<String> triples = extractTriples(pattern);
-        List<String> triplesWithoutFilters = triples.stream()
+        List<String> triplesWithoutFilters = triples.parallelStream()
                 .filter(s -> !s.toLowerCase().contains("filter") && !s.toLowerCase().contains("optional"))
                 .collect(Collectors.toList());
         //TODO At the moment every placeholder is filled with every class/property. Check which replacement fits (with the POS tags)
@@ -143,6 +143,8 @@ public class Utilities {
             }
         }
 
+
+
         String filterClauses = SPARQLUtilities.createFilterClauses(triplesWithoutFilters, replacements);
 
         return addToLastTriple(pattern, classValues.append(propertyValues.toString()).append(filterClauses).toString());
@@ -184,14 +186,6 @@ public class Utilities {
             }
         }
         return returnValue;
-    }
-
-    private static boolean isProperty(String rdfResource) {
-        return Character.isLowerCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0));
-    }
-
-    private static boolean isClass(String rdfResource) {
-        return Character.isUpperCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0));
     }
 
     static double getLevenshteinRatio(String s, String s2) {

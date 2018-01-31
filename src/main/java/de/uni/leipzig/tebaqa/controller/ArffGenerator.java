@@ -37,13 +37,13 @@ import weka.core.converters.ArffLoader;
 import weka.core.converters.CSVSaver;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class ArffGenerator {
@@ -51,39 +51,7 @@ public class ArffGenerator {
 
     ArffGenerator(List<CustomQuestion> questions) {
         log.debug("Calculate the features per question and cluster");
-
-        List<String> filter = new ArrayList<>();
-        filter.add("Filter");
-        filter.add("noFilter");
-
-        List<String> optional = new ArrayList<>();
-        optional.add("Optional");
-        optional.add("noOptional");
-
-        List<String> limit = new ArrayList<>();
-        limit.add("Limit");
-        limit.add("noLimit");
-
-        List<String> orderBy = new ArrayList<>();
-        orderBy.add("OrderBy");
-        orderBy.add("noOrderBy");
-
-        List<String> union = new ArrayList<>();
-        union.add("Union");
-        union.add("noUnion");
-
         List<Attribute> attributes = new ArrayList<>();
-        Attribute filterAttribute = new Attribute("filter", filter);
-        Attribute optionalAttribute = new Attribute("optional", optional);
-        Attribute limitAttribute = new Attribute("limit", limit);
-        Attribute orderByAttribute = new Attribute("orderBy", orderBy);
-        Attribute unionAttribute = new Attribute("union", union);
-
-        attributes.add(filterAttribute);
-        attributes.add(optionalAttribute);
-        attributes.add(limitAttribute);
-        attributes.add(orderByAttribute);
-        attributes.add(unionAttribute);
 
         // Add all occurring graphs(=class attribute) as possible attribute values
         Set<String> graphs = new HashSet<>();
@@ -102,27 +70,6 @@ public class ArffGenerator {
         log.debug("Start collection of training data for each class");
         for (CustomQuestion question : questions) {
             Instance instance = analyzer.analyze(question.getQuestionText());
-            List<String> modifiers = question.getModifiers();
-
-            instance.setValue(filterAttribute, "noFilter");
-            instance.setValue(optionalAttribute, "noOptional");
-            instance.setValue(limitAttribute, "noLimit");
-            instance.setValue(orderByAttribute, "noOrderBy");
-            instance.setValue(unionAttribute, "noUnion");
-
-            for (String modifier : modifiers) {
-                if (modifier.contains("FILTER")) {
-                    instance.setValue(filterAttribute, "Filter");
-                } else if (modifier.contains("OPTIONAL")) {
-                    instance.setValue(optionalAttribute, "Optional");
-                } else if (modifier.contains("LIMIT")) {
-                    instance.setValue(limitAttribute, "Limit");
-                } else if (modifier.contains("ORDER BY")) {
-                    instance.setValue(orderByAttribute, "OrderBy");
-                } else if (modifier.contains("UNION")) {
-                    instance.setValue(unionAttribute, "Union");
-                }
-            }
 
             //Create instance and set the class attribute missing for testing
             Instance testInstance = instance;
@@ -136,12 +83,16 @@ public class ArffGenerator {
         }
 
         try {
-            writeSetToArffFile(trainingSet, new ClassPathResource("Train.arff").getFile().getPath());
+            File file = new File(new ClassPathResource("Train.arff").getFile().getAbsolutePath());
+            file.createNewFile();
+            writeSetToArffFile(trainingSet, file.getPath());
         } catch (IOException e) {
             log.error("Unable to write Train.arff to file!", e);
         }
         try {
-            writeSetToArffFile(testSet, new ClassPathResource("Test.arff").getFile().getPath());
+            File file = new File(new ClassPathResource("Test.arff").getFile().getAbsolutePath());
+            file.createNewFile();
+            writeSetToArffFile(testSet, file.getPath());
         } catch (IOException e) {
             log.error("Unable to write Test.arff to file!", e);
         }
@@ -150,16 +101,16 @@ public class ArffGenerator {
         try {
             trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
             randomCommittee.buildClassifier(trainingSet);
-            SerializationHelper.write(new ClassPathResource("randomCommittee.model").getFile().getPath(), randomCommittee);
+            SerializationHelper.write(new ClassPathResource("randomCommittee.model").getFile().getAbsolutePath(), randomCommittee);
         } catch (Exception e) {
             log.error("Unable to generate weka model!", e);
         }
 
-        //TODO enable to evaluate result
-        //evaluateResult(idGraph);
+        //enable to evaluate result
+        //evaluateResult(questions);
     }
 
-    private void evaluateResult(Map<Integer, CustomQuestion> idGraph) {
+    private void evaluateResult(List<CustomQuestion> questions) {
         WekaWrapper wekaWrapper = new WekaWrapper();
         double f_measure;
         ArrayList<Attribute> attributes = new ArrayList<>();
@@ -169,9 +120,8 @@ public class ArffGenerator {
                 "KStar", "LWL", "AdaBoostM1", "Bagging", "ClassificationViaRegression", "CVParameterSelection",
                 "FilteredClassifier", "IterativeClassifierOptimizer", "LogitBoost", "MultiClassClassifier",
                 "MultiClassClassifierUpdateable", "MultiScheme", "RandomCommittee", "RandomizableFilteredClassifier",
-                "RandomSubSpace", "Stacking", "Vote", "DecisionTable", "JRip", "OneR", "PART",
-                "ZeroR", "DecisionStump", "HoeffdingTree", "J48", "LMT", "RandomTree",
-                "REPTree"}));
+                "RandomSubSpace", "Stacking", "Vote", "DecisionTable", "JRip", "OneR", "PART", "ZeroR", "DecisionStump",
+                "HoeffdingTree", "J48", "LMT", "RandomTree", "REPTree"}));
         Attribute name_attribute = new Attribute("name", classifiers);
         attributes.add(name_attribute);
         Attribute f_measure_attribute = new Attribute("f-measure");
@@ -185,231 +135,231 @@ public class ArffGenerator {
         f_measure = wekaWrapper.classify(new BayesNet(), new String[0]);
         instance.setValue(name_attribute, "BayesNet");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new NaiveBayes(), new String[0]);
         instance.setValue(name_attribute, "NaiveBayes");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new NaiveBayesUpdateable(), new String[0]);
         instance.setValue(name_attribute, "NaiveBayesUpdateable");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new NaiveBayesMultinomialText(), new String[0]);
         instance.setValue(name_attribute, "NaiveBayesMultinominalText");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new Logistic(), new String[0]);
         instance.setValue(name_attribute, "Logistic");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new MultilayerPerceptron(), new String[0]);
         instance.setValue(name_attribute, "MultilayerPerception");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new SimpleLogistic(), new String[0]);
         instance.setValue(name_attribute, "SimpleLogistic");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new SMO(), new String[0]);
         instance.setValue(name_attribute, "SMO");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new IBk(), new String[0]);
         instance.setValue(name_attribute, "IBk");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new KStar(), new String[0]);
         instance.setValue(name_attribute, "KStar");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new LWL(), new String[0]);
         instance.setValue(name_attribute, "LWL");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new AdaBoostM1(), new String[0]);
         instance.setValue(name_attribute, "AdaBoostM1");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new Bagging(), new String[0]);
         instance.setValue(name_attribute, "Bagging");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new ClassificationViaRegression(), new String[0]);
         instance.setValue(name_attribute, "ClassificationViaRegression");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new CVParameterSelection(), new String[0]);
         instance.setValue(name_attribute, "CVParameterSelection");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new FilteredClassifier(), new String[0]);
         instance.setValue(name_attribute, "FilteredClassifier");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new IterativeClassifierOptimizer(), new String[0]);
         instance.setValue(name_attribute, "IterativeClassifierOptimizer");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new LogitBoost(), new String[0]);
         instance.setValue(name_attribute, "LogitBoost");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new MultiClassClassifier(), new String[0]);
         instance.setValue(name_attribute, "MultiClassClassifier");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new MultiClassClassifierUpdateable(), new String[0]);
         instance.setValue(name_attribute, "MultiClassClassifierUpdateable");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new MultiScheme(), new String[0]);
         instance.setValue(name_attribute, "MultiScheme");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new RandomCommittee(), new String[0]);
         instance.setValue(name_attribute, "RandomCommittee");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new RandomizableFilteredClassifier(), new String[0]);
         instance.setValue(name_attribute, "RandomizableFilteredClassifier");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new RandomSubSpace(), new String[0]);
         instance.setValue(name_attribute, "RandomSubSpace");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new Stacking(), new String[0]);
         instance.setValue(name_attribute, "Stacking");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new Vote(), new String[0]);
         instance.setValue(name_attribute, "Vote");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new DecisionTable(), new String[0]);
         instance.setValue(name_attribute, "DecisionTable");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new JRip(), new String[0]);
         instance.setValue(name_attribute, "JRip");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new OneR(), new String[0]);
         instance.setValue(name_attribute, "OneR");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new PART(), new String[0]);
         instance.setValue(name_attribute, "PART");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new ZeroR(), new String[0]);
         instance.setValue(name_attribute, "ZeroR");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new DecisionStump(), new String[0]);
         instance.setValue(name_attribute, "DecisionStump");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new HoeffdingTree(), new String[0]);
         instance.setValue(name_attribute, "HoeffdingTree");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         String[] j48Options = new String[1];
@@ -418,46 +368,42 @@ public class ArffGenerator {
         f_measure = wekaWrapper.classify(new J48(), j48Options);
         instance.setValue(name_attribute, "J48");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new LMT(), new String[0]);
         instance.setValue(name_attribute, "LMT");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new RandomTree(), new String[0]);
         instance.setValue(name_attribute, "RandomTree");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
         instance = new DenseInstance(3);
         f_measure = wekaWrapper.classify(new REPTree(), new String[0]);
         instance.setValue(name_attribute, "REPTree");
         instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(idGraph));
+        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
         set.add(instance);
 
-        try {
-            writeSetToArffFile(set, new ClassPathResource("Evaluation.arff").getFile().getPath());
-        } catch (IOException e) {
-            log.error("IOException while writing Evaluation.arff to file!", e);
-        }
+        writeSetToArffFile(set, "./src/main/resources/Evaluation.arff");
         CSVSaver csvSaver = new CSVSaver();
         try {
             csvSaver.setInstances(set);
-            csvSaver.setFile(new ClassPathResource("Evaluation.scv").getFile());
+            csvSaver.setFile(new File("./src/main/resources/Evaluation.csv"));
             csvSaver.writeBatch();
         } catch (IOException e) {
             log.error("Unable to write classifier evaluation to CSV", e);
         }
     }
 
-    private float getCorrectClassifiedCount(Map<Integer, CustomQuestion> idGraph) {
+    private float getCorrectClassifiedCount(List<CustomQuestion> questions) {
         Instances classifiedResult = readClassifiedResult();
         int correctlyClassified = 0;
         int classified = 0;
@@ -466,7 +412,7 @@ public class ArffGenerator {
             classified++;
             Instance instance = classifiedResult.instance(i);
             String classifiedGraph = instance.stringValue(instance.numAttributes() - 1);
-            String correctGraph = idGraph.get(i).getGraph();
+            String correctGraph = questions.get(i).getGraph();
             if (classifiedGraph.equals(correctGraph)) {
                 correctlyClassified++;
             }
@@ -475,8 +421,9 @@ public class ArffGenerator {
     }
 
     private void writeSetToArffFile(Instances set, String path) {
-        try (FileWriter file = new FileWriter(path)) {
+        try (FileWriter file = new FileWriter(path, false)) {
             file.write(set.toString());
+            log.info("File " + path + " successfully written.");
         } catch (IOException e) {
             log.error("Unable to write set to Arff file: " + path, e);
         }

@@ -590,7 +590,7 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
-    public void testGetBestAnswerOnlyReturnsMostCommonBoolean() {
+    public void testGetBestAnswerPrefersTrueOverFalse() {
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<Map<Integer, List<String>>> results = new ArrayList<>();
         Map<Integer, List<String>> result = new HashMap<>();
@@ -613,7 +613,7 @@ public class SemanticAnalysisHelperTest {
 
         Set<String> bestAnswer = semanticAnalysisHelper.getBestAnswer(results, SPARQLResultSet.BOOLEAN_ANSWER_TYPE, false);
         assertTrue(bestAnswer.size() == 1);
-        assertTrue(bestAnswer.contains("false"));
+        assertTrue(bestAnswer.contains("true"));
     }
 
     @Test

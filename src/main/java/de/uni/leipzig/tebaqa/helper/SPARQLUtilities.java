@@ -108,21 +108,21 @@ public class SPARQLUtilities {
                     //result.add(message);
                 }
                 if (result.size() > 1) {
-                    boolean listIsMixed = result.stream().anyMatch(s -> !isResource(s));
+                    boolean listIsMixed = result.parallelStream().anyMatch(s -> !isResource(s));
                     if (listIsMixed) {
-                        Set<String> dates = result.stream().filter(SPARQLUtilities::isDateFromXMLSchema).collect(Collectors.toSet());
+                        Set<String> dates = result.parallelStream().filter(SPARQLUtilities::isDateFromXMLSchema).collect(Collectors.toSet());
                         if (dates.size() > 0) {
                             SPARQLResultSet dateResult = new SPARQLResultSet(Lists.newArrayList(dates), SPARQLResultSet.DATE_ANSWER_TYPE);
                             results.add(dateResult);
                         }
 
-                        Set<String> numbers = result.stream().filter(SPARQLUtilities::isNumberFromXMLSchema).collect(Collectors.toSet());
+                        Set<String> numbers = result.parallelStream().filter(SPARQLUtilities::isNumberFromXMLSchema).collect(Collectors.toSet());
                         if (numbers.size() > 0) {
                             SPARQLResultSet numberResult = new SPARQLResultSet(Lists.newArrayList(numbers), SPARQLResultSet.NUMBER_ANSWER_TYPE);
                             results.add(numberResult);
                         }
 
-                        Set<String> resources = result.stream().filter(SPARQLUtilities::isResource).collect(Collectors.toSet());
+                        Set<String> resources = result.parallelStream().filter(SPARQLUtilities::isResource).collect(Collectors.toSet());
                         if (resources.size() > 0) {
                             SPARQLResultSet resourceResult;
                             if (resources.size() > 1) {
@@ -133,7 +133,7 @@ public class SPARQLUtilities {
                             results.add(resourceResult);
                         }
 
-                        Set<String> strings = result.stream().filter(s -> !isResource(s) && !isDateFromXMLSchema(s) && !isResource(s) || isStringFromXMLSchema(s)).collect(Collectors.toSet());
+                        Set<String> strings = result.parallelStream().filter(s -> !isResource(s) && !isDateFromXMLSchema(s) && !isResource(s) || isStringFromXMLSchema(s)).collect(Collectors.toSet());
                         if (strings.size() > 0) {
                             SPARQLResultSet stringResult = new SPARQLResultSet(Lists.newArrayList(strings), SPARQLResultSet.STRING_ANSWER_TYPE);
                             results.add(stringResult);
@@ -330,7 +330,7 @@ public class SPARQLUtilities {
         }));
 
         filterClauses.forEach((filterMap) -> {
-            Optional<Entry<List<String>, List<String>>> any = filterMap.entrySet().stream().findAny();
+            Optional<Entry<List<String>, List<String>>> any = filterMap.entrySet().parallelStream().findAny();
             if (any.isPresent()) {
                 Entry<List<String>, List<String>> filterMapping = any.get();
                 List<String> triple1 = filterMapping.getKey();

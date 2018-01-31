@@ -3,13 +3,9 @@ package de.uni.leipzig.tebaqa.model;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.helper.PosTransformation;
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
-import edu.cmu.lti.lexical_db.ILexicalDatabase;
 import edu.cmu.lti.lexical_db.NictWordNet;
-import edu.cmu.lti.lexical_db.data.Concept;
-import edu.cmu.lti.ws4j.Relatedness;
-import edu.cmu.lti.ws4j.RelatednessCalculator;
-import edu.cmu.lti.ws4j.impl.Path;
-import edu.cmu.lti.ws4j.util.WS4JConfiguration;
+import edu.cmu.lti.ws4j.impl.HirstStOnge;
+import edu.cmu.lti.ws4j.util.WordSimilarityCalculator;
 import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.IIndexWord;
@@ -100,26 +96,16 @@ public class WordNetWrapper {
         return result;
     }
 
-    public double semanticWordSimilarity(String word1, edu.cmu.lti.jawjaw.pobj.POS posWord1, String word2, edu.cmu.lti.jawjaw.pobj.POS posWord2) {
-        ILexicalDatabase db = new NictWordNet();
-        RelatednessCalculator rc = new Path(db);
-        double maxScore = 0D;
-        WS4JConfiguration.getInstance().setMFS(true);
-        List<Concept> synsets1 = (List<Concept>) db.getAllConcepts(word1, posWord1.name());
-        List<Concept> synsets2 = (List<Concept>) db.getAllConcepts(word2, posWord2.name());
-        for (Concept synset1 : synsets1) {
-            for (Concept synset2 : synsets2) {
-                Relatedness relatedness = rc.calcRelatednessOfSynset(synset1, synset2);
-                double score = relatedness.getScore();
-                if (score > maxScore) {
-                    maxScore = score;
-                }
-            }
+    public double semanticWordSimilarity(String word1, String word2) {
+        if (Stopwords.isStopword(word1) || Stopwords.isStopword(word2)) {
+            return 0.0;
         }
-        return maxScore;
+
+        WordSimilarityCalculator wordSimilarityCalculator = new WordSimilarityCalculator();
+        return wordSimilarityCalculator.calcRelatednessOfWords(word1, word2, new HirstStOnge(new NictWordNet()));
     }
 
-    public double semanticWordSimilarity(String entity, String word2, edu.cmu.lti.jawjaw.pobj.POS posWord2) {
+    public double semanticSimilarityBetweenWordgroupAndWord(String entity, String word2) {
         Double highestSimilarity = 0.0;
 
         if(Stopwords.isStopword(word2)){
@@ -130,7 +116,7 @@ public class WordNetWrapper {
         for (String word : words) {
             edu.cmu.lti.jawjaw.pobj.POS pos = PosTransformation.transform(SemanticAnalysisHelper.getPOS(word).getOrDefault(word, ""));
             if (pos != null) {
-                double similarity = semanticWordSimilarity(word, pos, word2, posWord2);
+                double similarity = semanticWordSimilarity(word, word2);
                 if (similarity > highestSimilarity) {
                     highestSimilarity = similarity;
                 }
