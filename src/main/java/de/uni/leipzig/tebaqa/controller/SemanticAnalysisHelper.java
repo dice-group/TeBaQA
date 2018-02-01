@@ -326,7 +326,7 @@ public class SemanticAnalysisHelper {
 
         String predictedGraph = "";
         try {
-            Classifier cls = (Classifier) SerializationHelper.read(new FileInputStream(new ClassPathResource("randomCommittee.model").getFile()));
+            Classifier cls = (Classifier) SerializationHelper.read(new FileInputStream(new ClassPathResource("question_classification.model").getFile()));
             double predictedClass = cls.classifyInstance(instance);
             predictedGraph = instance.classAttribute().value((int) predictedClass);
 
