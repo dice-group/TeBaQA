@@ -51,6 +51,7 @@ public class PipelineController {
     private List<Dataset> testDatasets = new ArrayList<>();
     private Map<String, QueryTemplateMapping> mappings;
     private HashSet<String> graphs = new HashSet<>();
+    private Boolean evaluateWekaAlgorithms = false;
 
 
     public PipelineController(List<Dataset> trainDatasets, List<Dataset> testDatasets) {
@@ -64,26 +65,26 @@ public class PipelineController {
     }
 
     private void run() {
-        List<HAWKQuestion> questions = new ArrayList<>();
+        List<HAWKQuestion> trainQuestions = new ArrayList<>();
         for (Dataset d : trainDatasets) {
-            //Remove all questions without SPARQL query
+            //Remove all trainQuestions without SPARQL query
             List<IQuestion> load = LoaderController.load(d);
             List<IQuestion> result = load.parallelStream()
                     .filter(question -> question.getSparqlQuery() != null)
                     .collect(Collectors.toList());
-            questions.addAll(HAWKQuestionFactory.createInstances(result));
+            trainQuestions.addAll(HAWKQuestionFactory.createInstances(result));
         }
-        Map<String, String> questionsWithQuery = new HashMap<>();
-        for (HAWKQuestion q : questions) {
-            //only use unique questions in case multiple datasets are used
+        Map<String, String> trainQuestionsWithQuery = new HashMap<>();
+        for (HAWKQuestion q : trainQuestions) {
+            //only use unique trainQuestions in case multiple datasets are used
             String questionText = q.getLanguageToQuestion().get("en");
-            if (!semanticAnalysisHelper.containsQuestionText(questionsWithQuery, questionText)) {
-                questionsWithQuery.put(q.getSparqlQuery(), questionText);
+            if (!semanticAnalysisHelper.containsQuestionText(trainQuestionsWithQuery, questionText)) {
+                trainQuestionsWithQuery.put(q.getSparqlQuery(), questionText);
             }
         }
 
         log.info("Generating ontology mapping...");
-        createOntologyMapping(questionsWithQuery);
+        createOntologyMapping(trainQuestionsWithQuery);
         log.debug("Ontology Mapping: " + OntologyMappingProvider.getOntologyMapping());
 
         log.info("Getting DBpedia properties from SPARQL endpoint...");
@@ -92,7 +93,7 @@ public class PipelineController {
         log.info("Parsing DBpedia n-triples from file...");
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
 
-        List<CustomQuestion> customQuestions = new ArrayList<>();
+        List<CustomQuestion> customTrainQuestions;
 
         List<HAWKQuestion> testQuestions = new ArrayList<>();
         testDatasets.forEach(dataset -> {
@@ -104,7 +105,33 @@ public class PipelineController {
         });
 
         log.info("Building query clusters...");
-        QueryIsomorphism queryIsomorphism = new QueryIsomorphism(questionsWithQuery);
+        customTrainQuestions = transform(trainQuestionsWithQuery);
+        QueryBuilder queryBuilder = new QueryBuilder(customTrainQuestions, semanticAnalysisHelper);
+        customTrainQuestions = queryBuilder.getQuestions();
+
+        log.info("Extract query templates...");
+        mappings = semanticAnalysisHelper.extractTemplates(customTrainQuestions, Lists.newArrayList(ontologyNodes), dBpediaProperties);
+
+        log.info("Creating weka model...");
+        Map<String, String> testQuestionsWithQuery = new HashMap<>();
+        for (HAWKQuestion q : trainQuestions) {
+            //only use unique trainQuestions in case multiple datasets are used
+            String questionText = q.getLanguageToQuestion().get("en");
+            if (!semanticAnalysisHelper.containsQuestionText(testQuestionsWithQuery, questionText)) {
+                testQuestionsWithQuery.put(q.getSparqlQuery(), questionText);
+            }
+        }
+        new ArffGenerator(customTrainQuestions, transform(testQuestionsWithQuery), evaluateWekaAlgorithms);
+
+        graphs = new HashSet<>();
+        customTrainQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
+
+        testQuestions.parallelStream().forEach(q -> answerQuestion(graphs, q));
+    }
+
+    private List<CustomQuestion> transform(Map<String, String> trainQuestionsWithQuery) {
+        List<CustomQuestion> customTrainQuestions = new ArrayList<>();
+        QueryIsomorphism queryIsomorphism = new QueryIsomorphism(trainQuestionsWithQuery);
         List<Cluster> clusters = queryIsomorphism.getClusters();
         for (Cluster cluster : clusters) {
             String graph = cluster.getGraph();
@@ -118,24 +145,11 @@ public class PipelineController {
                 List<String> resultSet = new ArrayList<>();
                 sparqlResultSets.forEach(sparqlResultSet -> resultSet.addAll(sparqlResultSet.getResultSet()));
                 goldenAnswers.put(sparqlQuery, resultSet);
-                customQuestions.add(new CustomQuestion(sparqlQuery, questionText, simpleModifiers, graph, goldenAnswers));
-                semanticAnalysisHelper.annotate(questionText);
+                customTrainQuestions.add(new CustomQuestion(sparqlQuery, questionText, simpleModifiers, graph, goldenAnswers));
+//                semanticAnalysisHelper.annotate(questionText);
             }
         }
-        QueryBuilder queryBuilder = new QueryBuilder(customQuestions, semanticAnalysisHelper);
-        customQuestions = queryBuilder.getQuestions();
-
-        log.info("Extract query templates...");
-        mappings = semanticAnalysisHelper.extractTemplates(customQuestions, Lists.newArrayList(ontologyNodes), dBpediaProperties);
-
-        log.info("Creating weka model...");
-        new ArffGenerator(customQuestions);
-
-        graphs = new HashSet<>();
-        customQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
-
-        //TODO enable parallelization with customQuestions.parallelStream().forEach()
-        testQuestions.parallelStream().forEach(q -> answerQuestion(graphs, q));
+        return customTrainQuestions;
     }
 
     private void createOntologyMapping(Map<String, String> questionsWithQuery) {

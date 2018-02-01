@@ -5,6 +5,7 @@ import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import org.apache.log4j.Logger;
 import org.springframework.core.io.ClassPathResource;
+import weka.classifiers.AbstractClassifier;
 import weka.classifiers.bayes.BayesNet;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.bayes.NaiveBayesMultinomialText;
@@ -27,7 +28,6 @@ import weka.classifiers.trees.HoeffdingTree;
 import weka.classifiers.trees.J48;
 import weka.classifiers.trees.LMT;
 import weka.classifiers.trees.REPTree;
-import weka.classifiers.trees.RandomTree;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -49,13 +49,13 @@ import java.util.Set;
 public class ArffGenerator {
     private static Logger log = Logger.getLogger(ArffGenerator.class);
 
-    ArffGenerator(List<CustomQuestion> questions) {
+    ArffGenerator(List<CustomQuestion> trainQuestions, List<CustomQuestion> testQuestions, Boolean evaluateWekaAlgorithms) {
         log.debug("Calculate the features per question and cluster");
         List<Attribute> attributes = new ArrayList<>();
 
         // Add all occurring graphs(=class attribute) as possible attribute values
         Set<String> graphs = new HashSet<>();
-        for (CustomQuestion customQuestion : questions) {
+        for (CustomQuestion customQuestion : trainQuestions) {
             graphs.add(customQuestion.getGraph());
         }
         List<String> graphsList = new ArrayList<>();
@@ -65,10 +65,10 @@ public class ArffGenerator {
         Analyzer analyzer = new Analyzer(attributes);
         ArrayList<Attribute> fvfinal = analyzer.fvWekaAttributes;
 
-        Instances trainingSet = new Instances("training_classifier: -C 4", fvfinal, questions.size());
-        Instances testSet = new Instances("training_classifier: -C 4", fvfinal, questions.size());
+        Instances trainingSet = new Instances("training_classifier: -C 4", fvfinal, trainQuestions.size());
+        Instances testSet = new Instances("training_classifier: -C 4", fvfinal, trainQuestions.size());
         log.debug("Start collection of training data for each class");
-        for (CustomQuestion question : questions) {
+        for (CustomQuestion question : trainQuestions) {
             Instance instance = analyzer.analyze(question.getQuestionText());
 
             //Create instance and set the class attribute missing for testing
@@ -97,31 +97,30 @@ public class ArffGenerator {
             log.error("Unable to write Test.arff to file!", e);
         }
 
-        RandomCommittee randomCommittee = new RandomCommittee();
+        LogitBoost logitBoost = new LogitBoost();
         try {
             trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
-            randomCommittee.buildClassifier(trainingSet);
-            SerializationHelper.write(new ClassPathResource("randomCommittee.model").getFile().getAbsolutePath(), randomCommittee);
+            logitBoost.buildClassifier(trainingSet);
+            SerializationHelper.write(new ClassPathResource("question_classification.model").getFile().getAbsolutePath(), logitBoost);
         } catch (Exception e) {
             log.error("Unable to generate weka model!", e);
         }
 
-        //enable to evaluate result
-        //evaluateResult(questions);
+        if(evaluateWekaAlgorithms){
+            evaluateResult(testQuestions);
+        }
     }
 
     private void evaluateResult(List<CustomQuestion> questions) {
-        WekaWrapper wekaWrapper = new WekaWrapper();
-        double f_measure;
         ArrayList<Attribute> attributes = new ArrayList<>();
         List<String> classifiers = new ArrayList<>();
         classifiers.addAll(Lists.asList("BayesNet", new String[]{"NaiveBayes", "NaiveBayesUpdateable",
-                "NaiveBayesMultinominalText", "Logistic", "MultilayerPerception", "SimpleLogistic", "SMO", "IBk",
+                "NaiveBayesMultinominalText", "Logistic", "MultilayerPerceptron", "SimpleLogistic", "SMO", "IBk",
                 "KStar", "LWL", "AdaBoostM1", "Bagging", "ClassificationViaRegression", "CVParameterSelection",
                 "FilteredClassifier", "IterativeClassifierOptimizer", "LogitBoost", "MultiClassClassifier",
                 "MultiClassClassifierUpdateable", "MultiScheme", "RandomCommittee", "RandomizableFilteredClassifier",
                 "RandomSubSpace", "Stacking", "Vote", "DecisionTable", "JRip", "OneR", "PART", "ZeroR", "DecisionStump",
-                "HoeffdingTree", "J48", "LMT", "RandomTree", "REPTree"}));
+                "HoeffdingTree", "J48", "LMT", "REPTree"}));
         Attribute name_attribute = new Attribute("name", classifiers);
         attributes.add(name_attribute);
         Attribute f_measure_attribute = new Attribute("f-measure");
@@ -130,277 +129,71 @@ public class ArffGenerator {
         attributes.add(correctly_classified_attribute);
         Instances set = new Instances("classifier_evaluation", attributes, 36);
 
-        Instance instance = new DenseInstance(3);
-
-        f_measure = wekaWrapper.classify(new BayesNet(), new String[0]);
-        instance.setValue(name_attribute, "BayesNet");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new NaiveBayes(), new String[0]);
-        instance.setValue(name_attribute, "NaiveBayes");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new NaiveBayesUpdateable(), new String[0]);
-        instance.setValue(name_attribute, "NaiveBayesUpdateable");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new NaiveBayesMultinomialText(), new String[0]);
-        instance.setValue(name_attribute, "NaiveBayesMultinominalText");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new Logistic(), new String[0]);
-        instance.setValue(name_attribute, "Logistic");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new MultilayerPerceptron(), new String[0]);
-        instance.setValue(name_attribute, "MultilayerPerception");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new SimpleLogistic(), new String[0]);
-        instance.setValue(name_attribute, "SimpleLogistic");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new SMO(), new String[0]);
-        instance.setValue(name_attribute, "SMO");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new IBk(), new String[0]);
-        instance.setValue(name_attribute, "IBk");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new KStar(), new String[0]);
-        instance.setValue(name_attribute, "KStar");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new LWL(), new String[0]);
-        instance.setValue(name_attribute, "LWL");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new AdaBoostM1(), new String[0]);
-        instance.setValue(name_attribute, "AdaBoostM1");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new Bagging(), new String[0]);
-        instance.setValue(name_attribute, "Bagging");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new ClassificationViaRegression(), new String[0]);
-        instance.setValue(name_attribute, "ClassificationViaRegression");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new CVParameterSelection(), new String[0]);
-        instance.setValue(name_attribute, "CVParameterSelection");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new FilteredClassifier(), new String[0]);
-        instance.setValue(name_attribute, "FilteredClassifier");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new IterativeClassifierOptimizer(), new String[0]);
-        instance.setValue(name_attribute, "IterativeClassifierOptimizer");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new LogitBoost(), new String[0]);
-        instance.setValue(name_attribute, "LogitBoost");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new MultiClassClassifier(), new String[0]);
-        instance.setValue(name_attribute, "MultiClassClassifier");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new MultiClassClassifierUpdateable(), new String[0]);
-        instance.setValue(name_attribute, "MultiClassClassifierUpdateable");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new MultiScheme(), new String[0]);
-        instance.setValue(name_attribute, "MultiScheme");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new RandomCommittee(), new String[0]);
-        instance.setValue(name_attribute, "RandomCommittee");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new RandomizableFilteredClassifier(), new String[0]);
-        instance.setValue(name_attribute, "RandomizableFilteredClassifier");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new RandomSubSpace(), new String[0]);
-        instance.setValue(name_attribute, "RandomSubSpace");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new Stacking(), new String[0]);
-        instance.setValue(name_attribute, "Stacking");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new Vote(), new String[0]);
-        instance.setValue(name_attribute, "Vote");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new DecisionTable(), new String[0]);
-        instance.setValue(name_attribute, "DecisionTable");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new JRip(), new String[0]);
-        instance.setValue(name_attribute, "JRip");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new OneR(), new String[0]);
-        instance.setValue(name_attribute, "OneR");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new PART(), new String[0]);
-        instance.setValue(name_attribute, "PART");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new ZeroR(), new String[0]);
-        instance.setValue(name_attribute, "ZeroR");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new DecisionStump(), new String[0]);
-        instance.setValue(name_attribute, "DecisionStump");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new HoeffdingTree(), new String[0]);
-        instance.setValue(name_attribute, "HoeffdingTree");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        String[] j48Options = new String[1];
-        j48Options[0] = "-U";            // unpruned tree
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new J48(), j48Options);
-        instance.setValue(name_attribute, "J48");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new LMT(), new String[0]);
-        instance.setValue(name_attribute, "LMT");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new RandomTree(), new String[0]);
-        instance.setValue(name_attribute, "RandomTree");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
-
-        instance = new DenseInstance(3);
-        f_measure = wekaWrapper.classify(new REPTree(), new String[0]);
-        instance.setValue(name_attribute, "REPTree");
-        instance.setValue(f_measure_attribute, f_measure);
-        instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
-        set.add(instance);
+        set.add(createInstance(new BayesNet(), "BayesNet", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new NaiveBayes(), "NaiveBayes", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new NaiveBayesUpdateable(), "NaiveBayesUpdateable", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new NaiveBayesMultinomialText(), "NaiveBayesMultinominalText", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new Logistic(), "Logistic", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new MultilayerPerceptron(), "MultilayerPerceptron", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new SimpleLogistic(), "SimpleLogistic", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new SMO(), "SMO", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new IBk(), "IBk", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new KStar(), "KStar", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new LWL(), "LWL", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new AdaBoostM1(), "AdaBoostM1", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new Bagging(), "Bagging", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new ClassificationViaRegression(), "ClassificationViaRegression", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new CVParameterSelection(), "CVParameterSelection", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new FilteredClassifier(), "FilteredClassifier", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new IterativeClassifierOptimizer(), "IterativeClassifierOptimizer", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new LogitBoost(), "LogitBoost", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new MultiClassClassifier(), "MultiClassClassifier", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new MultiClassClassifierUpdateable(), "MultiClassClassifierUpdateable", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new MultiScheme(), "MultiScheme", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new RandomCommittee(), "RandomCommittee", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new RandomizableFilteredClassifier(), "RandomizableFilteredClassifier", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new RandomSubSpace(), "RandomSubSpace", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new Stacking(), "Stacking", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new J48(), "J48", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new Vote(), "Vote", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new DecisionTable(), "DecisionTable", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new JRip(), "JRip", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new OneR(), "OneR", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new PART(), "PART", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new ZeroR(), "ZeroR", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new DecisionStump(), "DecisionStump", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new HoeffdingTree(), "HoeffdingTree", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new LMT(), "LMT", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
+        set.add(createInstance(new REPTree(), "REPTree", new String[0], name_attribute, f_measure_attribute, correctly_classified_attribute, questions));
 
         writeSetToArffFile(set, "./src/main/resources/Evaluation.arff");
         CSVSaver csvSaver = new CSVSaver();
         try {
             csvSaver.setInstances(set);
-            csvSaver.setFile(new File("./src/main/resources/Evaluation.csv"));
+            File csvFile = new File("./src/main/resources/Evaluation.csv");
+            csvSaver.setFile(csvFile);
             csvSaver.writeBatch();
+            log.info("File " + csvFile.getAbsolutePath() + " successfully written.");
         } catch (IOException e) {
             log.error("Unable to write classifier evaluation to CSV", e);
         }
+    }
+
+    private Instance createInstance(AbstractClassifier classifier, String name, String[] options,
+                                    Attribute name_attribute, Attribute f_measure_attribute,
+                                    Attribute correctly_classified_attribute, List<CustomQuestion> questions) {
+        Instance instance = new DenseInstance(3);
+        WekaWrapper wekaWrapper = new WekaWrapper();
+        try {
+            double f_measure = wekaWrapper.classify(classifier, options);
+            instance.setValue(name_attribute, name);
+            instance.setValue(f_measure_attribute, f_measure);
+            instance.setValue(correctly_classified_attribute, (double) getCorrectClassifiedCount(questions));
+        } catch (IllegalArgumentException e) {
+            log.error("Exception while classifying with WEKA algorithm: " + name, e);
+        }
+
+        return instance;
     }
 
     private float getCorrectClassifiedCount(List<CustomQuestion> questions) {
