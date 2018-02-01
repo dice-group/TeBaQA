@@ -97,11 +97,11 @@ public class ArffGenerator {
             log.error("Unable to write Test.arff to file!", e);
         }
 
-        LogitBoost logitBoost = new LogitBoost();
+        AbstractClassifier classifier = new MultilayerPerceptron();
         try {
             trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
-            logitBoost.buildClassifier(trainingSet);
-            SerializationHelper.write(new ClassPathResource("question_classification.model").getFile().getAbsolutePath(), logitBoost);
+            classifier.buildClassifier(trainingSet);
+            SerializationHelper.write(new ClassPathResource("question_classification.model").getFile().getAbsolutePath(), classifier);
         } catch (Exception e) {
             log.error("Unable to generate weka model!", e);
         }
