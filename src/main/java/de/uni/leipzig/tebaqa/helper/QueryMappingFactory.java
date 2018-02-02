@@ -1,7 +1,6 @@
 package de.uni.leipzig.tebaqa.helper;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.CoOccurrenceEntityMapping;
@@ -276,12 +275,12 @@ public class QueryMappingFactory {
         return queryPattern;
     }
 
-    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph, List<String> injectedEntities, boolean useSynonyms) {
+    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph, boolean useSynonyms) {
         Set<String> rdfEntities;
-        if (!injectedEntities.isEmpty()) {
-            rdfEntities = Sets.newHashSet(injectedEntities);
+        if (!useSynonyms) {
+            rdfEntities = extractEntities(question);
         } else {
-            rdfEntities = extractEntities(question, useSynonyms);
+            rdfEntities = extractEntitiesUsingSynonyms(question);
         }
         //log.info("Found resources: " + Strings.join(rdfEntities, "; "));
 
@@ -314,7 +313,7 @@ public class QueryMappingFactory {
         return Lists.newArrayList(fillPatterns(rdfEntities, suitableMappings));
     }
 
-    Set<String> extractEntities(String question, boolean useSynonyms) {
+    Set<String> extractEntities(String question) {
         Map<String, Set<String>> ontologyMapping = OntologyMappingProvider.getOntologyMapping();
         Set<String> rdfEntities = new HashSet<>();
 
@@ -430,11 +429,12 @@ public class QueryMappingFactory {
             log.error("Exception while extracting entities from wordgroups of the question!", e);
         }
 
-        if (useSynonyms) {
-            rdfEntities.addAll(findResourcesBySynonyms(question));
-        }
+        this.rdfEntities.addAll(rdfEntities);
+        return this.rdfEntities;
+    }
 
-        this.rdfEntities = rdfEntities;
+    Set<String> extractEntitiesUsingSynonyms(String question) {
+        rdfEntities.addAll(findResourcesBySynonyms(question));
         return this.rdfEntities;
     }
 
@@ -598,7 +598,7 @@ public class QueryMappingFactory {
     }
 
     public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, boolean useSynonyms) {
-        return generateQueries(mappings, null, new ArrayList<>(), useSynonyms);
+        return generateQueries(mappings, null, useSynonyms);
     }
 
     private String joinCapitalizedLemmas(String[] strings, boolean capitalizeFirstLetter, boolean useLemma) {

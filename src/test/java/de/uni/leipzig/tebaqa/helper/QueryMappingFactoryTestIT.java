@@ -385,7 +385,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/Breaking_Bad"));
         assertTrue(actual.contains("http://dbpedia.org/resource/Game_of_Thrones"));
     }
@@ -405,7 +405,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.contains("http://dbpedia.org/resource/Are"));
         assertFalse(actual.contains("http://dbpedia.org/resource/E85_in_the_United_States"));
         assertFalse(actual.contains("http://dbpedia.org/resource/Zen_in_the_United_States"));
@@ -428,7 +428,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/almaMater"));
         assertTrue(actual.contains("http://dbpedia.org/resource/Angela_Merkel"));
     }
@@ -449,7 +449,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/areaTotal"));
         assertTrue(actual.contains("http://dbpedia.org/resource/United_Kingdom"));
     }
@@ -469,7 +469,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/author"));
         assertTrue(actual.contains("http://dbpedia.org/resource/The_Interpretation_of_Dreams"));
     }
@@ -489,7 +489,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/birthName"));
         assertTrue(actual.contains("http://dbpedia.org/resource/Adele"));
     }
@@ -509,7 +509,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/property/awards"));
         assertTrue(actual.contains("http://dbpedia.org/resource/Bertrand_Russell"));
     }
@@ -530,7 +530,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/property/date"));
     }
 
@@ -549,7 +549,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/Düsseldorf_Airport"));
         assertTrue(actual.contains("http://dbpedia.org/ontology/elevation"));
     }
@@ -570,7 +570,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/European_Union"));
         assertTrue(actual.contains("http://dbpedia.org/ontology/populationTotal"));
     }
@@ -590,7 +590,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/BlaBlaCar"));
         assertTrue(actual.contains("http://dbpedia.org/property/founders"));
     }
@@ -611,7 +611,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/property/speakers"));
     }
 
@@ -630,7 +630,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/Johann_Wolfgang_von_Goethe"));
         assertTrue(actual.contains("http://dbpedia.org/ontology/birthPlace"));
     }
@@ -650,7 +650,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/Carolina_Reaper"));
         assertTrue(actual.contains("http://dbpedia.org/ontology/origin"));
     }
@@ -671,7 +671,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/Mexico_City"));
         assertTrue(actual.contains("http://dbpedia.org/ontology/populationTotal"));
     }
@@ -692,7 +692,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://xmlns.com/foaf/0.1/nick"));
         assertTrue(actual.contains("http://dbpedia.org/resource/Baghdad"));
     }
@@ -713,7 +713,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/property/author"));
         assertTrue(actual.contains("http://dbpedia.org/resource/A_Song_of_Ice_and_Fire"));
     }
@@ -733,7 +733,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/percentageOfAreaWater"));
         assertTrue(actual.contains("http://dbpedia.org/resource/Brazil"));
     }
@@ -754,7 +754,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/populationTotal"));
         assertTrue(actual.contains("http://dbpedia.org/resource/Iraq"));
     }
@@ -775,7 +775,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/populationTotal"));
         assertTrue(actual.contains("http://dbpedia.org/resource/Cairo"));
     }
@@ -796,7 +796,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/North_Rhine-Westphalia"));
         assertTrue(actual.contains("http://dbpedia.org/ontology/areaTotal"));
     }
@@ -817,7 +817,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/The_Interpretation_of_Dreams"));
         assertTrue(actual.contains("http://xmlns.com/foaf/0.1/name"));
     }
@@ -837,7 +837,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/The_Wall"));
     }
 
@@ -858,7 +858,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/deathDate"));
         assertTrue(actual.contains("http://dbpedia.org/resource/William_Shakespeare"));
     }
@@ -878,7 +878,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/largestCity"));
     }
 
@@ -897,7 +897,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/property/highest"));
         assertTrue(actual.contains("http://dbpedia.org/resource/Bavarian_Alps"));
     }
@@ -917,7 +917,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/President_of_Montenegro"));
     }
 
@@ -936,7 +936,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/sourceCountry"));
     }
 
@@ -955,7 +955,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/sourceCountry"));
     }
 
@@ -974,7 +974,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/TelevisionShow"));
     }
 
@@ -993,7 +993,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         //TODO should starring be detected? the lemma 'star' is only detected at the moment.
         assertTrue(actual.contains("http://dbpedia.org/ontology/starring"));
     }
@@ -1013,7 +1013,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/foundedBy"));
     }
 
@@ -1032,7 +1032,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/starring"));
     }
 
@@ -1051,7 +1051,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(!actual.contains("http://dbpedia.org/resource/Give"));
         assertTrue(!actual.contains("http://dbpedia.org/resource/S/lay_w/Me"));
     }
@@ -1071,7 +1071,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/World_of_Warcraft"));
     }
 
@@ -1142,7 +1142,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/officialLanguage"));
         assertFalse(actual.contains("http://dbpedia.org/ontology/ProgrammingLanguage"));
         assertFalse(actual.contains("http://dbpedia.org/ontology/languageCode"));
@@ -1163,7 +1163,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/resource/Österreich"));
     }
 
@@ -1176,7 +1176,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.contains("http://dbpedia.org/ontology/birthPlace"));
         assertFalse(actual.contains("http://dbpedia.org/ontology/deathPlace"));
     }
@@ -1190,7 +1190,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.contains("http://dbpedia.org/property/be"));
     }
 
@@ -1203,7 +1203,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.contains("http://dbpedia.org/resource/The_The"));
     }
 
@@ -1216,7 +1216,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, true);
+        Set<String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.contains("http://dbpedia.org/property/be"));
     }
 
@@ -1229,7 +1229,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.contains("http://dbpedia.org/ontology/cost"));
     }
 
@@ -1242,7 +1242,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, true);
+        Set<String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.contains("http://dbpedia.org/ontology/cost"));
     }
 
@@ -1255,7 +1255,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, true);
+        Set<String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.contains("http://dbpedia.org/ontology/map"));
     }
 
@@ -1268,7 +1268,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, true);
+        Set<String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.contains("http://dbpedia.org/resource/Where"));
     }
 
@@ -1281,7 +1281,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, true);
+        Set<String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.contains("http://dbpedia.org/ontology/deathPlace"));
     }
 
@@ -1295,7 +1295,7 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
 
-        Set<String> actual = queryMappingFactory.extractEntities(question, false);
+        Set<String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.contains("http://dbpedia.org/ontology/spouse"));
     }
 
@@ -1316,7 +1316,7 @@ public class QueryMappingFactoryTestIT {
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
-        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
         List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(actualQueries.get(0));
 
         assertTrue(actualQueries.size() == 1);
@@ -1351,7 +1351,7 @@ public class QueryMappingFactoryTestIT {
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), properties);
 
 
-        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
         assertTrue(actualQueries.size() == 1);
         assertTrue(actualQueries.get(0).contains("?uri ?property_0 ?class_0 . ?uri ?property_1 ?class_1 . ?uri ?property_2 ?class_2 ."));
@@ -1377,7 +1377,7 @@ public class QueryMappingFactoryTestIT {
         List<String> expectedQueries = new ArrayList<>();
         expectedQueries.add("SELECT DISTINCT ?uri WHERE { ?uri ?property_0 ?class_0 . ?uri ?property_1 ?class_1 . ?uri ?property_2 ?inhabitants .  VALUES (?class_0) {(<http://dbpedia.org/ontology/City>) (<http://dbpedia.org/ontology/Street>) (<http://dbpedia.org/resource/New_Jersey>)} VALUES (?class_1) {(<http://dbpedia.org/ontology/City>) (<http://dbpedia.org/ontology/Street>) (<http://dbpedia.org/resource/New_Jersey>)} VALUES (?class_2) {(<http://dbpedia.org/ontology/City>) (<http://dbpedia.org/ontology/Street>) (<http://dbpedia.org/resource/New_Jersey>)} VALUES (?property_0) {(<http://dbpedia.org/ontology/city>) (<http://dbpedia.org/property/new>) (<http://dbpedia.org/property/city>) (<http://dbpedia.org/property/jersey>) (<http://dbpedia.org/ontology/ruling>)} VALUES (?property_1) {(<http://dbpedia.org/ontology/city>) (<http://dbpedia.org/property/new>) (<http://dbpedia.org/property/city>) (<http://dbpedia.org/property/jersey>) (<http://dbpedia.org/ontology/ruling>)} VALUES (?property_2) {(<http://dbpedia.org/ontology/city>) (<http://dbpedia.org/property/new>) (<http://dbpedia.org/property/city>) (<http://dbpedia.org/property/jersey>) (<http://dbpedia.org/ontology/ruling>)} FILTER (CONCAT( ?uri, ?property_0, ?class_0 ) != CONCAT( ?uri, ?property_1, ?class_1 ))  FILTER (CONCAT( ?uri, ?property_0, ?class_0 ) != CONCAT( ?uri, ?property_2, ?inhabitants ))  FILTER (CONCAT( ?uri, ?property_1, ?class_1 ) != CONCAT( ?uri, ?property_0, ?class_0 ))  FILTER (CONCAT( ?uri, ?property_1, ?class_1 ) != CONCAT( ?uri, ?property_2, ?inhabitants ))  FILTER (CONCAT( ?uri, ?property_2, ?inhabitants ) != CONCAT( ?uri, ?property_0, ?class_0 ))  FILTER (CONCAT( ?uri, ?property_2, ?inhabitants ) != CONCAT( ?uri, ?property_1, ?class_1 )) }");
 
-        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
         assertTrue(actualQueries.size() == 1);
         assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?uri ?property_0 ?class_0 . ?uri ?property_1 ?class_1 . ?uri ?property_2 ?inhabitants ."));
@@ -1400,7 +1400,7 @@ public class QueryMappingFactoryTestIT {
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
-        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
         assertTrue(actualQueries.size() == 1);
         assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?uri ?property_0 'President of the United States' . ?uri ?property_1 '16th' .  "));
@@ -1423,7 +1423,7 @@ public class QueryMappingFactoryTestIT {
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
-        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
         assertTrue(actualQueries.size() == 1);
         assertTrue(actualQueries.get(0).startsWith("ASK WHERE { ?uri ?property_0 ?class_0 . ?uri ?property_1 'Battle Chess'@en .  VALUES "));
@@ -1447,7 +1447,7 @@ public class QueryMappingFactoryTestIT {
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
-        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
         assertTrue(actualQueries.size() == 1);
         assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?class_0 ?property_0 ?uri . ?uri ?property_1 ?d . "));
@@ -1471,7 +1471,7 @@ public class QueryMappingFactoryTestIT {
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
-        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, new ArrayList<>(), false);
+        List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
         assertTrue(actualQueries.size() == 1);
         assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?uri a ?class_0 . ?uri ?property_0 ?class_1 . ?uri ?property_1 ?n . "));
