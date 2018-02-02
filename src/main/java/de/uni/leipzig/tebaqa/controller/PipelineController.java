@@ -126,7 +126,7 @@ public class PipelineController {
         graphs = new HashSet<>();
         customTrainQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
 
-        testQuestions.parallelStream().forEach(q -> answerQuestion(graphs, q));
+//        testQuestions.parallelStream().forEach(q -> answerQuestion(graphs, q));
     }
 
     private List<CustomQuestion> transform(Map<String, String> trainQuestionsWithQuery) {
@@ -224,8 +224,7 @@ public class PipelineController {
         QueryMappingFactory mappingFactory = new QueryMappingFactory(question, "", Lists.newArrayList(ontologyNodes), dBpediaProperties);
         List<Map<Integer, List<String>>> results = new ArrayList<>();
         String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
-        List<String> mockedEntities = new ArrayList<>();
-        List<String> queries = mappingFactory.generateQueries(mappings, graphPattern, mockedEntities, false);
+        List<String> queries = mappingFactory.generateQueries(mappings, graphPattern, false);
 
         //If the template from the predicted graph won't find suitable templates, try all other templates
         if (queries.isEmpty()) {
