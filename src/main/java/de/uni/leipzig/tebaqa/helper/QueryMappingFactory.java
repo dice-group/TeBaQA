@@ -67,7 +67,6 @@ public class QueryMappingFactory {
     private int queryType;
     private static Logger log = Logger.getLogger(QueryMappingFactory.class);
     private String queryPattern;
-    private Map<String, List<String>> unresolvedEntities = new HashMap<>();
     private String question;
     private List<RDFNode> ontologyNodes;
     private List<String> properties = new ArrayList<>();
@@ -219,8 +218,6 @@ public class QueryMappingFactory {
                 if (newString.contains("<" + uriToReplace + ">")) {
                     newString = newString.replace(uriToReplace, "^" + join("_", posList) + "^");
                 }
-            } else {
-                unresolvedEntities.put(uriToReplace, new ArrayList<>(dependencySequencePos.keySet()));
             }
         }
         return newString;
@@ -789,10 +786,6 @@ public class QueryMappingFactory {
             }
         }
         return result;
-    }
-
-    public Map<String, List<String>> getUnresolvedEntities() {
-        return unresolvedEntities;
     }
 
     private boolean resourceStartsLowercase(String rdfResource) {

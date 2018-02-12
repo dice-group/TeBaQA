@@ -430,6 +430,12 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
+    public void testDetectQuestionAnswerTypeUsesLemma() {
+        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Does a question always makes sense?");
+        assertEquals(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, answerType);
+    }
+
+    @Test
     public void testGetBestAnswerWithSameResult() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Which books by Kerouac were published by Viking Press?");
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();

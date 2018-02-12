@@ -282,38 +282,6 @@ public class SemanticAnalysisHelper {
     String classifyInstance(String question, HashSet<String> graphList) {
         ArrayList<Attribute> attributes = new ArrayList<>();
 
-        List<String> filter = new ArrayList<>();
-        filter.add("Filter");
-        filter.add("noFilter");
-
-        List<String> optional = new ArrayList<>();
-        optional.add("Optional");
-        optional.add("noOptional");
-
-        List<String> limit = new ArrayList<>();
-        limit.add("Limit");
-        limit.add("noLimit");
-
-        List<String> orderBy = new ArrayList<>();
-        orderBy.add("OrderBy");
-        orderBy.add("noOrderBy");
-
-        List<String> union = new ArrayList<>();
-        union.add("Union");
-        union.add("noUnion");
-
-        Attribute filterAttribute = new Attribute("filter", filter);
-        Attribute optionalAttribute = new Attribute("optional", optional);
-        Attribute limitAttribute = new Attribute("limit", limit);
-        Attribute orderByAttribute = new Attribute("orderBy", orderBy);
-        Attribute unionAttribute = new Attribute("union", union);
-
-        attributes.add(filterAttribute);
-        attributes.add(optionalAttribute);
-        attributes.add(limitAttribute);
-        attributes.add(orderByAttribute);
-        attributes.add(unionAttribute);
-
         Attribute classAttribute = new Attribute("class", new ArrayList<>(graphList));
         attributes.add(classAttribute);
 
@@ -422,8 +390,10 @@ public class SemanticAnalysisHelper {
         Pattern pattern = Pattern.compile("\\w+");
         Matcher m = pattern.matcher(question);
         if (m.find()) {
-            if (m.group().toLowerCase().matches("is|are|did|was|does")) {
-                return SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
+            Optional<String> first = SemanticAnalysisHelper.getLemmas(m.group()).values().stream().findFirst();
+            if (first.isPresent()) {
+                if (first.get().toLowerCase().matches("is|be|do"))
+                    return SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
             }
         }
         if (question.toLowerCase().startsWith("how many") || question.toLowerCase().startsWith("how much")
