@@ -445,7 +445,12 @@ public class QueryMappingFactory {
         List<String> resultSet = new ArrayList<>();
         sparqlResultSets.forEach(sparqlResultSet -> resultSet.addAll(sparqlResultSet.getResultSet()));
         resultSet.parallelStream().filter(s1 -> s1.startsWith("http://")).forEach(uri -> {
-            String[] split = uri.split("/");
+            String[] split;
+            if (uri.startsWith("http://dbpedia.org/resource/")) {
+                split = uri.split("http://dbpedia.org/resource/");
+            } else {
+                split = uri.split("/");
+            }
             String resourceName = split[split.length - 1];
             if (!questionWords.contains(resourceName.toLowerCase())) {
                 double levenshteinRatio = Utilities.getLevenshteinRatio(s.toLowerCase(), resourceName.replace("_", " ")
@@ -454,7 +459,7 @@ public class QueryMappingFactory {
                         .replaceAll("\\s+", " ")
                         .trim()
                         .toLowerCase());
-                if (levenshteinRatio < 0.1) {
+                if (levenshteinRatio < 0.3) {
                     result.add(uri);
                 }
             }
