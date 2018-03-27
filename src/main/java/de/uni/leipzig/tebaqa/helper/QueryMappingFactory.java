@@ -459,7 +459,7 @@ public class QueryMappingFactory {
                         .replaceAll("\\s+", " ")
                         .trim()
                         .toLowerCase());
-                if (levenshteinRatio < 0.3) {
+                if (levenshteinRatio < 0.2) {
                     result.add(uri);
                 }
             }
