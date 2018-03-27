@@ -392,7 +392,7 @@ public class SemanticAnalysisHelper {
         if (m.find()) {
             Optional<String> first = SemanticAnalysisHelper.getLemmas(m.group()).values().stream().findFirst();
             if (first.isPresent()) {
-                if (first.get().toLowerCase().matches("is|be|do"))
+                if (first.get().toLowerCase().matches("be|do|have"))
                     return SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
             }
         }
@@ -563,7 +563,7 @@ public class SemanticAnalysisHelper {
     }
 
 
-    static long countUpperCase(String s) {
+    public static long countUpperCase(String s) {
         return s.chars().filter(Character::isUpperCase).count();
     }
 

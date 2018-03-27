@@ -234,17 +234,19 @@ public class QueryMappingFactory {
         return distances;
     }
 
-    private List<String> getNeighborCoOccurrencePermutations(String[] s) {
+    private static List<String> getNeighborCoOccurrencePermutations(String[] s) {
         List<String> permutations = new ArrayList<>();
         for (int i = 0; i <= s.length; i++) {
             for (int y = 1; y <= s.length - i; y++) {
-                permutations.add(join(" ", Arrays.asList(s).subList(i, i + y)));
+                if (y - i < 6) {
+                    permutations.add(join(" ", Arrays.asList(s).subList(i, i + y)));
+                }
             }
         }
         return permutations;
     }
 
-    private List<String> getNeighborCoOccurrencePermutations(List<String> s) {
+    public static List<String> getNeighborCoOccurrencePermutations(List<String> s) {
         return getNeighborCoOccurrencePermutations(s.toArray(new String[0]));
     }
 
