@@ -407,9 +407,6 @@ public class QueryMappingFactoryTestIT {
 
         Set<String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.contains("http://dbpedia.org/resource/Are"));
-        assertFalse(actual.contains("http://dbpedia.org/resource/E85_in_the_United_States"));
-        assertFalse(actual.contains("http://dbpedia.org/resource/Zen_in_the_United_States"));
-        assertFalse(actual.contains("http://dbpedia.org/resource/DDT_in_the_United_States"));
         assertFalse(actual.contains("http://dbpedia.org/ontology/Earthquake"));
     }
 
