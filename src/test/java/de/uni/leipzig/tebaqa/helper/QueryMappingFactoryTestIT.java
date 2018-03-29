@@ -200,7 +200,7 @@ public class QueryMappingFactoryTestIT {
         mappings.put("1", template1);
 
         List<String> actual = queryMappingFactory.generateQueries(mappings, false);
-        assertTrue(actual.size() == 1);
+        assertEquals(1, actual.size());
     }
 
 
@@ -223,14 +223,11 @@ public class QueryMappingFactoryTestIT {
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . }");
 
-        List<String> expected = new ArrayList<>();
-        expected.add("SELECT DISTINCT ?uri WHERE { ?class_0 ?property_0 ?x . VALUES (?class_0) {(<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/ontology/Country>)} VALUES (?property_0) {(<http://dbpedia.org/ontology/country>) (<http://dbpedia.org/ontology/deathPlace>) (<http://dbpedia.org/ontology/start>) (<http://dbpedia.org/ontology/birthPlace>)}}");
-
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         mappings.put("1", template1);
 
         List<String> actual = queryMappingFactory.generateQueries(mappings, false);
-        assertTrue(actual.size() == 1);
+        assertEquals(1, actual.size());
         assertTrue(actual.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?class_0 ?property_0 ?x . VALUES (?class_0) {("));
     }
 
@@ -253,14 +250,11 @@ public class QueryMappingFactoryTestIT {
                 "PREFIX res: <http://dbpedia.org/resource/> " +
                 "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . }");
 
-        List<String> expected = new ArrayList<>();
-        expected.add("SELECT DISTINCT ?uri WHERE { ?class_0 a ?x . VALUES (?class_0) {(<http://dbpedia.org/resource/The_Nile>) (<http://dbpedia.org/resource/Nile>) (<http://dbpedia.org/resource/Country>) (<http://dbpedia.org/ontology/Country>)}}");
-
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         mappings.put("", template1);
 
         List<String> actual = queryMappingFactory.generateQueries(mappings, false);
-        assertTrue(actual.size() == 1);
+        assertEquals(1, actual.size());
         assertTrue(actual.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?class_0 a ?x . VALUES (?class_0) {(<http://dbpedia.org/resource/"));
     }
 
@@ -286,7 +280,7 @@ public class QueryMappingFactoryTestIT {
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         mappings.put("1", template1);
 
-        assertTrue(queryMappingFactory.generateQueries(mappings, false).size() == 1);
+        assertEquals(1, queryMappingFactory.generateQueries(mappings, false).size());
     }
 
     @Test
@@ -311,7 +305,7 @@ public class QueryMappingFactoryTestIT {
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         mappings.put("1", template1);
 
-        assertTrue(queryMappingFactory.generateQueries(mappings, false).size() == 1);
+        assertEquals(1, queryMappingFactory.generateQueries(mappings, false).size());
     }
 
     @Test
@@ -1316,10 +1310,10 @@ public class QueryMappingFactoryTestIT {
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
         List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(actualQueries.get(0));
 
-        assertTrue(actualQueries.size() == 1);
-        assertTrue(sparqlResultSets.size() == 1);
-        assertTrue(sparqlResultSets.get(0).getResultSet().size() == 1);
-        assertTrue(sparqlResultSets.get(0).getResultSet().get(0).equals("http://dbpedia.org/resource/Time_in_Chile"));
+        assertEquals(1, actualQueries.size());
+        assertEquals(1, sparqlResultSets.size());
+        assertEquals(1, sparqlResultSets.get(0).getResultSet().size());
+        assertEquals("http://dbpedia.org/resource/Time_in_Chile", sparqlResultSets.get(0).getResultSet().get(0));
     }
 
     @Test
@@ -1350,7 +1344,7 @@ public class QueryMappingFactoryTestIT {
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
-        assertTrue(actualQueries.size() == 1);
+        assertEquals(1, actualQueries.size());
         assertTrue(actualQueries.get(0).contains("?uri ?property_0 ?class_0 . ?uri ?property_1 ?class_1 . ?uri ?property_2 ?class_2 ."));
     }
 
@@ -1371,12 +1365,9 @@ public class QueryMappingFactoryTestIT {
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
         Map<String, QueryTemplateMapping> mappings = semanticAnalysisHelper.extractTemplates(customQuestions, newArrayList(nodes), dBpediaProperties);
 
-        List<String> expectedQueries = new ArrayList<>();
-        expectedQueries.add("SELECT DISTINCT ?uri WHERE { ?uri ?property_0 ?class_0 . ?uri ?property_1 ?class_1 . ?uri ?property_2 ?inhabitants .  VALUES (?class_0) {(<http://dbpedia.org/ontology/City>) (<http://dbpedia.org/ontology/Street>) (<http://dbpedia.org/resource/New_Jersey>)} VALUES (?class_1) {(<http://dbpedia.org/ontology/City>) (<http://dbpedia.org/ontology/Street>) (<http://dbpedia.org/resource/New_Jersey>)} VALUES (?class_2) {(<http://dbpedia.org/ontology/City>) (<http://dbpedia.org/ontology/Street>) (<http://dbpedia.org/resource/New_Jersey>)} VALUES (?property_0) {(<http://dbpedia.org/ontology/city>) (<http://dbpedia.org/property/new>) (<http://dbpedia.org/property/city>) (<http://dbpedia.org/property/jersey>) (<http://dbpedia.org/ontology/ruling>)} VALUES (?property_1) {(<http://dbpedia.org/ontology/city>) (<http://dbpedia.org/property/new>) (<http://dbpedia.org/property/city>) (<http://dbpedia.org/property/jersey>) (<http://dbpedia.org/ontology/ruling>)} VALUES (?property_2) {(<http://dbpedia.org/ontology/city>) (<http://dbpedia.org/property/new>) (<http://dbpedia.org/property/city>) (<http://dbpedia.org/property/jersey>) (<http://dbpedia.org/ontology/ruling>)} FILTER (CONCAT( ?uri, ?property_0, ?class_0 ) != CONCAT( ?uri, ?property_1, ?class_1 ))  FILTER (CONCAT( ?uri, ?property_0, ?class_0 ) != CONCAT( ?uri, ?property_2, ?inhabitants ))  FILTER (CONCAT( ?uri, ?property_1, ?class_1 ) != CONCAT( ?uri, ?property_0, ?class_0 ))  FILTER (CONCAT( ?uri, ?property_1, ?class_1 ) != CONCAT( ?uri, ?property_2, ?inhabitants ))  FILTER (CONCAT( ?uri, ?property_2, ?inhabitants ) != CONCAT( ?uri, ?property_0, ?class_0 ))  FILTER (CONCAT( ?uri, ?property_2, ?inhabitants ) != CONCAT( ?uri, ?property_1, ?class_1 )) }");
-
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
-        assertTrue(actualQueries.size() == 1);
+        assertEquals(1, actualQueries.size());
         assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?uri ?property_0 ?class_0 . ?uri ?property_1 ?class_1 . ?uri ?property_2 ?inhabitants ."));
     }
 
@@ -1399,7 +1390,7 @@ public class QueryMappingFactoryTestIT {
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
-        assertTrue(actualQueries.size() == 1);
+        assertEquals(1, actualQueries.size());
         assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?uri ?property_0 'President of the United States' . ?uri ?property_1 '16th' .  "));
     }
 
@@ -1422,7 +1413,7 @@ public class QueryMappingFactoryTestIT {
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
-        assertTrue(actualQueries.size() == 1);
+        assertEquals(1, actualQueries.size());
         assertTrue(actualQueries.get(0).startsWith("ASK WHERE { ?uri ?property_0 ?class_0 . ?uri ?property_1 'Battle Chess'@en .  VALUES "));
         assertTrue(actualQueries.get(0).contains("CONCAT( ?uri, ?property_1, 'Battle Chess'@en )"));
     }
@@ -1446,7 +1437,7 @@ public class QueryMappingFactoryTestIT {
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
-        assertTrue(actualQueries.size() == 1);
+        assertEquals(1, actualQueries.size());
         assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?class_0 ?property_0 ?uri . ?uri ?property_1 ?d . "));
         assertTrue(actualQueries.get(0).endsWith("ORDER BY ASC(?d) OFFSET 0 LIMIT 1"));
     }
@@ -1470,7 +1461,7 @@ public class QueryMappingFactoryTestIT {
 
         List<String> actualQueries = queryMappingFactory.generateQueries(mappings, graph, false);
 
-        assertTrue(actualQueries.size() == 1);
+        assertEquals(1, actualQueries.size());
         assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?uri a ?class_0 . ?uri ?property_0 ?class_1 . ?uri ?property_1 ?n . "));
         assertTrue(actualQueries.get(0).endsWith(" ORDER BY DESC(?n) OFFSET 0 LIMIT 1"));
     }

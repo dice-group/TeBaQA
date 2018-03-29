@@ -48,18 +48,15 @@ public class PipelineController {
 
     private static SemanticAnalysisHelper semanticAnalysisHelper;
     private List<Dataset> trainDatasets = new ArrayList<>();
-    private List<Dataset> testDatasets = new ArrayList<>();
     private Map<String, QueryTemplateMapping> mappings;
     private HashSet<String> graphs = new HashSet<>();
     private Boolean evaluateWekaAlgorithms = false;
 
 
-    public PipelineController(List<Dataset> trainDatasets, List<Dataset> testDatasets) {
+    public PipelineController(List<Dataset> trainDatasets) {
         log.info("Configuring controller");
         semanticAnalysisHelper = new SemanticAnalysisHelper();
         trainDatasets.forEach(this::addTrainDataset);
-        testDatasets.forEach(this::addTestDataset);
-
         log.info("Starting controller...");
         run();
     }
@@ -94,15 +91,6 @@ public class PipelineController {
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
 
         List<CustomQuestion> customTrainQuestions;
-
-        List<HAWKQuestion> testQuestions = new ArrayList<>();
-        testDatasets.forEach(dataset -> {
-            List<IQuestion> load = LoaderController.load(dataset);
-            List<IQuestion> result = load.parallelStream()
-                    .filter(question -> question.getSparqlQuery() != null)
-                    .collect(Collectors.toList());
-            testQuestions.addAll(HAWKQuestionFactory.createInstances(result));
-        });
 
         log.info("Building query clusters...");
         customTrainQuestions = transform(trainQuestionsWithQuery);
@@ -302,9 +290,5 @@ public class PipelineController {
 
     private void addTrainDataset(Dataset dataset) {
         this.trainDatasets.add(dataset);
-    }
-
-    private void addTestDataset(Dataset dataset) {
-        this.testDatasets.add(dataset);
     }
 }
