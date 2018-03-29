@@ -445,6 +445,7 @@ public class QueryMappingFactory {
         List<String> resultSet = new ArrayList<>();
         sparqlResultSets.forEach(sparqlResultSet -> resultSet.addAll(sparqlResultSet.getResultSet()));
         resultSet.parallelStream().filter(s1 -> s1.startsWith("http://")).forEach(uri -> {
+            //uri = SPARQLUtilities.getRedirect(uri);
             String[] split;
             if (uri.startsWith("http://dbpedia.org/resource/")) {
                 split = uri.split("http://dbpedia.org/resource/");

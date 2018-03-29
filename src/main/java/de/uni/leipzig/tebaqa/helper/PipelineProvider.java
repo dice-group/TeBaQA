@@ -18,9 +18,7 @@ public class PipelineProvider {
             List<Dataset> trainDatasets = new ArrayList<>();
             trainDatasets.add(Dataset.QALD7_Train_Multilingual);
             trainDatasets.add(Dataset.QALD8_Train_Multilingual);
-            List<Dataset> testDatasets = new ArrayList<>();
-            testDatasets.add(Dataset.QALD8_Test_Multilingual);
-            pipeline = new PipelineController(trainDatasets, testDatasets);
+            pipeline = new PipelineController(trainDatasets);
         }
         return pipeline;
     }
