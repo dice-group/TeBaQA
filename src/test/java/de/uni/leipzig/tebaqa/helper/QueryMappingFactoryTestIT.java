@@ -1465,4 +1465,47 @@ public class QueryMappingFactoryTestIT {
         assertTrue(actualQueries.get(0).startsWith("SELECT DISTINCT ?uri WHERE { ?uri a ?class_0 . ?uri ?property_0 ?class_1 . ?uri ?property_1 ?n . "));
         assertTrue(actualQueries.get(0).endsWith(" ORDER BY DESC(?n) OFFSET 0 LIMIT 1"));
     }
+
+    @Test
+    public void testGetPropertyWithMultipleWords() {
+        String question = "population density rank";
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . }";
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, dBpediaProperties);
+        List<String> properties = queryMappingFactory.getProperties("population density rank");
+
+        assertTrue(properties.contains("http://dbpedia.org/property/populationDensityRank"));
+    }
+
+    @Test
+    public void testGetClassWithMultipleWords() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . }";
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory("", query, nodes, dBpediaProperties);
+        List<String> classes = queryMappingFactory.getOntologyClass("populated place");
+
+        assertTrue(classes.contains("http://dbpedia.org/ontology/PopulatedPlace"));
+    }
+
+    @Test
+    public void testGetClassWithMultipleWords2() {
+        String query = "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX res: <http://dbpedia.org/resource/> " +
+                "SELECT DISTINCT ?uri WHERE { res:Nile dbo:city ?uri . }";
+        List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
+        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory("", query, nodes, dBpediaProperties);
+        List<String> classes = queryMappingFactory.getOntologyClass("How much is the population density rank of Germany?");
+
+        assertTrue(classes.contains("http://dbpedia.org/ontology/PopulatedPlace"));
+    }
 }

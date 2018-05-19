@@ -18,6 +18,7 @@ import org.aksw.qa.annotation.index.IndexDBO_classes;
 import org.aksw.qa.annotation.index.IndexDBO_properties;
 import org.aksw.qa.commons.datastructure.Entity;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.log4j.Logger;
@@ -73,6 +74,7 @@ public class QueryMappingFactory {
     private Set<String> rdfEntities = new HashSet<>();
     private Set<String> ontologyURIs;
     public final static String NON_WORD_CHARACTERS_REGEX = "[^a-zA-Z0-9_äÄöÖüÜ']";
+    private static Configuration pattyPhrases = PattyPhrasesProvider.getPattyPhrases();
 
     /**
      * Default constructor. Tries to create a mapping between a word or group of words and a resource in it's SPARQL
@@ -281,33 +283,8 @@ public class QueryMappingFactory {
         } else {
             rdfEntities = extractEntitiesUsingSynonyms(question);
         }
-        //log.info("Found resources: " + Strings.join(rdfEntities, "; "));
 
-        List<String> classes = new ArrayList<>();
-        List<String> properties = new ArrayList<>();
-        for (String resource : rdfEntities) {
-            if (resourceStartsLowercase(resource)) {
-                properties.add(resource);
-            } else {
-                classes.add(resource);
-            }
-        }
-
-        int classCount = classes.size();
-        int propertyCount = properties.size();
-        //if there is no suitable mapping with exactly the amount of properties and classes, reduce both consecutively
-        //and try again.
-        //TODO Use eccentric method in case their are less RDF resources than slots
-        List<String> suitableMappings = new ArrayList<>();
-        List<List<Integer>> downwardCountingPermutations = createDownwardCountingPermutations(classCount, propertyCount);
-        for (List<Integer> permutation : downwardCountingPermutations) {
-            Integer classCount1 = permutation.get(0);
-            Integer propertyCount1 = permutation.get(1);
-            suitableMappings = getSuitableMappings(mappings, classCount1, propertyCount1, queryType, graph);
-            if (!suitableMappings.isEmpty()) {
-                break;
-            }
-        }
+        List<String> suitableMappings = getSuitableMappings(mappings, queryType, graph);
 
         return Lists.newArrayList(fillPatterns(rdfEntities, suitableMappings));
     }
@@ -335,18 +312,12 @@ public class QueryMappingFactory {
                     && !pos.getOrDefault(word, "").equalsIgnoreCase("IN")) {
                 List<String> hypernyms = SemanticAnalysisHelper.getHypernymsFromWiktionary(word);
                 hypernyms.forEach(s -> rdfEntities.addAll(getProperties(s)));
-                hypernyms.forEach(s -> rdfEntities.addAll(getOntologies(s)));
-                List<String> properties = getProperties(word);
-                rdfEntities.addAll(properties);
-                List<String> ontologies = getOntologies(word);
-                rdfEntities.addAll(ontologies);
+                hypernyms.forEach(s -> rdfEntities.addAll(getOntologyClass(s)));
             }
             Set<String> ontologiesFromMapping = new HashSet<>();
             if (ontologyMapping != null) {
                 ontologiesFromMapping = ontologyMapping.getOrDefault(lemmas.getOrDefault(word, "").toLowerCase(), new HashSet<>());
-            }// else {
-//                log.error("Ontology mapping is empty! (This should only happen during tests)");
-           // }
+            }
 
             if (!ontologiesFromMapping.isEmpty()) {
                 rdfEntities.addAll(ontologiesFromMapping);
@@ -375,6 +346,12 @@ public class QueryMappingFactory {
                 if (!containsOnlyStopwords) {
                     Map<String, Double> currentResources = new HashMap<>();
                     Map<String, Double> currentOntologies = new HashMap<>();
+
+                    List<String> pattyEntities = Arrays.asList(pattyPhrases.getStringArray(coOccurrence));
+                    pattyEntities.forEach(s -> rdfEntities.add("http://dbpedia.org/ontology/" + s));
+
+                    rdfEntities.addAll(getProperties(coOccurrence));
+                    rdfEntities.addAll(getOntologyClass(coOccurrence));
 
                     String lemmasJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, true);
                     Consumer<String> addResourceWithLevenshteinRatio = s -> {
@@ -415,9 +392,8 @@ public class QueryMappingFactory {
                     rdfEntities.addAll(bestResources);
                     rdfEntities.addAll(bestOntologies);
                     rdfEntities.addAll(resourcesFoundInFullText);
+                    rdfEntities.removeIf(String::isEmpty);
                 }
-
-
             }
         };
         ForkJoinPool forkJoinPool = new ForkJoinPool(8);
@@ -473,8 +449,14 @@ public class QueryMappingFactory {
         return Boolean.valueOf(sparqlResultSets.get(0).getResultSet().get(0));
     }
 
-    public Set<String> findResourcesBySynonyms(String question) {
+    private Set<String> findResourcesBySynonyms(String question) {
         Set<String> rdfResources = new HashSet<>();
+
+        List<String> coOccurrences = getNeighborCoOccurrencePermutations(Arrays.asList(question.split(NON_WORD_CHARACTERS_REGEX)));
+        coOccurrences.parallelStream().forEach(coOccurrence -> {
+            List<String> pattyEntities = Arrays.asList(pattyPhrases.getStringArray(coOccurrence));
+            pattyEntities.forEach(s -> rdfResources.add("http://dbpedia.org/ontology/" + s));
+        });
 
         WordNetWrapper wordNet = new WordNetWrapper();
         Set<String> synonyms = wordNet.lookUpWords(question);
@@ -617,9 +599,9 @@ public class QueryMappingFactory {
         }
         //The first letter is lowercase sometimes
         if (capitalizeFirstLetter) {
-            return StringUtils.uncapitalize(result[0]);
+            return StringUtils.capitalize(result[0]);
         } else {
-            return result[0];
+            return StringUtils.uncapitalize(result[0]);
         }
     }
 
@@ -678,7 +660,7 @@ public class QueryMappingFactory {
         return sparqlQueries;
     }
 
-    private List<String> getSuitableMappings(Map<String, QueryTemplateMapping> mappings, int classCount, int propertyCount, int queryType, String graph) {
+    private List<String> getSuitableMappings(Map<String, QueryTemplateMapping> mappings, int queryType, String graph) {
         List<QueryTemplateMapping> templatesForGraph = new ArrayList<>();
         if (graph == null) {
             templatesForGraph = new ArrayList<>(mappings.values());
@@ -691,34 +673,30 @@ public class QueryMappingFactory {
         List<String> result = new ArrayList<>();
         if (queryType == SPARQLUtilities.SELECT_SUPERLATIVE_ASC_QUERY) {
             result = templatesForGraph.parallelStream()
-                    //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectSuperlativeAscTemplate)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
         } else if (queryType == SPARQLUtilities.SELECT_SUPERLATIVE_DESC_QUERY) {
             result = templatesForGraph.parallelStream()
-                    //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectSuperlativeDescTemplate)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
         } else if (queryType == SPARQLUtilities.SELECT_COUNT_QUERY) {
             result = templatesForGraph.parallelStream()
-                    //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectCountTemplates)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
         } else if (queryType == SPARQLUtilities.ASK_QUERY) {
             result = templatesForGraph.parallelStream()
-                    //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getAskTemplates)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
 
             //templatesForGraph.forEach(queryTemplateMapping -> result.addAll(queryTemplateMapping.getAskTemplates()));
-        } else if (queryType == SPARQLUtilities.SELECT_QUERY) {
+        }
 
+        if (queryType == SPARQLUtilities.SELECT_QUERY) {
             result = templatesForGraph.parallelStream()
-                    // .filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectTemplates)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList());
@@ -726,12 +704,10 @@ public class QueryMappingFactory {
             //templatesForGraph.forEach(queryTemplateMapping -> result.addAll(queryTemplateMapping.getSelectTemplates()));
         } else {
             result.addAll(templatesForGraph.parallelStream()
-                    //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getAskTemplates)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList()));
             result.addAll(templatesForGraph.parallelStream()
-                    //.filter(map -> map.getNumberOfClasses() <= classCount && map.getNumberOfProperties() <= propertyCount)
                     .map(QueryTemplateMapping::getSelectTemplates)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList()));
@@ -742,15 +718,13 @@ public class QueryMappingFactory {
         return result;
     }
 
-    //TODO Don't just check for string equality, example: birth -> birthPlace
-    //TODO Check for Neighbor Co-Occurrences? ethnic group -> http://dbpedia.org/ontology/ethnicGroup; same as in QueryMappingfactory.extractEntities()
-    private List<String> getProperties(String word) {
-        if (word.isEmpty()) {
+    List<String> getProperties(String words) {
+        if (words.isEmpty()) {
             return new ArrayList<>();
         }
         List<String> result = new ArrayList<>();
         final String relevantPos = "JJ.*|NN.*|VB.*";
-        Annotation document = new Annotation(word);
+        Annotation document = new Annotation(words);
         StanfordCoreNLP pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
         pipeline.annotate(document);
         List<CoreMap> sentences = document.get(SentencesAnnotation.class);
@@ -763,21 +737,29 @@ public class QueryMappingFactory {
                             .filter(property -> property.equalsIgnoreCase(String.format("http://dbpedia.org/property/%s", lemma)))
                             .collect(Collectors.toSet()));
                     result.addAll(properties.parallelStream()
-                            .filter(property -> property.equalsIgnoreCase(String.format("http://dbpedia.org/property/%s", word)))
+                            .filter(property -> property.equalsIgnoreCase(String.format("http://dbpedia.org/property/%s", words)))
                             .collect(Collectors.toSet()));
                 }
             }
         }
+
+        List<String> coOccurrences = getNeighborCoOccurrencePermutations(Arrays.asList(words.split(NON_WORD_CHARACTERS_REGEX)));
+        coOccurrences.parallelStream().forEach(coOccurrence -> {
+            String propertyCandidate = "http://dbpedia.org/property/" + joinCapitalizedLemmas(coOccurrence.split(NON_WORD_CHARACTERS_REGEX), false, false);
+            if (properties.contains(propertyCandidate)) {
+                result.add(propertyCandidate);
+            }
+        });
         return result;
     }
 
-    private List<String> getOntologies(String word) {
-        if (word.isEmpty()) {
+    List<String> getOntologyClass(String words) {
+        if (words.isEmpty()) {
             return new ArrayList<>();
         }
         List<String> result = new ArrayList<>();
         final String relevantPos = "JJ.*|NN.*|VB.*";
-        Annotation document = new Annotation(word);
+        Annotation document = new Annotation(words);
         StanfordCoreNLP pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
         pipeline.annotate(document);
         List<CoreMap> sentences = document.get(SentencesAnnotation.class);
@@ -793,6 +775,16 @@ public class QueryMappingFactory {
                 }
             }
         }
+
+        List<String> coOccurrences = getNeighborCoOccurrencePermutations(Arrays.asList(words.split(NON_WORD_CHARACTERS_REGEX)));
+        coOccurrences.parallelStream().forEach(coOccurrence -> result.addAll(ontologyNodes.parallelStream()
+                .filter(rdfNode -> rdfNode.toString().equalsIgnoreCase("http://dbpedia.org/ontology/" + joinCapitalizedLemmas(coOccurrence.split(NON_WORD_CHARACTERS_REGEX), false, false)))
+                .map(RDFNode::toString)
+                .collect(Collectors.toSet())));
+        coOccurrences.parallelStream().forEach(coOccurrence -> result.addAll(ontologyNodes.parallelStream()
+                .filter(rdfNode -> rdfNode.toString().equalsIgnoreCase("http://dbpedia.org/ontology/" + joinCapitalizedLemmas(coOccurrence.split(NON_WORD_CHARACTERS_REGEX), true, false)))
+                .map(RDFNode::toString)
+                .collect(Collectors.toSet())));
         return result;
     }
 

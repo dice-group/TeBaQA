@@ -27,7 +27,7 @@ public class QuestionAnsweringController {
     public String answerQuestion(@RequestParam String query,
                                  @RequestParam(required = false, defaultValue = "en") String lang,
                                  HttpServletResponse response) {
-        log.debug(String.format("/qa received POST request with: query='%s' and lang='%s'", query, lang));
+        log.info(String.format("/qa received POST request with: query='%s' and lang='%s'", query, lang));
         if (!query.isEmpty() && isValidQuestion(query)) {
             PipelineController qaPipeline = getQAPipeline();
             String result;
@@ -37,7 +37,7 @@ public class QuestionAnsweringController {
                 result = new ExtendedQALDAnswer(new AnswerToQuestion(new HashSet<>(), new HashSet<>())).getResult();
                 log.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);
             }
-            log.debug("Answer:" + result);
+            log.info("Answer: " + result);
             return result;
         } else {
             log.error("Received request with empty query parameter!");
@@ -56,7 +56,7 @@ public class QuestionAnsweringController {
     public String answerQuestionSimple(@RequestParam String query,
                                        @RequestParam(required = false, defaultValue = "en") String lang,
                                        HttpServletResponse response) {
-        log.debug(String.format("/qa-simple received POST request with: query='%s' and lang='%s'", query, lang));
+        log.info(String.format("/qa-simple received POST request with: query='%s' and lang='%s'", query, lang));
         if (!query.isEmpty() && isValidQuestion(query)) {
             PipelineController qaPipeline = getQAPipeline();
             String result;
@@ -70,7 +70,7 @@ public class QuestionAnsweringController {
                 result = Json.createObjectBuilder().add("answers", Json.createArrayBuilder()).build().toString();
                 log.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);
             }
-            log.debug("Answer:" + result);
+            log.info("Answer: " + result);
             return result;
         } else {
             log.error("Received request with empty query parameter!");

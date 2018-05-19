@@ -5,6 +5,7 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.helper.DBpediaPropertiesProvider;
 import de.uni.leipzig.tebaqa.helper.NTripleParser;
 import de.uni.leipzig.tebaqa.helper.OntologyMappingProvider;
+import de.uni.leipzig.tebaqa.helper.PattyPhrasesProvider;
 import de.uni.leipzig.tebaqa.helper.PosTransformation;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
@@ -80,6 +81,9 @@ public class PipelineController {
             }
         }
 
+        log.info("Loading Patty Phrases...");
+        PattyPhrasesProvider.load();
+
         log.info("Generating ontology mapping...");
         createOntologyMapping(trainQuestionsWithQuery);
         log.debug("Ontology Mapping: " + OntologyMappingProvider.getOntologyMapping());
@@ -142,8 +146,9 @@ public class PipelineController {
 
     private void createOntologyMapping(Map<String, String> questionsWithQuery) {
         Map<String, Set<String>> lemmaOntologyMapping = new HashMap<>();
-        questionsWithQuery.forEach((sparqlQuery, questionText) -> {
+        questionsWithQuery.keySet().parallelStream().forEach((sparqlQuery) -> {
             WordNetWrapper wordNetWrapper = new WordNetWrapper();
+            String questionText = questionsWithQuery.get(sparqlQuery);
             ArrayList<String> words = Lists.newArrayList(questionText.split(NON_WORD_CHARACTERS_REGEX));
             Matcher matcher = Utilities.BETWEEN_LACE_BRACES.matcher(SPARQLUtilities.resolveNamespaces(sparqlQuery));
             while (matcher.find()) {
@@ -170,7 +175,6 @@ public class PipelineController {
                         Double similarity;
                         if (entityPOS == null || currentWordPOS == null) {
                             continue;
-
                         }
                         if (entityName.length() > 1 && SemanticAnalysisHelper.countUpperCase(entityName.substring(1, entityName.length() - 1)) > 0) {
                             similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord(entityName, lemma);
@@ -240,6 +244,9 @@ public class PipelineController {
             results.addAll(executeQueries(queries));
             bestAnswer = semanticAnalysisHelper.getBestAnswer(results, expectedAnswerType, true);
         }
+
+        //Filter out every empty answer or 0
+        bestAnswer = bestAnswer.parallelStream().filter(s -> !Strings.isNullOrEmpty(s) && !s.equals("0")).collect(Collectors.toSet());
         return new AnswerToQuestion(bestAnswer, mappingFactory.getRdfEntities());
     }
 
