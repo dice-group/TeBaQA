@@ -16,6 +16,9 @@ public class PattyPhrasesProvider {
     }
 
     static Configuration getPattyPhrases() {
+        if (pattyPhrase == null) {
+            load();
+        }
         return pattyPhrase;
     }
 

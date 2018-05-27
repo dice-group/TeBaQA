@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.model;
 
 import org.junit.Test;
 
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -12,8 +13,8 @@ public class WordNetWrapperTest {
     @Test
     public void testLookUpWord() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Set<String> actualSynonyms = wordNetWrapper.lookUpWords("Whom did Lance Bass marry?");
-        assertTrue(actualSynonyms.contains("espouse"));
+        Map<String, String> actualSynonyms = wordNetWrapper.lookUpWords("Whom did Lance Bass marry?");
+        assertTrue(actualSynonyms.keySet().contains("espouse"));
     }
 
     @Test

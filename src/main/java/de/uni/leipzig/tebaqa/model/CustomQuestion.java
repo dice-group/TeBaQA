@@ -8,15 +8,13 @@ public class CustomQuestion {
     private String query;
     private String questionText;
     private String graph;
-    private Map<String, List<String>> goldenAnswers;
     private Map<String, String> dependencySequencePosMap;
 
-    public CustomQuestion(String query, String questionText, List<String> simpleModifiers, String graph, Map<String, List<String>> goldenAnswers) {
+    public CustomQuestion(String query, String questionText, List<String> simpleModifiers, String graph) {
         this.query = query;
         this.questionText = questionText;
         this.modifiers = simpleModifiers;
         this.graph = graph;
-        this.goldenAnswers = goldenAnswers;
     }
 
     public String getQuestionText() {
@@ -43,10 +41,6 @@ public class CustomQuestion {
         this.dependencySequencePosMap = dependencySequencePosMap;
     }
 
-    public Map<String, List<String>> getGoldenAnswers() {
-        return goldenAnswers;
-    }
-
     @Override
     public String toString() {
         return "CustomQuestion{" +
@@ -54,7 +48,6 @@ public class CustomQuestion {
                 ", query='" + query + '\'' +
                 ", questionText='" + questionText + '\'' +
                 ", graph='" + graph + '\'' +
-                ", goldenAnswers=" + goldenAnswers +
                 ", dependencySequencePosMap=" + dependencySequencePosMap +
                 '}';
     }

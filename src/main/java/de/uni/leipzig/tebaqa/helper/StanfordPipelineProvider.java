@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 public class StanfordPipelineProvider {
 
     private static StanfordCoreNLP pipeline;
-    private static Logger log = Logger.getLogger(PipelineController.class);
+    private static Logger log = Logger.getLogger(StanfordPipelineProvider.class);
 
 
     //do not instantiate

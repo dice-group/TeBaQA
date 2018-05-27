@@ -23,9 +23,9 @@ import weka.core.Stopwords;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 public class WordNetWrapper {
     private static IDictionary dictionary = null;
@@ -40,8 +40,8 @@ public class WordNetWrapper {
         }
     }
 
-    public Set<String> lookUpWords(String s) {
-        Set<String> synonyms = new HashSet<>();
+    public Map<String, String> lookUpWords(String s) {
+        Map<String, String> synonyms = new HashMap<>();
         List<IIndexWord> indexedWords = createIndexedWords(s);
         indexedWords.forEach(iIndexWord -> {
             List<IWordID> wordIDs = iIndexWord.getWordIDs();
@@ -50,7 +50,7 @@ public class WordNetWrapper {
                 List<IWord> words = word.getSynset().getWords();
                 for (IWord w : words) {
                     String replace = w.getLemma().replace("_", " ");
-                    synonyms.add(replace);
+                    synonyms.put(replace, iWordID.getLemma());
                 }
             });
 
@@ -112,7 +112,7 @@ public class WordNetWrapper {
             return 0.0;
         }
         //Regex (?=\p{Lu}) finds uppercase letters. E.g. "bodyOfWater" -> ["body", "Of", "Water"]
-        List<String> words = Arrays.asList(entity.split("(?=\\p{Lu})"));
+        String[] words = entity.split("(?=\\p{Lu})");
         for (String word : words) {
             edu.cmu.lti.jawjaw.pobj.POS pos = PosTransformation.transform(SemanticAnalysisHelper.getPOS(word).getOrDefault(word, ""));
             if (pos != null) {

@@ -97,12 +97,11 @@ public class Utilities {
         return (x % 2) == 0;
     }
 
-    public static String fillPattern(String pattern, List<String> classResources, List<String> propertyResources) {
+    static String fillPattern(String pattern, List<String> classResources, List<String> propertyResources) {
         List<String> triples = extractTriples(pattern);
         List<String> triplesWithoutFilters = triples.parallelStream()
                 .filter(s -> !s.toLowerCase().contains("filter") && !s.toLowerCase().contains("optional"))
                 .collect(Collectors.toList());
-        //TODO At the moment every placeholder is filled with every class/property. Check which replacement fits (with the POS tags)
         int classReplacementCount = 0;
         int propertyReplacementCount = 0;
         Map<String, String> replacements = new HashMap<>();
@@ -188,7 +187,10 @@ public class Utilities {
         return returnValue;
     }
 
-    static double getLevenshteinRatio(String s, String s2) {
+    public static double getLevenshteinRatio(String s, String s2) {
+        if(s == null || s2 == null){
+            return 1;
+        }
         int lfd = StringUtils.getLevenshteinDistance(s2, s);
         return ((double) lfd) / (Math.max(s2.length(), s.length()));
     }

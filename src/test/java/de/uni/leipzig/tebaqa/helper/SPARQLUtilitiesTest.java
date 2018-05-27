@@ -1,9 +1,12 @@
 package de.uni.leipzig.tebaqa.helper;
 
+import de.uni.leipzig.tebaqa.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -119,7 +122,7 @@ public class SPARQLUtilitiesTest {
         List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery("SELECT DISTINCT ?uri WHERE { ?uri <http://dbpedia.org/ontology/routeStart> <http://dbpedia.org/resource/Piccadilly>. } ");
         assertTrue(sparqlResultSets.size() == 1);
         SPARQLResultSet  sparqlResultSet = sparqlResultSets.get(0);
-        assertEquals(SPARQLResultSet.SINGLE_RESOURCE_TYPE, sparqlResultSet.getType());
+        assertEquals(SPARQLResultSet.SINGLE_ANSWER, sparqlResultSet.getType());
     }
 
     @Test
@@ -177,6 +180,57 @@ public class SPARQLUtilitiesTest {
     @Test
     public void testGetRedirect() {
         String actual = SPARQLUtilities.getRedirect("http://dbpedia.org/resource/G._W._F._Hegel");
-        assertEquals("http://dbpedia.org/resource/Georg_Wilhelm_Friedrich_Hegel",actual);
+        assertEquals("http://dbpedia.org/resource/Georg_Wilhelm_Friedrich_Hegel", actual);
+    }
+
+    @Test
+    public void testGetRedirect2() {
+        String actual = SPARQLUtilities.getRedirect("http://dbpedia.org/resource/Carolina_Reaper");
+        assertEquals("http://dbpedia.org/resource/Carolina_Reaper", actual);
+    }
+
+    @Test
+    public void testReplaceWithWildcard() {
+        String actual = SPARQLUtilities.replaceWithWildcard("SELECT DISTINCT ?uri WHERE { res:Brooklyn_Bridge dbo:crosses ?uri }");
+        assertEquals("SELECT DISTINCT * WHERE { res:Brooklyn_Bridge dbo:crosses ?uri }", actual);
+    }
+
+    @Test
+    public void testReplaceWithWildcard2() {
+        String actual = SPARQLUtilities.replaceWithWildcard("SELECT ?uri WHERE { res:Brooklyn_Bridge dbo:crosses ?uri }");
+        assertEquals("SELECT * WHERE { res:Brooklyn_Bridge dbo:crosses ?uri }", actual);
+    }
+
+    @Test
+    public void testIsNumeric() {
+        assertTrue(SPARQLUtilities.isNumericOrScientific("1"));
+    }
+
+    @Test
+    public void testIsNumericWithNegative() {
+        assertTrue(SPARQLUtilities.isNumericOrScientific("-1.0"));
+    }
+
+    @Test
+    public void testIsNumericWithDot() {
+        assertTrue(SPARQLUtilities.isNumericOrScientific("44.8"));
+    }
+
+    @Test
+    public void testIsNumericWithScientific() {
+        assertTrue(SPARQLUtilities.isNumericOrScientific("3.40841e+10"));
+    }
+
+    @Test
+    public void testDetermineAnswerType() {
+        ResultsetBinding rs = new ResultsetBinding();
+        Set<String> result = new HashSet<>();
+        result.add("1616-04-23");
+        result.add("1616-4-23");
+        result.add("1616-04");
+        result.add("1616-4");
+        result.add("1616");
+        rs.setResult(result);
+        assertEquals(SPARQLResultSet.DATE_ANSWER_TYPE, SPARQLUtilities.determineAnswerType(rs));
     }
 }

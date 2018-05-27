@@ -11,6 +11,15 @@ h1,h2,h3 {
     text-align: center;
 }
 
+#show-sparql-button {
+    text-align: center;
+}
+
+#sparql-query-content {
+    text-align: left !important;
+    width: 100%;
+}
+
 @media screen and (max-width: 400px) {
     .card {
         float: none;

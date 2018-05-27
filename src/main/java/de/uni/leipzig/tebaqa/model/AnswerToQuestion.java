@@ -1,33 +1,23 @@
 package de.uni.leipzig.tebaqa.model;
 
-import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class AnswerToQuestion {
     private Set<String> answer;
-    private Set<String> rdfEntities;
+    private Map<String, String> rdfEntities;
     private String answerType;
+    private String sparqlQuery;
 
-    public AnswerToQuestion(Set<String> answer, Set<String> rdfEntities) {
+    public AnswerToQuestion(ResultsetBinding answer, Map<String, String> entitiyToQuestionMapping) {
         this.answer = new HashSet<>();
-        if (answer.size() < 50) {
-            answer.parallelStream().forEach(s -> {
-                if (s.startsWith("http://dbpedia.org/")) {
-                    String redirect = SPARQLUtilities.getRedirect(s);
-                    if (!redirect.isEmpty()) {
-                        s = redirect;
-                    }
-                }
-                this.answer.add(s);
-            });
-        } else {
-            this.answer.addAll(answer);
-        }
+        this.answer.addAll(answer.getResult());
+        this.sparqlQuery = answer.getQuery();
+        this.rdfEntities = entitiyToQuestionMapping;
 
-        this.rdfEntities = rdfEntities;
         if (!this.answer.isEmpty() && this.answer.parallelStream().allMatch(a -> a.startsWith("http://dbpedia.org/"))) {
             this.answerType = "uri";
         } else {
@@ -44,12 +34,12 @@ public class AnswerToQuestion {
         return answer;
     }
 
-    public Set<String> getRdfEntities() {
-        return rdfEntities;
-    }
-
     public String getAnswerType() {
         return answerType;
+    }
+
+    public String getSparqlQuery() {
+        return sparqlQuery;
     }
 
     @Override
@@ -58,6 +48,7 @@ public class AnswerToQuestion {
                 "answer=" + answer +
                 ", rdfEntities=" + rdfEntities +
                 ", answerType='" + answerType + '\'' +
+                ", sparqlQuery='" + sparqlQuery + '\'' +
                 '}';
     }
 }

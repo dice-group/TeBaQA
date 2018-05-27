@@ -1,14 +1,15 @@
 package de.uni.leipzig.tebaqa.controller;
 
-import com.google.common.collect.Sets;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
+import de.uni.leipzig.tebaqa.helper.TextUtilities;
 import de.uni.leipzig.tebaqa.helper.Utilities;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
+import de.uni.leipzig.tebaqa.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -33,15 +34,24 @@ import java.io.FileInputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static de.uni.leipzig.tebaqa.helper.HypernymMappingProvider.getHypernymMapping;
-import static de.uni.leipzig.tebaqa.helper.QueryMappingFactory.NON_WORD_CHARACTERS_REGEX;
+import static de.uni.leipzig.tebaqa.helper.TextUtilities.NON_WORD_CHARACTERS_REGEX;
 import static de.uni.leipzig.tebaqa.helper.Utilities.ARGUMENTS_BETWEEN_SPACES;
+import static de.uni.leipzig.tebaqa.helper.Utilities.getLevenshteinRatio;
 
 public class SemanticAnalysisHelper {
     private static Logger log = Logger.getLogger(SemanticAnalysisHelper.class);
@@ -397,7 +407,7 @@ public class SemanticAnalysisHelper {
             }
         }
         if (question.toLowerCase().startsWith("how many") || question.toLowerCase().startsWith("how much")
-                || question.toLowerCase().startsWith("how big")) {
+                || question.toLowerCase().startsWith("how big") || question.toLowerCase().startsWith("how large")) {
             return SPARQLResultSet.NUMBER_ANSWER_TYPE;
         }
         if (question.toLowerCase().startsWith("how") && sequence.size() >= 2) {
@@ -415,146 +425,85 @@ public class SemanticAnalysisHelper {
             if (posTag.equalsIgnoreCase("NNS") || posTag.equalsIgnoreCase("NNPS")) {
                 return SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
             } else if (posTag.equalsIgnoreCase("NN") || posTag.equalsIgnoreCase("NNP")) {
-                return SPARQLResultSet.SINGLE_RESOURCE_TYPE;
+                return SPARQLResultSet.SINGLE_ANSWER;
             }
         }
         return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
     }
 
-    Set<String> getBestAnswer(List<Map<Integer, List<String>>> results, int expectedAnswerType, boolean forceResult) {
-        Set<Map<Integer, List<String>>> suitableAnswers = new HashSet<>();
-        List<String> bestAnswer = new ArrayList<>();
 
-        if (expectedAnswerType == SPARQLResultSet.SINGLE_RESOURCE_TYPE) {
-            //A list might contain the correct answer too
-            suitableAnswers.addAll(getPossibleAnswer(results, SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE));
-        } else if (expectedAnswerType == SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE) {
-            //A single answer might be a partly correct answer
-            suitableAnswers.addAll(getPossibleAnswer(results, SPARQLResultSet.SINGLE_RESOURCE_TYPE));
-        }
-
-        results.forEach(result -> {
-            if (result.containsKey(expectedAnswerType)) {
-                List<String> resultWithMatchingType = result.get(expectedAnswerType);
-                if (!resultWithMatchingType.isEmpty()) {
-                    Map<Integer, List<String>> answer = new HashMap<>();
-                    answer.put(expectedAnswerType, resultWithMatchingType);
-                    suitableAnswers.add(answer);
-                }
-            }
-        });
-        if (suitableAnswers.size() == 1) {
-            Optional<Map<Integer, List<String>>> firstElement = suitableAnswers.parallelStream().findFirst();
-            Map<Integer, List<String>> answer = firstElement.get();
-            Optional<List<String>> first = answer.values().parallelStream().findFirst();
-            Set<String> suitableAnswer = first.<Set<String>>map(Sets::newHashSet).orElseGet(HashSet::new);
-            if (expectedAnswerType == SPARQLResultSet.DATE_ANSWER_TYPE && suitableAnswer.size() > 1) {
-                return Sets.newHashSet(getDateAnswer(suitableAnswer).values());
-            }
-            if (expectedAnswerType == SPARQLResultSet.NUMBER_ANSWER_TYPE && suitableAnswer.contains("0")) {
-                //The answer to most questions who demand a number isn't 0. In case 0 was found as an answer, search for other answers.
-                return new HashSet<>();
-            }
-            return first.<Set<String>>map(Sets::newHashSet).orElseGet(HashSet::new);
-        } else if (suitableAnswers.isEmpty() && forceResult) {
-            //If there is no suitable result fallback to the other results
-            List<String> finalBestAnswer = bestAnswer;
-            results.parallelStream()
-                    .map(Map::values)
-                    .forEach(values -> finalBestAnswer.addAll(values.parallelStream()
-                            .flatMap(List::stream)
-                            .collect(Collectors.toList())));
-            bestAnswer = finalBestAnswer;
-        } else if (suitableAnswers.size() > 1) {
-            List<String> answersWithMatchingType = suitableAnswers.parallelStream()
-                    .filter(answer -> answer.containsKey(expectedAnswerType))
-                    .map(answer -> answer.getOrDefault(expectedAnswerType, new ArrayList<>()))
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toList());
-            if (expectedAnswerType == SPARQLResultSet.BOOLEAN_ANSWER_TYPE) {
-                return getMostFrequentBooleanAnswer(answersWithMatchingType);
-            } else if (expectedAnswerType == SPARQLResultSet.DATE_ANSWER_TYPE) {
-                Optional<String> max = answersWithMatchingType.parallelStream().max(Comparator.comparingInt(String::length));
-                if (max.isPresent()) {
-                    bestAnswer.add(max.get());
-                }
-            } else if (answersWithMatchingType.size() != 0) {
-                return Sets.newHashSet(answersWithMatchingType);
+    ResultsetBinding getBestAnswer(Set<ResultsetBinding> results, Map<String, String> entitiyToQuestionMapping, int expectedAnswerType, boolean forceResult) {
+        results.parallelStream().forEach(resultsetBinding -> {
+            Map<String, String> bindings = resultsetBinding.getBindings();
+            Double rating = 0.0;
+            if (!forceResult && resultsetBinding.getAnswerType() != expectedAnswerType) {
+                resultsetBinding.setRating(0.0);
             } else {
-                return suitableAnswers.parallelStream().map(answer -> answer.getOrDefault(expectedAnswerType, new ArrayList<>()))
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toSet());
-            }
-        }
-        return Sets.newHashSet(bestAnswer);
-    }
-
-    @NotNull
-    private Map<LocalDate, String> getDateAnswer(Set<String> suitableAnswer) {
-        Map<LocalDate, String> uniqueDates = new HashMap<>();
-        suitableAnswer.forEach(s -> {
-            if (s.contains("-")) {
-                LocalDate dateTime = null;
-                try {
-                    dateTime = LocalDate.parse(s, dateTimeFormatterLong);
-                } catch (DateTimeParseException ignored) {
-                }
-                try {
-                    dateTime = LocalDate.parse(s, dateTimeFormatterShortDay);
-                } catch (DateTimeParseException ignored) {
-                }
-                try {
-                    dateTime = LocalDate.parse(s, dateTimeFormatterShortMonth);
-                } catch (DateTimeParseException ignored) {
-                }
-                if (dateTime != null && !uniqueDates.containsKey(dateTime)) {
-                    uniqueDates.put(dateTime, s);
-                } else if (dateTime != null && uniqueDates.containsKey(dateTime)) {
-                    String s1 = uniqueDates.get(dateTime);
-                    //Update the date if the dates are equivalent and the new date is longer e.g. 1616-04-23 instead of 1616-4-23
-                    //TODO What happens if a year is requested?
-                    if (s1.length() < s.length()) {
-                        uniqueDates.put(dateTime, s);
+                for (String variable : bindings.keySet()) {
+                    if (variable.toLowerCase().startsWith("class_") || variable.toLowerCase().startsWith("property_")) {
+                        String uri = bindings.get(variable);
+                        String relatedPhrase = entitiyToQuestionMapping.getOrDefault(uri, "");
+                        double relatednessFactor;
+                        if (relatedPhrase.isEmpty()) {
+                            relatednessFactor = 0;
+                        } else {
+                            relatednessFactor = TextUtilities.countWords(relatedPhrase) - getLevenshteinRatio(SPARQLUtilities.getBaseNameFromDBpediaEntitiy(uri).toLowerCase(), relatedPhrase.toLowerCase());
+                        }
+                        if (bindings.values().stream().filter(s -> s.equals(uri)).collect(Collectors.toList()).size() > 1) {
+                            //If the binding is used more than once reduce its rating
+                            //rating += relatednessFactor / 2;
+                            rating = 0.0;
+                        } else {
+                            rating += relatednessFactor;
+                        }
+                    } else {
+                        //Unbound variables mostly lead to worse results
+                        rating = -5.0;
                     }
                 }
+                if (rating > 0) {
+                    if (resultsetBinding.getResult().size() >= 50) {
+                        rating *= (1 / 2);
+                    }
+                    if (resultsetBinding.getAnswerType() != expectedAnswerType) {
+                        rating *= (3 / 2);
+                    }
+                } else {
+                    if (resultsetBinding.getResult().size() >= 50) {
+                        rating *= 2;
+                    }
+                    if (resultsetBinding.getAnswerType() != expectedAnswerType) {
+                        rating *= (2 / 3);
+                    }
+                }
+
+                //Queries with "true" as answers are more likely to be correct
+                if (resultsetBinding.getAnswerType() == SPARQLResultSet.BOOLEAN_ANSWER_TYPE && resultsetBinding.getResult().size() == 1) {
+                    if (resultsetBinding.getResult().stream().findFirst().get().equalsIgnoreCase("true")) {
+                        rating *= (3 / 2);
+                    } else {
+                        rating *= (2 / 3);
+                    }
+                }
+
+                resultsetBinding.setRating(rating);
             }
         });
-        return uniqueDates;
-    }
 
-    @NotNull
-    private Set<String> getMostFrequentBooleanAnswer(List<String> answersWithMatchingType) {
-        int trueCount = Math.toIntExact(answersWithMatchingType.parallelStream().filter(Boolean::valueOf).count());
-        int falseCount = Math.toIntExact(answersWithMatchingType.parallelStream().filter(a -> !Boolean.valueOf(a)).count());
-        Set<String> set = new HashSet<>();
-        if (trueCount >= falseCount) {
-            set.add("true");
+
+        Optional<ResultsetBinding> bestAnswerWithMatchingResultType = results.stream().filter(resultsetBinding -> resultsetBinding.getAnswerType() == expectedAnswerType).max(Comparator.comparingDouble(ResultsetBinding::getRating));
+        if (bestAnswerWithMatchingResultType.isPresent()) {
+            return bestAnswerWithMatchingResultType.get();
         } else {
-            set.add("false");
-        }
-        return set;
-    }
-
-    private List<Map<Integer, List<String>>> getPossibleAnswer(List<Map<Integer, List<String>>> results, int singleResourceType) {
-        List<Map<Integer, List<String>>> a = new ArrayList<>();
-        results.forEach(result -> {
-            if (result.containsKey(singleResourceType)) {
-                List<String> resultWithMatchingType = result.get(singleResourceType);
-                if (!resultWithMatchingType.isEmpty()) {
-                    Map<Integer, List<String>> answer = new HashMap<>();
-                    answer.put(singleResourceType, resultWithMatchingType);
-                    a.add(answer);
-                }
-            } else if (result.containsKey(SPARQLResultSet.STRING_ANSWER_TYPE)) {
-                List<String> stringAnswers = result.get(SPARQLResultSet.STRING_ANSWER_TYPE);
-                if (!stringAnswers.isEmpty()) {
-                    Map<Integer, List<String>> answer = new HashMap<>();
-                    answer.put(SPARQLResultSet.STRING_ANSWER_TYPE, stringAnswers);
-                    a.add(answer);
-                }
+            if (forceResult) {
+                return results.stream()
+                        .max(Comparator.comparingDouble(ResultsetBinding::getRating)).orElseGet(ResultsetBinding::new);
+            } else {
+                return results.stream()
+                        .filter(resultsetBinding -> resultsetBinding.getRating() > 0)
+                        .max(Comparator.comparingDouble(ResultsetBinding::getRating)).orElseGet(ResultsetBinding::new);
             }
-        });
-        return a;
+        }
     }
 
     public static List<String> getHypernymsFromWiktionary(String s) {
