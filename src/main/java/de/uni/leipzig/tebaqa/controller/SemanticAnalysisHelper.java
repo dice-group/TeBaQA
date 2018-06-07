@@ -22,7 +22,6 @@ import edu.stanford.nlp.util.CoreMap;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.Classifier;
 import weka.core.Attribute;
@@ -31,19 +30,9 @@ import weka.core.Instances;
 import weka.core.SerializationHelper;
 
 import java.io.FileInputStream;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -296,7 +285,9 @@ public class SemanticAnalysisHelper {
         attributes.add(classAttribute);
 
         Analyzer analyzer = new Analyzer(attributes);
-        Instances dataset = new Instances("testdata", analyzer.fvWekaAttributes, 1);
+        log.info("analyzer.fvWekaAttributes:" + analyzer.fvWekaAttributes);
+        ArrayList<Attribute> filteredAttributes = analyzer.fvWekaAttributes.stream().filter(Objects::nonNull).collect(Collectors.toCollection(ArrayList::new));
+        Instances dataset = new Instances("testdata", filteredAttributes, 1);
         dataset.setClassIndex(dataset.numAttributes() - 1);
         Instance instance = analyzer.analyze(question);
         instance.setDataset(dataset);
@@ -463,26 +454,24 @@ public class SemanticAnalysisHelper {
                 }
                 if (rating > 0) {
                     if (resultsetBinding.getResult().size() >= 50) {
-                        rating *= (1 / 2);
+                        rating *= (1 / 3);
                     }
                     if (resultsetBinding.getAnswerType() != expectedAnswerType) {
-                        rating *= (3 / 2);
+                        rating *= 2;
+                    }
+                    if (resultsetBinding.getAnswerType() == SPARQLResultSet.BOOLEAN_ANSWER_TYPE && resultsetBinding.getResult().size() == 1 && resultsetBinding.getResult().stream().findFirst().get().equalsIgnoreCase("false")) {
+                        rating *= (1 / 2);
                     }
                 } else {
                     if (resultsetBinding.getResult().size() >= 50) {
-                        rating *= 2;
+                        rating *= 3;
                     }
                     if (resultsetBinding.getAnswerType() != expectedAnswerType) {
-                        rating *= (2 / 3);
+                        rating *= (1 / 2);
                     }
-                }
 
-                //Queries with "true" as answers are more likely to be correct
-                if (resultsetBinding.getAnswerType() == SPARQLResultSet.BOOLEAN_ANSWER_TYPE && resultsetBinding.getResult().size() == 1) {
-                    if (resultsetBinding.getResult().stream().findFirst().get().equalsIgnoreCase("true")) {
-                        rating *= (3 / 2);
-                    } else {
-                        rating *= (2 / 3);
+                    if (resultsetBinding.getAnswerType() == SPARQLResultSet.BOOLEAN_ANSWER_TYPE && resultsetBinding.getResult().size() == 1 && resultsetBinding.getResult().stream().findFirst().get().equalsIgnoreCase("false")) {
+                        rating *= 2;
                     }
                 }
 

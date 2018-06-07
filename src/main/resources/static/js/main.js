@@ -102,11 +102,9 @@ function submitForm(s) {
             const sparql = response['sparql'];
             if (!$.isArray(answer) || !answer.length) {
                 $('#sparql-query-content').text("");
-                $('#show-sparql-button').prop('disabled', true);
                 createEmptyInfobox('No answers were found.');
             } else {
                 $('#sparql-query-content').text(sparql);
-                $('#show-sparql-button').prop('disabled', false);
                 for (let i in answer) {
                     if (answer.hasOwnProperty(i)) {
                         if (answer[i].startsWith('http://dbpedia.org/resource')) {
@@ -146,7 +144,7 @@ function submitForm(s) {
 function initExamples() {
     $('#example-1').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('Where was Angela Merkel born?');
+        $('#search-bar').val('What is the highest mountain in the Bavarian Alps?');
         return false;
     });
     $('#example-2').click(function (e) {
@@ -176,7 +174,7 @@ function initExamples() {
     });
     $('#example-7').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('From who was Adorno influenced by?');
+        $('#search-bar').val('What were the main interests of Adorno?');
         return false;
     });
     $('#example-8').click(function (e) {

@@ -155,16 +155,6 @@ public class ResultsetBinding {
         }
     }
 
-    public static ResultsetBinding merge(ResultsetBinding src, ResultsetBinding dest) {
-        ResultsetBinding newBinding = new ResultsetBinding();
-        src.getResult().forEach(newBinding::addResult);
-        dest.getResult().forEach(newBinding::addResult);
-        newBinding.setQuery(src.getQuery());
-        newBinding.setAnswerType(src.getAnswerType());
-        src.getBindings().forEach(newBinding::addBinding);
-        return newBinding;
-    }
-
     @Override
     public String toString() {
         return "ResultsetBinding{" +

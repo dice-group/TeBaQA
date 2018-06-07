@@ -5,7 +5,6 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.helper.DBpediaPropertiesProvider;
 import de.uni.leipzig.tebaqa.helper.NTripleParser;
 import de.uni.leipzig.tebaqa.helper.OntologyMappingProvider;
-import de.uni.leipzig.tebaqa.helper.PattyPhrasesProvider;
 import de.uni.leipzig.tebaqa.helper.PosTransformation;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
@@ -20,7 +19,6 @@ import de.uni.leipzig.tebaqa.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import de.uni.leipzig.tebaqa.model.WordNetWrapper;
 import edu.cmu.lti.jawjaw.pobj.POS;
-import joptsimple.internal.Strings;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.commons.datastructure.IQuestion;
@@ -82,12 +80,9 @@ public class PipelineController {
             }
         }
 
-        log.info("Loading Patty Phrases...");
-        PattyPhrasesProvider.load();
-
-        log.info("Generating ontology mapping...");
-        createOntologyMapping(trainQuestionsWithQuery);
-        log.info("Ontology Mapping: " + OntologyMappingProvider.getOntologyMapping());
+        //log.info("Generating ontology mapping...");
+        //createOntologyMapping(trainQuestionsWithQuery);
+        //log.info("Ontology Mapping: " + OntologyMappingProvider.getOntologyMapping());
 
         log.info("Getting DBpedia properties from SPARQL endpoint...");
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
@@ -107,17 +102,19 @@ public class PipelineController {
 
         log.info("Creating weka model...");
         Map<String, String> testQuestionsWithQuery = new HashMap<>();
+        //only use unique trainQuestions in case multiple datasets are used
         for (HAWKQuestion q : trainQuestions) {
-            //only use unique trainQuestions in case multiple datasets are used
             String questionText = q.getLanguageToQuestion().get("en");
             if (!semanticAnalysisHelper.containsQuestionText(testQuestionsWithQuery, questionText)) {
                 testQuestionsWithQuery.put(q.getSparqlQuery(), questionText);
             }
         }
+        log.info("Instantiating ArffGenerator...");
         new ArffGenerator(customTrainQuestions, transform(testQuestionsWithQuery), evaluateWekaAlgorithms);
+        log.info("Instantiating ArffGenerator done!");
 
         graphs = new HashSet<>();
-        customTrainQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
+        customTrainQuestions.parallelStream().forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
 
 //        testQuestions.parallelStream().forEach(q -> answerQuestion(graphs, q));
     }
@@ -209,14 +206,13 @@ public class PipelineController {
         QueryMappingFactory mappingFactory = new QueryMappingFactory(question, "", Lists.newArrayList(ontologyNodes), dBpediaProperties);
         Set<ResultsetBinding> results = new HashSet<>();
         String graphPattern = semanticAnalysisHelper.classifyInstance(question, graphs);
-        List<String> queries = mappingFactory.generateQueries(mappings, graphPattern, false);
+        Set<String> queries = mappingFactory.generateQueries(mappings, graphPattern, false);
 
         //If the template from the predicted graph won't find suitable templates, try all other templates
         if (queries.isEmpty()) {
             log.info("There is no suitable query template for this graph, using all templates now...");
             queries = mappingFactory.generateQueries(mappings, false);
         }
-
         results.addAll(executeQueries(queries));
 
         final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question);
@@ -242,8 +238,7 @@ public class PipelineController {
         return new AnswerToQuestion(rsBinding, mappingFactory.getEntitiyToQuestionMapping());
     }
 
-
-    private Set<ResultsetBinding> executeQueries(List<String> queries) {
+    private Set<ResultsetBinding> executeQueries(Set<String> queries) {
         Set<ResultsetBinding> bindings = new HashSet<>();
         for (String s : queries) {
             bindings.addAll(SPARQLUtilities.retrieveBinings(s));

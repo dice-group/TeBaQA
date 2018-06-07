@@ -3,6 +3,7 @@ package de.uni.leipzig.tebaqa.model;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.helper.PosTransformation;
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
+import edu.cmu.lti.lexical_db.ILexicalDatabase;
 import edu.cmu.lti.lexical_db.NictWordNet;
 import edu.cmu.lti.ws4j.impl.HirstStOnge;
 import edu.cmu.lti.ws4j.util.WordSimilarityCalculator;
@@ -22,7 +23,6 @@ import org.springframework.core.io.ClassPathResource;
 import weka.core.Stopwords;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,12 +97,17 @@ public class WordNetWrapper {
     }
 
     public double semanticWordSimilarity(String word1, String word2) {
+        if (word1 == null || word2 == null) {
+            return 0.0;
+        }
         if (Stopwords.isStopword(word1) || Stopwords.isStopword(word2)) {
             return 0.0;
         }
 
         WordSimilarityCalculator wordSimilarityCalculator = new WordSimilarityCalculator();
-        return wordSimilarityCalculator.calcRelatednessOfWords(word1, word2, new HirstStOnge(new NictWordNet()));
+        ILexicalDatabase db = new NictWordNet();
+        HirstStOnge rc = new HirstStOnge(db);
+        return wordSimilarityCalculator.calcRelatednessOfWords(word1, word2, rc);
     }
 
     public double semanticSimilarityBetweenWordgroupAndWord(String entity, String word2) {

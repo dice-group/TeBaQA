@@ -233,4 +233,22 @@ public class SPARQLUtilitiesTest {
         rs.setResult(result);
         assertEquals(SPARQLResultSet.DATE_ANSWER_TYPE, SPARQLUtilities.determineAnswerType(rs));
     }
+
+    @Test
+    public void testDetermineAnswerType2() {
+        ResultsetBinding rs = new ResultsetBinding();
+        Set<String> result = new HashSet<>();
+        result.add("true");
+        rs.setResult(result);
+        assertEquals(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, SPARQLUtilities.determineAnswerType(rs));
+    }
+
+    @Test
+    public void testDetermineAnswerType3() {
+        ResultsetBinding rs = new ResultsetBinding();
+        Set<String> result = new HashSet<>();
+        result.add("false");
+        rs.setResult(result);
+        assertEquals(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, SPARQLUtilities.determineAnswerType(rs));
+    }
 }

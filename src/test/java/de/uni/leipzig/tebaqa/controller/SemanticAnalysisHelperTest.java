@@ -411,6 +411,12 @@ public class SemanticAnalysisHelperTest {
     }
 
     @Test
+    public void testDetectQuestionAnswerTypeSingleAnswer3() {
+        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("From whom was Adorno influenced by?");
+        assertEquals(SINGLE_ANSWER, answerType);
+    }
+
+    @Test
     public void testDetectQuestionAnswerTypeUsesLemma() {
         int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Does a question always makes sense?");
         assertEquals(BOOLEAN_ANSWER_TYPE, answerType);

@@ -24,14 +24,16 @@ public class OntologyMappingProvider {
     }
 
     public static Map<String, Set<String>> getOntologyMapping() {
-        if (ontologyMapping.isEmpty()) {
-            loadOntologyMapping();
-        }
-        return ontologyMapping;
+        //The Ontology mapping is unnecessary with the putty phrases
+        //if (ontologyMapping.isEmpty()) {
+        //    loadOntologyMapping();
+        //}
+        return new HashMap<>();
     }
 
     public static void setOntologyMapping(Map<String, Set<String>> ontologyMapping) {
-        Map<String, Set<String>> mapping = loadOntologyMapping();
+        //Map<String, Set<String>> mapping = loadOntologyMapping();
+        Map<String, Set<String>> mapping = new HashMap<>();
         OntologyMappingProvider.ontologyMapping = ontologyMapping;
         OntologyMappingProvider.ontologyMapping.putAll(mapping);
     }

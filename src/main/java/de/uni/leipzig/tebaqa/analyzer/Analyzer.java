@@ -21,18 +21,17 @@ public class Analyzer {
     public ArrayList<Attribute> fvWekaAttributes = new ArrayList<>();
 
     public Analyzer(List<Attribute> attributes) {
-
         analyzers = new ArrayList<>();
         analyzers.add(new QuestionWord());
         analyzers.add(new EntityPerson());
         analyzers.add(new NumberOfToken());
-        analyzers.add(new QueryResourceTypeAnalyzer());
+        //analyzers.add(new QueryResourceTypeAnalyzer());
         analyzers.add(new Noun());
         analyzers.add(new Number());
         analyzers.add(new Verb());
         analyzers.add(new Adjective());
         analyzers.add(new Comperative());
-        analyzers.add(new NamedEntities());
+        //analyzers.add(new NamedEntities());
         try {
             analyzers.add(new TripleCandidates());
         } catch (IOException | ClassNotFoundException e) {
@@ -56,10 +55,17 @@ public class Analyzer {
         // the feature adds itself to the instance
         for (IAnalyzer analyzer : analyzers) {
             Attribute attribute = analyzer.getAttribute();
+            final Object classification = analyzer.analyze(q);
             if (attribute.isNumeric()) {
-                tmpInstance.setValue(attribute, (double) analyzer.analyze(q));
+                double value = -1;
+                try {
+                    value = (double) classification;
+                } catch (ClassCastException e) {
+                    log.error(String.format("Invalid value: '%s' for numeric attribute: '%s' from question: '%s'", classification, attribute.toString(), q), e);
+                }
+                tmpInstance.setValue(attribute, value);
             } else if (attribute.isNominal() || attribute.isString()) {
-                String analyze = (String) analyzer.analyze(q);
+                String analyze = (String) classification;
                 try {
                     tmpInstance.setValue(attribute, analyze);
                 } catch (IllegalArgumentException e) {

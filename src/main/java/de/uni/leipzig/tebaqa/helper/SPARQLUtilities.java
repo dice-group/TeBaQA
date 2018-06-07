@@ -42,6 +42,7 @@ public class SPARQLUtilities {
     public final static String DESCRIPTION_SPARQL = "SELECT ?description WHERE { <%1$s> <http://purl.org/dc/terms/description> ?description . FILTER(lang(?description)=\"en\") }";
     public final static String ABSTRACT_SPARQL = "SELECT ?abstract WHERE { <%1$s> <http://dbpedia.org/ontology/abstract> ?abstract .  FILTER(lang(?abstract)=\"en\")  }";
     private final static String GET_REDIRECTS_SPARQL = "SELECT ?redirectsTo WHERE { <%1$s> <http://dbpedia.org/ontology/wikiPageRedirects> ?redirectsTo }";
+    static final String FULLTEXT_SEARCH_SPARQL = "SELECT DISTINCT ?s ?label WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?label . FILTER (lang(?label) = 'en'). ?label <bif:contains> \"'%s'\" . ?s <http://purl.org/dc/terms/subject> ?sub }";
     private static Pattern SPLIT_TRIPLE_PATTERN = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
     private static Logger log = Logger.getLogger(SPARQLUtilities.class);
     public static int QUERY_TYPE_UNKNOWN = -1;
@@ -283,6 +284,7 @@ public class SPARQLUtilities {
                         resultsetBinding.setResult(result);
 
                     }
+                    resultsetBinding.setAnswerType(determineAnswerType(resultsetBinding));
                     mergedBindings.add(resultsetBinding);
                 }
             }
@@ -316,7 +318,12 @@ public class SPARQLUtilities {
         } else if (result.stream().allMatch(SPARQLUtilities::isDateFromXMLScheme)) {
             return SPARQLResultSet.DATE_ANSWER_TYPE;
         } else if (result.size() == 1) {
-            return SPARQLResultSet.SINGLE_ANSWER;
+            final String s = result.stream().findFirst().get();
+            if (s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false")) {
+                return SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
+            } else {
+                return SPARQLResultSet.SINGLE_ANSWER;
+            }
         } else if (result.size() > 1 && result.stream().allMatch(SPARQLUtilities::isResource)) {
             return SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
         } else {

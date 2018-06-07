@@ -1,10 +1,8 @@
 package de.uni.leipzig.tebaqa.helper;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
-import de.uni.leipzig.tebaqa.model.CoOccurrenceEntityMapping;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.model.RatedEntity;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
@@ -16,6 +14,7 @@ import edu.stanford.nlp.simple.Sentence;
 import edu.stanford.nlp.util.CoreMap;
 import joptsimple.internal.Strings;
 import org.aksw.hawk.index.DBOIndex;
+import org.aksw.hawk.index.Patty_relations;
 import org.aksw.qa.annotation.index.IndexDBO_classes;
 import org.aksw.qa.annotation.index.IndexDBO_properties;
 import org.aksw.qa.commons.datastructure.Entity;
@@ -75,10 +74,14 @@ public class QueryMappingFactory {
     private String question;
     private List<RDFNode> ontologyNodes;
     private List<String> properties;
-    private Map<String, String> entitiyToQuestionMapping = new HashMap<>();
+    private Map<String, String> entitiyToQuestionMapping;
+    private Map<String, String> entitiyToQuestionMappingWithSynonyms;
+    private boolean entitiyToQuestionMappingWasSet;
+    private boolean entitiyToQuestionMappingWithSynonymsWasSet;
     private Set<String> ontologyURIs;
-    private static Configuration pattyPhrases = PattyPhrasesProvider.getPattyPhrases();
+    //private Configuration pattyPhrases;
     private PersistentCacheManager cacheManager;
+    private Patty_relations patty_relations;
 
     public QueryMappingFactory(String question, String sparqlQuery, List<RDFNode> ontologyNodes, List<String> properties) {
         this.ontologyNodes = ontologyNodes;
@@ -86,6 +89,12 @@ public class QueryMappingFactory {
         ontologyNodes.forEach(rdfNode -> ontologyURIs.add(rdfNode.toString()));
         this.properties = properties;
         this.queryType = SemanticAnalysisHelper.determineQueryType(question);
+        this.entitiyToQuestionMapping = new HashMap<>();
+        this.entitiyToQuestionMappingWasSet = false;
+        this.entitiyToQuestionMappingWithSynonyms = new HashMap<>();
+        this.entitiyToQuestionMappingWithSynonymsWasSet = false;
+        //this.pattyPhrases = PattyPhrasesProvider.getPattyPhrases();
+        this.patty_relations = new Patty_relations();
 
         this.question = question;
         String queryString = SPARQLUtilities.resolveNamespaces(sparqlQuery);
@@ -228,30 +237,39 @@ public class QueryMappingFactory {
         return queryPattern;
     }
 
-    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph, boolean useSynonyms) {
-        Map<String, String> entitiyToQuestionMapping = new HashMap<>();
-        if (!useSynonyms) {
+    public Set<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph, boolean useSynonyms) {
+        if (!useSynonyms && !this.entitiyToQuestionMappingWasSet) {
             entitiyToQuestionMapping.putAll(extractEntities(question));
-        } else {
-            entitiyToQuestionMapping.putAll(extractEntitiesUsingSynonyms(question));
+            this.entitiyToQuestionMappingWasSet = true;
+        } else if (useSynonyms && !this.entitiyToQuestionMappingWithSynonymsWasSet) {
+            entitiyToQuestionMappingWithSynonyms.putAll(extractEntitiesUsingSynonyms(question));
+            this.entitiyToQuestionMappingWithSynonymsWasSet = true;
         }
 
         List<String> suitableMappings = getSuitableMappings(mappings, queryType, graph);
-
-        return Lists.newArrayList(fillPatterns(entitiyToQuestionMapping, suitableMappings));
+        Set<String> queries;
+        if (!useSynonyms) {
+            queries = fillPatterns(entitiyToQuestionMapping, suitableMappings);
+        } else {
+            Map<String, String> m = new HashMap<>();
+            m.putAll(entitiyToQuestionMapping);
+            m.putAll(entitiyToQuestionMappingWithSynonyms);
+            queries = fillPatterns(m, suitableMappings);
+        }
+        return queries;
     }
 
     Map<String, String> extractEntities(String question) {
         Map<String, String> entitiyToQuestionMapping = new HashMap<>();
         question = SemanticAnalysisHelper.removeQuestionWords(question);
 
-        Map<String, List<Entity>> spotlightEntities = extractSpotlightEntities(question);
-        if (spotlightEntities.size() > 0) {
-            spotlightEntities.get("en").forEach(entity -> {
-                Set<String> uris = entity.getUris().stream().map(Resource::getURI).collect(Collectors.toSet());
-                uris.forEach(s -> entitiyToQuestionMapping.put(s, entity.getLabel()));
-            });
-        }
+//        Map<String, List<Entity>> spotlightEntities = extractSpotlightEntities(question);
+//        if (spotlightEntities.size() > 0) {
+//            spotlightEntities.get("en").forEach(entity -> {
+//                Set<String> uris = entity.getUris().stream().map(Resource::getURI).collect(Collectors.toSet());
+//                uris.forEach(s -> entitiyToQuestionMapping.put(s, entity.getLabel()));
+//            });
+//        }
 
         List<String> wordsFromQuestion = Arrays.asList(question.split(NON_WORD_CHARACTERS_REGEX));
         for (String word : wordsFromQuestion) {
@@ -359,7 +377,6 @@ public class QueryMappingFactory {
         } catch (InterruptedException | ExecutionException e) {
             log.error("Exception while extracting entities from wordgroups of the question!", e);
         }
-        this.entitiyToQuestionMapping = entitiyToQuestionMapping;
         return entitiyToQuestionMapping;
     }
 
@@ -375,19 +392,18 @@ public class QueryMappingFactory {
                 ontologiesFromMapping = ontologyMapping.getOrDefault(lemmas.getOrDefault(word, "").toLowerCase(), new HashSet<>());
             }
             if (!ontologiesFromMapping.isEmpty()) {
-                ontologiesFromMapping.forEach(s -> this.entitiyToQuestionMapping.put(s, word));
+                ontologiesFromMapping.forEach(s -> this.entitiyToQuestionMappingWithSynonyms.put(s, word));
             }
         }
 
-        this.entitiyToQuestionMapping.putAll(findResourcesBySynonyms(question));
-        return this.entitiyToQuestionMapping;
+        return findResourcesBySynonyms(question);
     }
 
     Set<String> findResourcesInFullText(String s) {
         List<String> questionWords = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which|is|are|did|was|does|a".split("\\|"));
         Set<String> result = new HashSet<>();
         //SPARQLResultSet sparqlResultSet = SPARQLUtilities.executeSPARQLQuery(String.format("select distinct ?s { ?s ?p ?o. ?s <http://www.w3.org/2000/01/rdf-schema#label> ?l. filter(langmatches(lang(?l), 'en')) ?l <bif:contains> \"'%s'\" }", s));
-        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(String.format("SELECT DISTINCT ?s ?label WHERE { ?s <http://www.w3.org/2000/01/rdf-schema#label> ?label . FILTER (lang(?label) = 'en'). ?label <bif:contains> \"'%s'\" . ?s <http://purl.org/dc/terms/subject> ?sub }", s.replace("'", "\\\\'")));
+        List<SPARQLResultSet> sparqlResultSets = SPARQLUtilities.executeSPARQLQuery(String.format(SPARQLUtilities.FULLTEXT_SEARCH_SPARQL, s.replace("'", "\\\\'")));
         List<String> resultSet = new ArrayList<>();
         sparqlResultSets.forEach(sparqlResultSet -> resultSet.addAll(sparqlResultSet.getResultSet()));
         resultSet.parallelStream().filter(s1 -> s1.startsWith("http://")).forEach(uri -> {
@@ -424,8 +440,9 @@ public class QueryMappingFactory {
 
         List<String> coOccurrences = getNeighborCoOccurrencePermutations(Arrays.asList(question.split(NON_WORD_CHARACTERS_REGEX)));
         coOccurrences.parallelStream().forEach(coOccurrence -> {
-            Set<String> pattyEntities = Sets.newHashSet(pattyPhrases.getStringArray(coOccurrence));
-            pattyEntities.forEach(s -> rdfResources.put("http://dbpedia.org/ontology/" + s, coOccurrence));
+
+            Set<String> puttyEntities = Sets.newHashSet(patty_relations.search(coOccurrence));
+            puttyEntities.forEach(s -> rdfResources.put("http://dbpedia.org/ontology/" + s, coOccurrence));
         });
 
         WordNetWrapper wordNet = new WordNetWrapper();
@@ -516,7 +533,7 @@ public class QueryMappingFactory {
         return addToResult;
     }
 
-    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, boolean useSynonyms) {
+    public Set<String> generateQueries(Map<String, QueryTemplateMapping> mappings, boolean useSynonyms) {
         return generateQueries(mappings, null, useSynonyms);
     }
 
@@ -642,7 +659,7 @@ public class QueryMappingFactory {
             }
         }
 
-        if (this.queryType == SPARQLUtilities.SELECT_COUNT_QUERY) {
+        if (this.queryType == SPARQLUtilities.SELECT_COUNT_QUERY || this.queryType == SPARQLUtilities.SELECT_QUERY) {
             Map<String, String> pos = SemanticAnalysisHelper.getPOS(words);
             Set<String> nouns = pos.keySet().parallelStream().filter(s -> pos.get(s).startsWith("NN")).collect(Collectors.toSet());
             nouns.parallelStream().forEach(s -> {

@@ -42,33 +42,30 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ArffGenerator {
     private static Logger log = Logger.getLogger(ArffGenerator.class);
 
     ArffGenerator(List<CustomQuestion> trainQuestions, List<CustomQuestion> testQuestions, Boolean evaluateWekaAlgorithms) {
-        log.debug("Calculate the features per question and cluster");
+        log.info("Calculate the features per question and cluster");
         List<Attribute> attributes = new ArrayList<>();
 
         // Add all occurring graphs(=class attribute) as possible attribute values
-        Set<String> graphs = new HashSet<>();
-        for (CustomQuestion customQuestion : trainQuestions) {
-            graphs.add(customQuestion.getGraph());
-        }
-        List<String> graphsList = new ArrayList<>();
-        graphsList.addAll(graphs);
-        Attribute classAttribute = new Attribute("class", graphsList);
+        Set<String> graphs = trainQuestions.parallelStream().map(CustomQuestion::getGraph).collect(Collectors.toSet());
+        Attribute classAttribute = new Attribute("class", Lists.newArrayList(graphs));
         attributes.add(classAttribute);
         Analyzer analyzer = new Analyzer(attributes);
         ArrayList<Attribute> fvfinal = analyzer.fvWekaAttributes;
 
         Instances trainingSet = new Instances("training_classifier: -C 4", fvfinal, trainQuestions.size());
-        Instances testSet = new Instances("training_classifier: -C 4", fvfinal, trainQuestions.size());
+        Instances testSet = new Instances("test_classifier: -C 4", fvfinal, trainQuestions.size());
         log.debug("Start collection of training data for each class");
-        for (CustomQuestion question : trainQuestions) {
+        //Create instance and set the class attribute missing for testing
+        //Create instance with the class attribute for training
+        trainQuestions.parallelStream().forEach(question -> {
             Instance instance = analyzer.analyze(question.getQuestionText());
 
             //Create instance and set the class attribute missing for testing
@@ -80,8 +77,7 @@ public class ArffGenerator {
             Instance trainInstance = instance;
             trainInstance.setValue(classAttribute, question.getGraph());
             trainingSet.add(trainInstance);
-        }
-
+        });
         try {
             File file = new File(new ClassPathResource("Train.arff").getFile().getAbsolutePath());
             file.createNewFile();
