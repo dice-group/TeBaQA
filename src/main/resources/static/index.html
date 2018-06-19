@@ -62,10 +62,24 @@
 <div id="loaderDiv" disabled="true"><img src="img/spinner.gif" alt="Please wait..."/></div>
 <div class="container">
     <div id="answer-header">
-        <h3>Answer(s):</h3>
+        <h3>Answer(s):
+            <br/>
+            <button class="btn btn-primary text-center" type="button" data-toggle="collapse"
+                    data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample" id="show-sparql-button">
+                Show SPARQL Query
+            </button>
+            <div class="collapse" id="collapseExample">
+                <div class="card card-body" id="sparql-query-content">
+
+                </div>
+            </div>
+        </h3>
     </div>
+
+
     <div id="infoboxes"></div>
 </div>
+
 
 </body>
 </html>

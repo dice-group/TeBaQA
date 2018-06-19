@@ -24,24 +24,28 @@ public class OntologyMappingProvider {
     }
 
     public static Map<String, Set<String>> getOntologyMapping() {
-        return ontologyMapping;
+        //The Ontology mapping is unnecessary with the putty phrases
+        //if (ontologyMapping.isEmpty()) {
+        //    loadOntologyMapping();
+        //}
+        return new HashMap<>();
     }
 
     public static void setOntologyMapping(Map<String, Set<String>> ontologyMapping) {
+        //Map<String, Set<String>> mapping = loadOntologyMapping();
         Map<String, Set<String>> mapping = new HashMap<>();
-        try {
-            mapping = loadOntologyMapping();
-        } catch (IOException e) {
-            log.error("Unable to load ontology-mappings.properties file!", e);
-        }
         OntologyMappingProvider.ontologyMapping = ontologyMapping;
         OntologyMappingProvider.ontologyMapping.putAll(mapping);
     }
 
-    private static Map<String, Set<String>> loadOntologyMapping() throws IOException {
+    private static Map<String, Set<String>> loadOntologyMapping() {
         Map<String, Set<String>> mapping = new HashMap<>();
         Properties properties = new Properties();
-        properties.load(new FileInputStream(new ClassPathResource("ontology-mappings.properties").getFile()));
+        try {
+            properties.load(new FileInputStream(new ClassPathResource("ontology-mappings.properties").getFile()));
+        } catch (IOException e) {
+            log.error("Unable to load ontology-mappings.properties file.", e);
+        }
 
         for (String key : properties.stringPropertyNames()) {
             mapping.put(key, new HashSet<>(Arrays.asList(properties.get(key).toString().split(","))));

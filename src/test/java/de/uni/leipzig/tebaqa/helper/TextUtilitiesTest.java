@@ -13,4 +13,11 @@ public class TextUtilitiesTest {
         String expected = "THIS string contains a lot of unnecessary spaces !";
         assertEquals(expected, actual);
     }
+
+    @Test
+    public void testCountWords() {
+        String words = "These are some words with % special characters?! ...";
+        int actual = TextUtilities.countWords(words);
+        assertEquals(7, actual);
+    }
 }

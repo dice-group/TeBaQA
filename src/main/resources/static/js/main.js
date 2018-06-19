@@ -13,10 +13,6 @@ function emptyAnswerList() {
 }
 
 function createInfobox(msg) {
-    if (!isNaN(Date.parse(msg.title))) {
-        msg.title = new Date(Date.parse(msg.title)).toLocaleDateString();
-    }
-
     let divTemplate = '<div class="card"><div class="summary">';
     if (msg.hasOwnProperty('image')) {
         divTemplate += '<div class="img-wrapper"><img src="?image" class="wiki-image"></div><div class="content">'.replace('?image', msg.image);
@@ -101,10 +97,14 @@ function submitForm(s) {
         success(msg) {
             let ajaxRequests = [];
             emptyAnswerList();
-            const answer = JSON.parse(msg)['answers'];
+            let response = JSON.parse(msg);
+            const answer = response['answers'];
+            const sparql = response['sparql'];
             if (!$.isArray(answer) || !answer.length) {
+                $('#sparql-query-content').text("");
                 createEmptyInfobox('No answers were found.');
             } else {
+                $('#sparql-query-content').text(sparql);
                 for (let i in answer) {
                     if (answer.hasOwnProperty(i)) {
                         if (answer[i].startsWith('http://dbpedia.org/resource')) {
@@ -118,9 +118,9 @@ function submitForm(s) {
 
             $.when.apply(undefined, ajaxRequests).then(
                 function () {
-                $('.card').each(function (index) {
-                    $(this).delay(400 * index).fadeIn(300);
-                });
+                    $('.card').each(function (index) {
+                        $(this).delay(400 * index).fadeIn(300);
+                    });
                 }, function (data, textStatus, jqXHR) {
                     toastr.error('Error while fetching data from one or more answers. Please try again later or contact the admin.');
                     $('.card').each(function (index) {
@@ -144,7 +144,7 @@ function submitForm(s) {
 function initExamples() {
     $('#example-1').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('Where was Angela Merkel born?');
+        $('#search-bar').val('What is the highest mountain in the Bavarian Alps?');
         return false;
     });
     $('#example-2').click(function (e) {
@@ -154,7 +154,7 @@ function initExamples() {
     });
     $('#example-3').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('When was the death of Shakespeare?');
+        $('#search-bar').val('How many awards has Bertrand Russell?');
         return false;
     });
     $('#example-4').click(function (e) {
@@ -174,12 +174,12 @@ function initExamples() {
     });
     $('#example-7').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('From who was Adorno influenced by?');
+        $('#search-bar').val('What were the main interests of Adorno?');
         return false;
     });
     $('#example-8').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('Give me all members of the The Prodigy!');
+        $('#search-bar').val('How much is the population of Mexico City?');
         return false;
     });
 }
@@ -191,4 +191,5 @@ function init() {
         submitForm($('#search-bar').val());
         return false;
     });
+
 }

@@ -8,10 +8,9 @@ public class SPARQLResultSet {
     public static int UNKNOWN_ANSWER_TYPE = -1;
     public static int BOOLEAN_ANSWER_TYPE = 0;
     public static int LIST_OF_RESOURCES_ANSWER_TYPE = 1;
-    public static int SINGLE_RESOURCE_TYPE = 2;
+    public static int SINGLE_ANSWER = 2;
     public static int NUMBER_ANSWER_TYPE = 3;
     public static int DATE_ANSWER_TYPE = 4;
-    public static int STRING_ANSWER_TYPE = 5;
     public static int MIXED_LIST_ANSWER_TYPE = 6;
 
     private int type;

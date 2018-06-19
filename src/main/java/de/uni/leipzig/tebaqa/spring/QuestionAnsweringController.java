@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.spring;
 
 import de.uni.leipzig.tebaqa.controller.PipelineController;
 import de.uni.leipzig.tebaqa.model.AnswerToQuestion;
+import de.uni.leipzig.tebaqa.model.ResultsetBinding;
 import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.servlet.http.HttpServletResponse;
-import java.util.HashSet;
+import java.util.HashMap;
 
 import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipeline;
 import static de.uni.leipzig.tebaqa.spring.ExtendedQALDAnswer.extractAnswerString;
@@ -27,17 +28,17 @@ public class QuestionAnsweringController {
     public String answerQuestion(@RequestParam String query,
                                  @RequestParam(required = false, defaultValue = "en") String lang,
                                  HttpServletResponse response) {
-        log.debug(String.format("/qa received POST request with: query='%s' and lang='%s'", query, lang));
+        log.info(String.format("/qa received POST request with: query='%s' and lang='%s'", query, lang));
         if (!query.isEmpty() && isValidQuestion(query)) {
             PipelineController qaPipeline = getQAPipeline();
             String result;
             try {
                 result = new ExtendedQALDAnswer(qaPipeline.answerQuestion(query)).getResult();
             } catch (Exception e) {
-                result = new ExtendedQALDAnswer(new AnswerToQuestion(new HashSet<>(), new HashSet<>())).getResult();
+                result = new ExtendedQALDAnswer(new AnswerToQuestion(new ResultsetBinding(), new HashMap<>())).getResult();
                 log.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);
             }
-            log.debug("Answer:" + result);
+            log.info("Answer: " + result);
             return result;
         } else {
             log.error("Received request with empty query parameter!");
@@ -56,7 +57,7 @@ public class QuestionAnsweringController {
     public String answerQuestionSimple(@RequestParam String query,
                                        @RequestParam(required = false, defaultValue = "en") String lang,
                                        HttpServletResponse response) {
-        log.debug(String.format("/qa-simple received POST request with: query='%s' and lang='%s'", query, lang));
+        log.info(String.format("/qa-simple received POST request with: query='%s' and lang='%s'", query, lang));
         if (!query.isEmpty() && isValidQuestion(query)) {
             PipelineController qaPipeline = getQAPipeline();
             String result;
@@ -64,13 +65,16 @@ public class QuestionAnsweringController {
                 AnswerToQuestion answer = qaPipeline.answerQuestion(query);
                 JsonArrayBuilder resultArray = Json.createArrayBuilder();
                 answer.getAnswer().forEach(a -> resultArray.add(extractAnswerString(a)));
-                result = Json.createObjectBuilder().add("answers", resultArray).build().toString();
+                result = Json.createObjectBuilder()
+                        .add("answers", resultArray)
+                        .add("sparql", answer.getSparqlQuery())
+                        .build().toString();
 
             } catch (Exception e) {
                 result = Json.createObjectBuilder().add("answers", Json.createArrayBuilder()).build().toString();
                 log.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);
             }
-            log.debug("Answer:" + result);
+            log.info("Answer: " + result);
             return result;
         } else {
             log.error("Received request with empty query parameter!");
