@@ -285,7 +285,6 @@ public class SemanticAnalysisHelper {
         attributes.add(classAttribute);
 
         Analyzer analyzer = new Analyzer(attributes);
-        log.info("analyzer.fvWekaAttributes:" + analyzer.fvWekaAttributes);
         ArrayList<Attribute> filteredAttributes = analyzer.fvWekaAttributes.stream().filter(Objects::nonNull).collect(Collectors.toCollection(ArrayList::new));
         Instances dataset = new Instances("testdata", filteredAttributes, 1);
         dataset.setClassIndex(dataset.numAttributes() - 1);
