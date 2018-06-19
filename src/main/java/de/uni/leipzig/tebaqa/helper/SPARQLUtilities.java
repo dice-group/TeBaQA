@@ -234,13 +234,13 @@ public class SPARQLUtilities {
                     ResultsetBinding askBinding = new ResultsetBinding();
                     for (String variable : binding.keySet()) {
                         if (isAskType) {
-                            if (variable.equalsIgnoreCase("uri")) {
+                            if ("uri".equalsIgnoreCase(variable)) {
                                 askBinding.addResult("true");
                             } else {
                                 askBinding.addBinding(variable, binding.get(variable));
                             }
                         }
-                        if (variable.equals("uri")) {
+                        if ("uri".equals(variable)) {
                             selectBinding.addResult(binding.get(variable));
                         } else {
                             selectBinding.addBinding(variable, binding.get(variable));
@@ -340,7 +340,7 @@ public class SPARQLUtilities {
     public static String rebuildSeperatedQuery(Map<String, String> bindings, String query) {
         query = removeValueAndFilterStatementsFromQuerie(query);
         for (String variable : bindings.keySet()) {
-            if (!variable.equals("uri")) {
+            if (!"uri".equals(variable)) {
                 query = query.replace("?" + variable, "<" + bindings.get(variable) + ">");
             }
         }
