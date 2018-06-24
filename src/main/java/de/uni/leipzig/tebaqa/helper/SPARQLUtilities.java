@@ -87,7 +87,7 @@ public class SPARQLUtilities {
                 return results;
             }
             QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
-            qe.setTimeout(20000, 20000);
+            qe.setTimeout(10000, 10000);
             boolean isAskType = query.isAskType();
             boolean isSelectType = query.isSelectType();
 
@@ -219,7 +219,7 @@ public class SPARQLUtilities {
             }
 
             QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
-            qe.setTimeout(20000, 20000);
+            qe.setTimeout(10000, 10000);
             if (query.isSelectType()) {
                 ResultSet rs = null;
                 try {
@@ -257,7 +257,6 @@ public class SPARQLUtilities {
                     } else if (isCountQuery && countBindings.size() == 1) {
                         selectBinding.setQuery(rebuildSeperatedQuery(countBindings.get(0).getBindings(), sparlQuery));
                     } else if (isCountQuery && countBindings.size() != 1) {
-                        log.error("Query: " + query + "  has an insufficient number of count bindings: " + countBindings);
                         selectBinding.setQuery(rebuildSeperatedQuery(binding, sparlQuery));
                     } else {
                         selectBinding.setQuery(rebuildSeperatedQuery(binding, sparlQuery));
@@ -297,7 +296,7 @@ public class SPARQLUtilities {
         return TextUtilities.trim(query.toLowerCase()).startsWith("select (count");
     }
 
-    private static String transformCountToStarQuery(String s) {
+    static String transformCountToStarQuery(String s) {
         s = TextUtilities.trim(s);
         return "SELECT * " + s.substring(s.toLowerCase().indexOf(" where"), s.length());
 

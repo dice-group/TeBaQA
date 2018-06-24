@@ -5,19 +5,18 @@ body {
 
 h1 {
     margin-top: 5%;
-    font-size: 40px;
+    font-size: 2.5rem;
+}
+
+h2 {
+    font-size: 1.3em;
+}
+
+h3 {
+    font-size: 1.0rem;
 }
 h1,h2,h3 {
     text-align: center;
-}
-
-#show-sparql-button {
-    text-align: center;
-}
-
-#sparql-query-content {
-    text-align: left !important;
-    width: 100%;
 }
 
 @media screen and (max-width: 400px) {
@@ -45,7 +44,6 @@ div#answer-header h3 {
     -webkit-flex-wrap: wrap;
     flex-wrap: wrap;
     flex-flow: row wrap;
-    margin-left: -8px;
 }
 
 .img-wrapper {
@@ -107,7 +105,7 @@ li.nav-item {
     min-width: unset;
     max-width: 550px;
     margin: 0 10px 10px 0;
-    box-shadow: 0 8px 17px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19);
+    box-shadow: 4px 4px 17px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19);
     font-size: 14px;
     font-weight: 300;
     line-height: 20px;
@@ -165,7 +163,7 @@ li.nav-item {
     flex-grow: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 5px 5px 15px;
+    padding: 5px 5px ;
 }
 
 .title {
@@ -190,15 +188,21 @@ li.nav-item {
 
 /* Form wrapper styling */
 .form-wrapper {
-    width: 550px;
+    /*width: fit-content;*/
     padding: 15px;
+    width: 100%;
+    vertical-align: middle;
+    display: flex;
     margin: auto auto auto auto;
 }
 
 /* Form text input */
 
 .form-wrapper input {
-    width: 400px;
+    display: flex;
+    flex: 1;
+    width: 70%;
+    /*max-width: 400px;*/
     box-sizing: content-box;
     height: 20px;
     padding: 10px 5px;
@@ -208,6 +212,28 @@ li.nav-item {
     background: #eee;
     border-radius: 3px 0 0 3px;
     box-shadow: 0 0 10px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19) !important;
+}
+
+.inner-form-wrapper {
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.inner-infobox-wrapper {
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+
+.nav a {
+    font-size: 0.8em;
+}
+
+.nav li {
+    padding-right: 5px;
 }
 
 .form-wrapper input:focus {
@@ -260,12 +286,13 @@ input::-moz-placeholder {
 .form-wrapper button {
     overflow: visible;
     position: relative;
-    float: right;
     border: 0;
     padding: 0;
     cursor: pointer;
     height: 40px;
-    width: 110px;
+    width: 25%;
+    max-width: 110px;
+    min-width: 75px;
     font: bold 18px/40px 'Roboto', 'lucida sans', 'trebuchet MS', 'Tahoma';
     color: #fff;
     background: #00897B;
