@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.controller;
 
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.analyzer.Analyzer;
+import de.uni.leipzig.tebaqa.helper.ClassifierProvider;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
@@ -22,17 +23,19 @@ import edu.stanford.nlp.util.CoreMap;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
-import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.Classifier;
-import weka.core.Attribute;
 import weka.core.Instance;
-import weka.core.Instances;
-import weka.core.SerializationHelper;
 
-import java.io.FileInputStream;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -275,31 +278,21 @@ public class SemanticAnalysisHelper {
      * Classifies a question and tries to find the best matching graph pattern for it's SPARQL query.
      *
      * @param question  The question which shall be classified.
-     * @param graphList A list containing every possible graph pattern.
      * @return The predicted graph pattern.
      */
-    String classifyInstance(String question, HashSet<String> graphList) {
-        ArrayList<Attribute> attributes = new ArrayList<>();
-
-        Attribute classAttribute = new Attribute("class", new ArrayList<>(graphList));
-        attributes.add(classAttribute);
-
-        Analyzer analyzer = new Analyzer(attributes);
-        ArrayList<Attribute> filteredAttributes = analyzer.fvWekaAttributes.stream().filter(Objects::nonNull).collect(Collectors.toCollection(ArrayList::new));
-        Instances dataset = new Instances("testdata", filteredAttributes, 1);
-        dataset.setClassIndex(dataset.numAttributes() - 1);
+    String classifyInstance(String question) {
+        Analyzer analyzer = ClassifierProvider.getAnalyzer();
         Instance instance = analyzer.analyze(question);
-        instance.setDataset(dataset);
-        instance.setMissing(classAttribute);
+        instance.setDataset(ClassifierProvider.getDataset());
+        instance.setMissing(ClassifierProvider.getClassAttribute());
 
         String predictedGraph = "";
         try {
-            Classifier cls = (Classifier) SerializationHelper.read(new FileInputStream(new ClassPathResource("question_classification.model").getFile()));
+            Classifier cls = ClassifierProvider.getSingletonClassifierInstance();
             double predictedClass = cls.classifyInstance(instance);
             predictedGraph = instance.classAttribute().value((int) predictedClass);
-
         } catch (Exception e) {
-            log.error("Unable to load weka model file!", e);
+            log.error(String.format("Unable to classify question: '%s'!", question), e);
         }
         return predictedGraph;
     }

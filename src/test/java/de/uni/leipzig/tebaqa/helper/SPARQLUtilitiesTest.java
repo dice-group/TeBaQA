@@ -251,4 +251,33 @@ public class SPARQLUtilitiesTest {
         rs.setResult(result);
         assertEquals(SPARQLResultSet.BOOLEAN_ANSWER_TYPE, SPARQLUtilities.determineAnswerType(rs));
     }
+
+    @Test
+    public void testTransformCountToStarQuery() {
+        final String actual = SPARQLUtilities.transformCountToStarQuery("SELECT (count(distinct *) AS ?c) WHERE  { ?s ?p ?o }");
+        assertEquals("SELECT *  WHERE { ?s ?p ?o }", actual);
+    }
+
+    @Test
+    public void testTetrieveBiningsWithCountQuery() {
+        final List<ResultsetBinding> bindings = SPARQLUtilities.retrieveBinings("SELECT  (count(distinct *) AS ?c)\n" +
+                "WHERE\n" +
+                "  { ?uri      ?property_0  ?class_0 ;\n" +
+                "              ?property_1  ?year .\n" +
+                "    ?class_1  ?property_2  ?year\n" +
+                "    VALUES ?class_0 { <http://dbpedia.org/ontology/City> <http://dbpedia.org/resource/City> <http://dbpedia.org/ontology/Population> <http://dbpedia.org/resource/Mexico_City> <http://dbpedia.org/resource/Population> <http://dbpedia.org/resource/Mexico> }\n" +
+                "    VALUES ?class_1 { <http://dbpedia.org/ontology/City> <http://dbpedia.org/resource/City> <http://dbpedia.org/ontology/Population> <http://dbpedia.org/resource/Mexico_City> <http://dbpedia.org/resource/Population> <http://dbpedia.org/resource/Mexico> }\n" +
+                "    VALUES ?class_2 { <http://dbpedia.org/ontology/City> <http://dbpedia.org/resource/City> <http://dbpedia.org/ontology/Population> <http://dbpedia.org/resource/Mexico_City> <http://dbpedia.org/resource/Population> <http://dbpedia.org/resource/Mexico> }\n" +
+                "    VALUES ?property_0 { <http://dbpedia.org/property/city> <http://dbpedia.org/property/population> <http://dbpedia.org/ontology/city> <http://dbpedia.org/property/populationTotal> <http://dbpedia.org/ontology/populationTotal> <http://dbpedia.org/ontology/population> <http://dbpedia.org/property/populationOf> }\n" +
+                "    VALUES ?property_1 { <http://dbpedia.org/property/city> <http://dbpedia.org/property/population> <http://dbpedia.org/ontology/city> <http://dbpedia.org/property/populationTotal> <http://dbpedia.org/ontology/populationTotal> <http://dbpedia.org/ontology/population> <http://dbpedia.org/property/populationOf> }\n" +
+                "    VALUES ?property_2 { <http://dbpedia.org/property/city> <http://dbpedia.org/property/population> <http://dbpedia.org/ontology/city> <http://dbpedia.org/property/populationTotal> <http://dbpedia.org/ontology/populationTotal> <http://dbpedia.org/ontology/population> <http://dbpedia.org/property/populationOf> }\n" +
+                "    FILTER ( concat(?uri, ?property_0, ?class_0) != concat(?uri, ?property_1, ?year) )\n" +
+                "    FILTER ( concat(?uri, ?property_0, ?class_0) != concat(?class_1, ?property_2, ?year) )\n" +
+                "    FILTER ( concat(?uri, ?property_1, ?year) != concat(?uri, ?property_0, ?class_0) )\n" +
+                "    FILTER ( concat(?uri, ?property_1, ?year) != concat(?class_1, ?property_2, ?year) )\n" +
+                "    FILTER ( concat(?class_1, ?property_2, ?year) != concat(?uri, ?property_0, ?class_0) )\n" +
+                "    FILTER ( concat(?class_1, ?property_2, ?year) != concat(?uri, ?property_1, ?year) )\n" +
+                "  }");
+        assertEquals(1, bindings.size());
+    }
 }

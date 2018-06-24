@@ -19,7 +19,6 @@ import org.aksw.qa.annotation.index.IndexDBO_classes;
 import org.aksw.qa.annotation.index.IndexDBO_properties;
 import org.aksw.qa.commons.datastructure.Entity;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.log4j.Logger;
@@ -254,7 +253,12 @@ public class QueryMappingFactory {
             Map<String, String> m = new HashMap<>();
             m.putAll(entitiyToQuestionMapping);
             m.putAll(entitiyToQuestionMappingWithSynonyms);
-            queries = fillPatterns(m, suitableMappings);
+            if (m.size() <= 30) {
+                queries = fillPatterns(m, suitableMappings);
+            } else {
+                queries = new HashSet<>();
+                log.error("There are too many entities, skipping this query");
+            }
         }
         return queries;
     }
