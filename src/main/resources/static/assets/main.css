@@ -94,7 +94,7 @@ li.nav-item {
     display: inline-block;
     min-width: unset;
     max-width: 550px;
-    margin: 0 10px 10px 0;
+    margin: 5px 5px 5px 5px;
     box-shadow: 4px 4px 17px 0 rgba(0, 0, 0, .2), 0 6px 20px 0 rgba(0, 0, 0, .19);
     font-size: 14px;
     font-weight: 300;
@@ -153,7 +153,7 @@ li.nav-item {
     flex-grow: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 5px 5px ;
+    padding: 0 0;
 }
 
 .title {
@@ -215,8 +215,6 @@ li.nav-item {
     margin-left: auto;
     margin-right: auto;
 }
-
-
 
 .nav a {
     font-size: 0.8em;
@@ -322,4 +320,10 @@ input::-moz-placeholder {
 .form-wrapper button::-moz-focus-inner { /* remove extra button spacing for Mozilla Firefox */
     border: 0;
     padding: 0;
+}
+
+@media screen and (max-width: 400px) {
+    .card {
+        margin: 5px 5px 5px 5px;
+    }
 }
