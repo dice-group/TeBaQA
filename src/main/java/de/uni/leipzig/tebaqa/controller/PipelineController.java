@@ -28,7 +28,6 @@ import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
 import org.apache.jena.query.QueryParseException;
 import org.apache.log4j.Logger;
-import org.springframework.util.StopWatch;
 
 import java.util.ArrayList;
 import java.util.HashMap;
