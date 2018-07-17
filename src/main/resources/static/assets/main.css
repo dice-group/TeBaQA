@@ -156,6 +156,11 @@ li.nav-item {
     padding: 0 0;
 }
 
+#sparql-query-content {
+    width: 400px;
+    max-width: 95%;
+}
+
 .title {
     font-size: 18px;
     color: #074764;
@@ -327,3 +332,9 @@ input::-moz-placeholder {
         margin: 5px 5px 5px 5px;
     }
 }
+
+/*@media (max-width: 300px) {*/
+    /*#answer-button {*/
+        /*!*display: none !important;*!*/
+    /*}*/
+/*}*/
