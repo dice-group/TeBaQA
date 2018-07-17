@@ -42,7 +42,7 @@
         <form class="search-container form-wrapper cf" id="search-form-id">
             <input type="text" id="search-bar" placeholder="What do you want to know?" required pattern=".*\S+.*"
                    autofocus>
-            <button type="submit">Answer</button>
+            <button type="submit" id="answer-button">Answer</button>
         </form>
     </div>
 </div>
@@ -80,14 +80,17 @@
     <div id="answer-header">
         <h3>Answer(s):
             <br/>
-            <button class="btn btn-primary text-center" type="button" data-toggle="collapse"
-                    data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample" id="show-sparql-button">
-                Show SPARQL Query
-            </button>
-            <div class="collapse" id="collapseExample">
-                <div class="card card-body" id="sparql-query-content">
-
+            <div class="container h-100">
+                <div class="h-100 justify-content-center align-items-center inner-infobox-wrapper">
+                    <button class="btn btn-primary text-center" type="button" data-toggle="collapse"
+                            data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample" id="show-sparql-button">
+                        Show SPARQL Query
+                    </button>
                 </div>
+            </div>
+
+            <div class="collapse container h-100 justify-content-center align-items-center" id="collapseExample">
+                <div class="card card-body h-100" id="sparql-query-content"></div>
             </div>
         </h3>
     </div>
