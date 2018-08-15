@@ -6,6 +6,27 @@
 ## Execution
 - Checkout the project
 - Execute the following command in the root directory to start the server: `mvn spring-boot:run`
+
+### Docker
+First install docker in your system. For ubuntu you may refer to below link. [https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04]
+
+For windows users [https://docs.docker.com/toolbox/toolbox_install_windows/#step-1-check-your-version]
+
+Move to the parent directory of project and execute the below commands
+```
+mvn clean
+mvn package
+```
+Now to build your image, type the below command.
+```
+sudo docker build -f Dockerfile -t tebaqa .
+```
+To run your image, type the below command.
+```
+sudo docker run -d -p 8187:8080 -t tebaqa --restart always
+```
+It will be available under localhost:8187
+
 ## Question Answering
 - To answer a question simply execute a HTTP POST request to
   - ```http://localhost:8181/qa``` for the answer which follows the W3C Query Results JSON Format (see https://www.w3.org/TR/sparql11-results-json/).
