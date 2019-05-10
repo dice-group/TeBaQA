@@ -2,23 +2,8 @@ package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
-import de.uni.leipzig.tebaqa.helper.ClassifierProvider;
-import de.uni.leipzig.tebaqa.helper.DBpediaPropertiesProvider;
-import de.uni.leipzig.tebaqa.helper.NTripleParser;
-import de.uni.leipzig.tebaqa.helper.OntologyMappingProvider;
-import de.uni.leipzig.tebaqa.helper.PosTransformation;
-import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
-import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
-import de.uni.leipzig.tebaqa.helper.TextUtilities;
-import de.uni.leipzig.tebaqa.helper.Utilities;
-import de.uni.leipzig.tebaqa.model.AnswerToQuestion;
-import de.uni.leipzig.tebaqa.model.Cluster;
-import de.uni.leipzig.tebaqa.model.CustomQuestion;
-import de.uni.leipzig.tebaqa.model.QueryBuilder;
-import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
-import de.uni.leipzig.tebaqa.model.ResultsetBinding;
-import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
-import de.uni.leipzig.tebaqa.model.WordNetWrapper;
+import de.uni.leipzig.tebaqa.helper.*;
+import de.uni.leipzig.tebaqa.model.*;
 import edu.cmu.lti.jawjaw.pobj.POS;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
@@ -26,19 +11,10 @@ import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.datastructure.Question;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
-import org.aksw.qa.commons.load.json.EJQuestionFactory;
-import org.aksw.qa.commons.load.json.ExtendedQALDJSONLoader;
-import org.aksw.qa.commons.load.json.QaldJson;
 import org.apache.jena.query.QueryParseException;
 import org.apache.log4j.Logger;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -47,9 +23,9 @@ import static de.uni.leipzig.tebaqa.helper.TextUtilities.NON_WORD_CHARACTERS_REG
 import static java.util.Collections.emptyList;
 
 
-public class PipelineController {
+public class LimboPipelineController {
 
-    private static Logger log = Logger.getLogger(PipelineController.class.getName());
+    private static Logger log = Logger.getLogger(LimboPipelineController.class.getName());
 
     private static SemanticAnalysisHelper semanticAnalysisHelper;
     private List<Dataset> trainDatasets = new ArrayList<>();
@@ -57,7 +33,7 @@ public class PipelineController {
     private Boolean evaluateWekaAlgorithms = false;
 
 
-    public PipelineController(List<Dataset> trainDatasets) {
+    public LimboPipelineController(List<Dataset> trainDatasets) {
         log.info("Configuring controller");
         semanticAnalysisHelper = new SemanticAnalysisHelper();
         trainDatasets.forEach(this::addTrainDataset);
@@ -65,40 +41,20 @@ public class PipelineController {
         run();
     }
 
-        //Input als File
-        public static List<IQuestion> readJson(File data) {
-            List<IQuestion> out = null;
-            try {
-                QaldJson json = (QaldJson) ExtendedQALDJSONLoader.readJson(data);
-                out = EJQuestionFactory.getQuestionsFromQaldJson(json);
-
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-            return out;
-        }
-
     private void run() {
         List<HAWKQuestion> trainQuestions = new ArrayList<>();
-        List<IQuestion> load = readJson(new File("limboqa.json"));
-
-        List<IQuestion> result = load.parallelStream()
-                .filter(question -> question.getSparqlQuery() != null)
-                .collect(Collectors.toList());
-        trainQuestions.addAll(HAWKQuestionFactory.createInstances(result));
-        /*for (Dataset d : trainDatasets) {
+        for (Dataset d : trainDatasets) {
             //Remove all trainQuestions without SPARQL query
             List<IQuestion> load = LoaderController.load(d);
             List<IQuestion> result = load.parallelStream()
                     .filter(question -> question.getSparqlQuery() != null)
                     .collect(Collectors.toList());
             trainQuestions.addAll(HAWKQuestionFactory.createInstances(result));
-        }*/
+        }
         Map<String, String> trainQuestionsWithQuery = new HashMap<>();
         for (HAWKQuestion q : trainQuestions) {
             //only use unique trainQuestions in case multiple datasets are used
-            String questionText = q.getLanguageToQuestion().get("de");
+            String questionText = q.getLanguageToQuestion().get("en");
             if (!semanticAnalysisHelper.containsQuestionText(trainQuestionsWithQuery, questionText)) {
                 trainQuestionsWithQuery.put(q.getSparqlQuery(), questionText);
             }
@@ -128,7 +84,7 @@ public class PipelineController {
         Map<String, String> testQuestionsWithQuery = new HashMap<>();
         //only use unique trainQuestions in case multiple datasets are used
         for (HAWKQuestion q : trainQuestions) {
-            String questionText = q.getLanguageToQuestion().get("de");
+            String questionText = q.getLanguageToQuestion().get("en");
             if (!semanticAnalysisHelper.containsQuestionText(testQuestionsWithQuery, questionText)) {
                 testQuestionsWithQuery.put(q.getSparqlQuery(), questionText);
             }

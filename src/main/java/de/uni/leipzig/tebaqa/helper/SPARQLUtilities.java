@@ -86,7 +86,7 @@ public class SPARQLUtilities {
                 log.error("QueryParseException: Unable to parse query: " + qs, e);
                 return results;
             }
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            QueryExecution qe = QueryExecutionFactory.sparqlService("https://portal.limbo-project.org/dataplatform/proxy/default/sparql", query);
             qe.setTimeout(10000, 10000);
             boolean isAskType = query.isAskType();
             boolean isSelectType = query.isSelectType();
@@ -218,7 +218,8 @@ public class SPARQLUtilities {
                 countBindings = retrieveBinings(transformCountToStarQuery(query.toString()));
             }
 
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            //QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            QueryExecution qe = QueryExecutionFactory.sparqlService("https://portal.limbo-project.org/dataplatform/proxy/default/sparql", query);
             qe.setTimeout(10000, 10000);
             if (query.isSelectType()) {
                 ResultSet rs = null;
@@ -391,8 +392,11 @@ public class SPARQLUtilities {
         return bindings;
     }
 
-    private static boolean isResource(String s) {
+    /*private static boolean isResource(String s) {
         return s.startsWith("http://dbpedia.org/resource/");
+    }*/
+    private static boolean isResource(String s) {
+        return s.startsWith("https://portal.limbo-project.org/");
     }
 
     public static boolean isNumericOrScientific(String s) {

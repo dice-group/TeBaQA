@@ -25,7 +25,8 @@ public class DBpediaPropertiesProvider {
 
     private static List<String> requestDBpediaProperties() {
         Set<String> properties = new HashSet<>();
-        String query = "select ?property where { ?property a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> } OFFSET %d LIMIT 10000";
+        //String query = "select ?property where { ?property a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> } OFFSET %d LIMIT 10000";
+        String query = "select ?property where { ?s ?property ?o } OFFSET %d LIMIT 10000";
         boolean gotResult = true;
         int offset = 0;
         while (gotResult) {

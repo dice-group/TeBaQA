@@ -12,30 +12,33 @@ import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
+import edu.stanford.nlp.io.IOUtils;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.IndexedWord;
+import edu.stanford.nlp.ling.Label;
+import edu.stanford.nlp.parser.common.ParserAnnotations;
 import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.ParserAnnotator;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
+import edu.stanford.nlp.semgraph.SemanticGraphFactory;
+import edu.stanford.nlp.trees.*;
+import edu.stanford.nlp.trees.ud.UniversalDependenciesFeatureAnnotator;
 import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.util.Pair;
+import edu.stanford.nlp.util.Triple;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
 import weka.classifiers.Classifier;
 import weka.core.Instance;
 
+import java.io.IOException;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -54,7 +57,16 @@ public class SemanticAnalysisHelper {
 
 
     public SemanticAnalysisHelper() {
-        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
+        Properties props = new Properties();
+        try {
+            props.load(IOUtils.readerFromString("StanfordCoreNLP-german.properties"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        props.remove("annotators");
+        props.setProperty("annotators","tokenize,ssplit,pos,ner,parse,lemma,depparse");
+        this.pipeline= new StanfordCoreNLP(props);
+        //this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
     }
 
     public static int determineQueryType(String q) {
@@ -105,12 +117,15 @@ public class SemanticAnalysisHelper {
             log.error("There is more than one sentence to analyze: " + text);
         }
         CoreMap sentence = sentences.get(0);
+        Set<Dependency<Label, Label, Object>> a=sentence.get( TreeCoreAnnotations.TreeAnnotation.class).dependencies();
+        //SemanticGraph dependencyGraph= SemanticGraphFactory.generateEnhancedDependencies(sentence.get( TreeCoreAnnotations.TreeAnnotation.class));
         SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
-        if (dependencyGraph == null) {
+        /*if (dependencyGraph == null) {
             return sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
         } else {
             return dependencyGraph;
-        }
+        }*/
+        return dependencyGraph;
     }
 
     /**

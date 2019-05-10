@@ -1,7 +1,6 @@
 package de.uni.leipzig.tebaqa.analyzer;
 
 import org.aksw.mlqa.analyzer.IAnalyzer;
-import org.aksw.mlqa.analyzer.comperative.Comperative;
 import org.aksw.mlqa.analyzer.entityType.EntityPerson;
 import org.aksw.mlqa.analyzer.numberOfToken.NumberOfToken;
 import org.aksw.mlqa.analyzer.questionword.QuestionWord;
@@ -23,7 +22,7 @@ public class Analyzer {
     public Analyzer(List<Attribute> attributes) {
         analyzers = new ArrayList<>();
         analyzers.add(new QuestionWord());
-        analyzers.add(new EntityPerson());
+        //analyzers.add(new EntityPerson());
         analyzers.add(new NumberOfToken());
         //analyzers.add(new QueryResourceTypeAnalyzer());
         analyzers.add(new Noun());
