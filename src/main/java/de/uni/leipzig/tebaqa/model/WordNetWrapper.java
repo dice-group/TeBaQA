@@ -110,7 +110,7 @@ public class WordNetWrapper {
         return wordSimilarityCalculator.calcRelatednessOfWords(word1, word2, rc);
     }
 
-    public double semanticSimilarityBetweenWordgroupAndWord(String entity, String word2) {
+    public double semanticSimilarityBetweenWordgroupAndWord(String entity, String word2,SemanticAnalysisHelper semanticAnalysisHelper) {
         Double highestSimilarity = 0.0;
 
         if(Stopwords.isStopword(word2)){
@@ -119,7 +119,7 @@ public class WordNetWrapper {
         //Regex (?=\p{Lu}) finds uppercase letters. E.g. "bodyOfWater" -> ["body", "Of", "Water"]
         String[] words = entity.split("(?=\\p{Lu})");
         for (String word : words) {
-            edu.cmu.lti.jawjaw.pobj.POS pos = PosTransformation.transform(SemanticAnalysisHelper.getPOS(word).getOrDefault(word, ""));
+            edu.cmu.lti.jawjaw.pobj.POS pos = PosTransformation.transform(semanticAnalysisHelper.getPOS(word).getOrDefault(word, ""));
             if (pos != null) {
                 double similarity = semanticWordSimilarity(word, word2);
                 if (similarity > highestSimilarity) {

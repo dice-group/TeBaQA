@@ -36,7 +36,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . }", queryMappingFactory.getQueryPattern());
     }
@@ -50,7 +50,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . }", queryMappingFactory.getQueryPattern());
     }
@@ -64,7 +64,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . }", queryMappingFactory.getQueryPattern());
     }
@@ -76,7 +76,7 @@ public class QueryMappingFactoryTestIT {
         String question = "Which airport does Yeti Airlines serve?";
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . }",
                 queryMappingFactory.getQueryPattern());
@@ -90,7 +90,7 @@ public class QueryMappingFactoryTestIT {
         String question = "Which airports does Yeti Airlines serve?";
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . }",
                 queryMappingFactory.getQueryPattern());
@@ -105,7 +105,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . }", queryMappingFactory.getQueryPattern());
     }
@@ -119,7 +119,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . }", queryMappingFactory.getQueryPattern());
     }
@@ -134,7 +134,7 @@ public class QueryMappingFactoryTestIT {
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
 
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(2, 2);
@@ -158,7 +158,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(1, 1);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x }", "PREFIX dbo: <http://dbpedia.org/ontology/> " +
@@ -182,7 +182,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(1, 0);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> a ?x }", "PREFIX dbo: <http://dbpedia.org/ontology/> " +
@@ -206,7 +206,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(0, 1);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { ?x <^NN3^> ?x }", "PREFIX dbo: <http://dbpedia.org/ontology/> " +
@@ -228,7 +228,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(3, 3);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^NNP4^> <^NN3^> ?x. <^NNP4^> <^NN3^> ?x. <^NNP4^> <^NN3^> ?x }", "PREFIX dbo: <http://dbpedia.org/ontology/> " +
@@ -250,7 +250,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         QueryTemplateMapping template1 = new QueryTemplateMapping(0, 0);
         template1.addSelectTemplate("SELECT DISTINCT ?uri WHERE { <^http://foo.bar.some.thing^> <^NN3^> ?x. <http://some.url> <^NN3^> ?x. <http://foo.bar.com> <^NN3^> ?x } ", "PREFIX dbo: <http://dbpedia.org/ontology/> " +
@@ -275,7 +275,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . }", queryMappingFactory.getQueryPattern());
     }
@@ -289,7 +289,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         assertEquals("SELECT DISTINCT ?uri WHERE { <^VAR_0^> <^VAR_1^> ?uri . <^VAR_2^> <^VAR_3^> ?uri . }", queryMappingFactory.getQueryPattern());
     }
@@ -307,7 +307,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/Breaking_Bad"));
@@ -327,7 +327,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/resource/Are"));
@@ -347,7 +347,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/almaMater"));
@@ -367,7 +367,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/property/areaTotal"));
@@ -386,7 +386,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/author"));
@@ -406,7 +406,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/birthName"));
@@ -426,7 +426,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/property/awards"));
@@ -447,7 +447,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/property/date"));
@@ -466,7 +466,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/Düsseldorf_Airport"));
@@ -487,7 +487,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/European_Union"));
@@ -507,7 +507,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/BlaBlaCar"));
@@ -528,7 +528,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/property/speakers"));
@@ -547,7 +547,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/Goethe"));
@@ -567,7 +567,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/Carolina_Reaper"));
@@ -588,7 +588,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/Mexico_City"));
@@ -609,7 +609,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://xmlns.com/foaf/0.1/nick"));
@@ -630,7 +630,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/property/author"));
@@ -650,7 +650,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/percentageOfAreaWater"));
@@ -671,7 +671,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/populationTotal"));
@@ -692,7 +692,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/populationTotal"));
@@ -713,7 +713,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/North_Rhine-Westphalia"));
@@ -734,7 +734,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/The_Interpretation_of_Dreams"));
@@ -754,7 +754,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/The_Wall"));
@@ -775,7 +775,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/deathDate"));
@@ -795,7 +795,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/largestCity"));
@@ -814,7 +814,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/property/highest"));
@@ -834,7 +834,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/President_of_Montenegro"));
@@ -853,7 +853,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/sourceCountry"));
@@ -872,7 +872,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/sourceCountry"));
@@ -891,7 +891,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/TelevisionShow"));
@@ -910,7 +910,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         //TODO should starring be detected? the lemma 'star' is only detected at the moment.
@@ -930,7 +930,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/foundedBy"));
@@ -949,7 +949,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/starring"));
@@ -968,7 +968,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(!actual.keySet().contains("http://dbpedia.org/resource/Give"));
@@ -988,7 +988,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/World_of_Warcraft"));
@@ -1007,7 +1007,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Set<String> actual = queryMappingFactory.findResourcesInFullText("World of Warcraft");
         //assertTrue(actual.size() == 1);
@@ -1027,7 +1027,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Set<String> actual = queryMappingFactory.findResourcesInFullText("Game of Thrones");
         assertTrue(actual.contains("http://dbpedia.org/resource/Game_of_Thrones"));
@@ -1046,7 +1046,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Set<String> actual = queryMappingFactory.findResourcesInFullText("a song of ice and fire");
         assertTrue(actual.contains("http://dbpedia.org/resource/A_Song_of_Ice_and_Fire"));
@@ -1059,7 +1059,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/officialLanguage"));
@@ -1080,7 +1080,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/resource/Österreich"));
@@ -1093,7 +1093,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/ontology/birthPlace"));
@@ -1107,7 +1107,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/property/be"));
@@ -1120,7 +1120,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/resource/The_The"));
@@ -1133,7 +1133,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/property/be"));
@@ -1146,7 +1146,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntities(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/ontology/cost"));
@@ -1159,7 +1159,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/ontology/cost"));
@@ -1172,7 +1172,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/ontology/map"));
@@ -1185,7 +1185,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/resource/Where"));
@@ -1198,7 +1198,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/ontology/deathPlace"));
@@ -1211,7 +1211,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertFalse(actual.keySet().contains("http://dbpedia.org/ontology/areaTotal"));
@@ -1225,7 +1225,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         Map<String, String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/spouse"));
@@ -1239,7 +1239,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<CustomQuestion> customQuestions = new ArrayList<>();
@@ -1269,7 +1269,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
 
@@ -1297,7 +1297,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<CustomQuestion> customQuestions = new ArrayList<>();
@@ -1320,7 +1320,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<CustomQuestion> customQuestions = new ArrayList<>();
@@ -1343,7 +1343,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<CustomQuestion> customQuestions = new ArrayList<>();
@@ -1367,7 +1367,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<CustomQuestion> customQuestions = new ArrayList<>();
@@ -1391,7 +1391,7 @@ public class QueryMappingFactoryTestIT {
 
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         List<CustomQuestion> customQuestions = new ArrayList<>();
@@ -1416,7 +1416,7 @@ public class QueryMappingFactoryTestIT {
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
 
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, dBpediaProperties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, dBpediaProperties, new SemanticAnalysisHelper());
         Map<String, String> properties = queryMappingFactory.getProperties("population density rank");
 
         assertEquals("population density rank", properties.get("http://dbpedia.org/property/populationDensityRank"));
@@ -1431,7 +1431,7 @@ public class QueryMappingFactoryTestIT {
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
 
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, dBpediaProperties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, dBpediaProperties, new SemanticAnalysisHelper());
         Map<String, String> properties = queryMappingFactory.getProperties("How much is the population of Mexico City ?");
 
         assertEquals("population", properties.get("http://dbpedia.org/property/populationTotal"));
@@ -1446,7 +1446,7 @@ public class QueryMappingFactoryTestIT {
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
 
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, dBpediaProperties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, dBpediaProperties, new SemanticAnalysisHelper());
         Map<String, String> classes = queryMappingFactory.getOntologyClass("How much is the population of Mexico City ?");
 
         assertEquals("population", classes.get("http://dbpedia.org/ontology/populationTotal"));
@@ -1460,7 +1460,7 @@ public class QueryMappingFactoryTestIT {
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
 
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory("", query, nodes, dBpediaProperties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory("", query, nodes, dBpediaProperties, new SemanticAnalysisHelper());
         Map<String, String> classes = queryMappingFactory.getOntologyClass("populated place");
 
         assertEquals("populated place", classes.get("http://dbpedia.org/ontology/PopulatedPlace"));
@@ -1474,7 +1474,7 @@ public class QueryMappingFactoryTestIT {
         List<RDFNode> nodes = Lists.newArrayList(NTripleParser.getNodes());
         List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
 
-        QueryMappingFactory queryMappingFactory = new QueryMappingFactory("", query, nodes, dBpediaProperties);
+        QueryMappingFactory queryMappingFactory = new QueryMappingFactory("", query, nodes, dBpediaProperties, new SemanticAnalysisHelper());
         Map<String, String> rdfResouces = new HashMap<>();
         rdfResouces.put("http://dbpedia.org/resource/America", "America");
 

@@ -1,7 +1,7 @@
-package de.uni.leipzig.tebaqa.analyzer;
+package de.uni.leipzig.tebaqa.analyzerGerman;
 
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
-import edu.stanford.nlp.io.IOUtils;
+import de.uni.leipzig.tebaqa.helper.StanfordPipelineProviderGerman;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -13,10 +13,8 @@ import org.slf4j.LoggerFactory;
 import weka.core.Attribute;
 import weka.core.FastVector;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 
 public class Comperative implements IAnalyzer {
     static Logger log = LoggerFactory.getLogger(org.aksw.mlqa.analyzer.comperative.Comperative.class);
@@ -28,7 +26,7 @@ public class Comperative implements IAnalyzer {
         //props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner");
         //props.setProperty("ner.useSUTime", "false");
         //this.pipeline = new StanfordCoreNLP(props);
-        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
+        this.pipeline = StanfordPipelineProviderGerman.getSingletonPipelineInstance();
         FastVector fvWekaComperative = new FastVector(2);
         fvWekaComperative.addElement("Comperative");
         fvWekaComperative.addElement("NoComperative");
@@ -56,7 +54,7 @@ public class Comperative implements IAnalyzer {
 
                     CoreLabel token = (CoreLabel)var7.next();
                     pos = (String)token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
-                } while(!pos.equals("RBR") && !pos.equals("JJR"));
+                } while(!pos.equals("KOKOM"));
 
                 result = "Comperative";
             }

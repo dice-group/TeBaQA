@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.model;
 
+import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import org.junit.Test;
 
 import java.util.Map;
@@ -44,7 +45,7 @@ public class WordNetWrapperTest {
     @Test
     public void testJwiSimilarityWithWordgroup() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("bodyOfWater", "river");
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("bodyOfWater", "river", new SemanticAnalysisHelper());
         Double expected = 5.0;
         assertEquals(expected, similarity);
     }
@@ -52,7 +53,7 @@ public class WordNetWrapperTest {
     @Test
     public void testJwiSimilarityRelated4() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("deathDate", "die");
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("deathDate", "die", new SemanticAnalysisHelper());
         Double expected = 0.0;
         assertEquals(expected, similarity);
     }
@@ -60,7 +61,7 @@ public class WordNetWrapperTest {
     @Test
     public void testJwiSimilarityIgnoresStopwords() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("deathDate", "be");
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("deathDate", "be", new SemanticAnalysisHelper());
         Double expected = 0.0;
         assertEquals(expected, similarity);
     }
@@ -76,7 +77,7 @@ public class WordNetWrapperTest {
     @Test
     public void testJwiSimilarityRelated6() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("firstAscentPerson", "climb");
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("firstAscentPerson", "climb", new SemanticAnalysisHelper());
         Double expected = 16.0;
         assertEquals(expected, similarity);
     }
@@ -108,7 +109,7 @@ public class WordNetWrapperTest {
     @Test
     public void testJwiSimilarityUnrelated2() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("numberOfPages", "give");
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("numberOfPages", "give", new SemanticAnalysisHelper());
         Double expected = 0.0;
         assertEquals(expected, similarity);
     }
@@ -124,7 +125,7 @@ public class WordNetWrapperTest {
     @Test
     public void testJwiSimilarityUnrelated4() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("languageFamily", "Urdu");
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("languageFamily", "Urdu", new SemanticAnalysisHelper());
         Double expected = 0.0;
         assertEquals(expected, similarity);
     }
@@ -140,7 +141,7 @@ public class WordNetWrapperTest {
     @Test
     public void testJwiSimilarityUnrelated6() {
         WordNetWrapper wordNetWrapper = new WordNetWrapper();
-        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("numberOfPages", "peace");
+        Double similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord("numberOfPages", "peace", new SemanticAnalysisHelper());
         Double expected = 0.0;
         assertEquals(expected, similarity);
     }

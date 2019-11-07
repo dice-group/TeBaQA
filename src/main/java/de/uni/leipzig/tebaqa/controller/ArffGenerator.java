@@ -1,7 +1,7 @@
 package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.Lists;
-import de.uni.leipzig.tebaqa.analyzer.Analyzer;
+import de.uni.leipzig.tebaqa.analyzerGerman.Analyzer;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import org.apache.log4j.Logger;
 import org.springframework.core.io.ClassPathResource;
@@ -65,7 +65,7 @@ public class ArffGenerator {
         log.debug("Start collection of training data for each class");
         //Create instance and set the class attribute missing for testing
         //Create instance with the class attribute for training
-        trainQuestions.parallelStream().forEach(question -> {
+        trainQuestions.forEach(question -> {
             Instance instance = analyzer.analyze(question.getQuestionText());
 
             //Create instance and set the class attribute missing for testing
@@ -93,7 +93,8 @@ public class ArffGenerator {
             log.error("Unable to write Test.arff to file!", e);
         }
 
-        AbstractClassifier classifier = new MultilayerPerceptron();
+        //AbstractClassifier classifier = new MultilayerPerceptron();
+        AbstractClassifier classifier = new RandomizableFilteredClassifier();
         try {
             trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
             classifier.buildClassifier(trainingSet);

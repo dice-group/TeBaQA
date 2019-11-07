@@ -1,7 +1,6 @@
 package de.uni.leipzig.tebaqa.analyzer;
 
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
-import edu.stanford.nlp.io.IOUtils;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -13,52 +12,40 @@ import org.slf4j.LoggerFactory;
 import weka.core.Attribute;
 import weka.core.FastVector;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
-public class Comperative implements IAnalyzer {
-    static Logger log = LoggerFactory.getLogger(org.aksw.mlqa.analyzer.comperative.Comperative.class);
+public class EntityPerson implements IAnalyzer {
+    static Logger log = LoggerFactory.getLogger(org.aksw.mlqa.analyzer.entityType.EntityPerson.class);
     private Attribute attribute = null;
     private StanfordCoreNLP pipeline;
 
-    public Comperative() {
-        //Properties props = new Properties();
-        //props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner");
-        //props.setProperty("ner.useSUTime", "false");
-        //this.pipeline = new StanfordCoreNLP(props);
+    public EntityPerson() {
         this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
-        FastVector fvWekaComperative = new FastVector(2);
-        fvWekaComperative.addElement("Comperative");
-        fvWekaComperative.addElement("NoComperative");
-        this.attribute = new Attribute("Comperative", fvWekaComperative);
+        FastVector fvWekaPerson = new FastVector(2);
+        fvWekaPerson.addElement("Person");
+        fvWekaPerson.addElement("NoPerson");
+        this.attribute = new Attribute("Person", fvWekaPerson);
     }
 
     public Object analyze(String q) {
-        String result = "NoComperative";
+        String result = "NoPerson";
         Annotation annotation = new Annotation(q);
         this.pipeline.annotate(annotation);
         List<CoreMap> sentences = (List)annotation.get(CoreAnnotations.SentencesAnnotation.class);
         Iterator var5 = sentences.iterator();
 
-        label27:
         while(var5.hasNext()) {
             CoreMap sentence = (CoreMap)var5.next();
             Iterator var7 = ((List)sentence.get(CoreAnnotations.TokensAnnotation.class)).iterator();
 
-            while(true) {
-                String pos;
-                do {
-                    if (!var7.hasNext()) {
-                        continue label27;
-                    }
-
-                    CoreLabel token = (CoreLabel)var7.next();
-                    pos = (String)token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
-                } while(!pos.equals("RBR") && !pos.equals("JJR"));
-
-                result = "Comperative";
+            while(var7.hasNext()) {
+                CoreLabel token = (CoreLabel)var7.next();
+                String ne = (String)token.get(CoreAnnotations.NamedEntityTagAnnotation.class);
+                if (ne.equals("PERSON")) {
+                    result = "Person";
+                }
             }
         }
 

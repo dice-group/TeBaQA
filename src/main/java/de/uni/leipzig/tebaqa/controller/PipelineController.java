@@ -2,15 +2,7 @@ package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.Lists;
 import com.hp.hpl.jena.rdf.model.RDFNode;
-import de.uni.leipzig.tebaqa.helper.ClassifierProvider;
-import de.uni.leipzig.tebaqa.helper.DBpediaPropertiesProvider;
-import de.uni.leipzig.tebaqa.helper.NTripleParser;
-import de.uni.leipzig.tebaqa.helper.OntologyMappingProvider;
-import de.uni.leipzig.tebaqa.helper.PosTransformation;
-import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
-import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
-import de.uni.leipzig.tebaqa.helper.TextUtilities;
-import de.uni.leipzig.tebaqa.helper.Utilities;
+import de.uni.leipzig.tebaqa.helper.*;
 import de.uni.leipzig.tebaqa.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.model.Cluster;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
@@ -32,7 +24,8 @@ import org.aksw.qa.commons.load.json.QaldJson;
 import org.apache.jena.query.QueryParseException;
 import org.apache.log4j.Logger;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,40 +47,32 @@ public class PipelineController {
     private static SemanticAnalysisHelper semanticAnalysisHelper;
     private List<Dataset> trainDatasets = new ArrayList<>();
     private Map<String, QueryTemplateMapping> mappings;
-    private Boolean evaluateWekaAlgorithms = false;
+    private Boolean evaluateWekaAlgorithms = true;
 
 
     public PipelineController(List<Dataset> trainDatasets) {
         log.info("Configuring controller");
-        semanticAnalysisHelper = new SemanticAnalysisHelper();
+        //semanticAnalysisHelper = new SemanticAnalysisHelper();
+        semanticAnalysisHelper = new SemanticAnalysisHelperGerman();
         trainDatasets.forEach(this::addTrainDataset);
         log.info("Starting controller...");
         run();
     }
+    public static List<IQuestion> readJson(File data) {
+        List<IQuestion> out = null;
+        try {
+            QaldJson json = (QaldJson) ExtendedQALDJSONLoader.readJson(data);
+            out = EJQuestionFactory.getQuestionsFromQaldJson(json);
 
-        //Input als File
-        public static List<IQuestion> readJson(File data) {
-            List<IQuestion> out = null;
-            try {
-                QaldJson json = (QaldJson) ExtendedQALDJSONLoader.readJson(data);
-                out = EJQuestionFactory.getQuestionsFromQaldJson(json);
-
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-            return out;
         }
-
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return out;
+    }
     private void run() {
-        List<HAWKQuestion> trainQuestions = new ArrayList<>();
-        List<IQuestion> load = readJson(new File("limboqa.json"));
-
-        List<IQuestion> result = load.parallelStream()
-                .filter(question -> question.getSparqlQuery() != null)
-                .collect(Collectors.toList());
-        trainQuestions.addAll(HAWKQuestionFactory.createInstances(result));
-        /*for (Dataset d : trainDatasets) {
+        /*List<HAWKQuestion> trainQuestions = new ArrayList<>();
+        for (Dataset d : trainDatasets) {
             //Remove all trainQuestions without SPARQL query
             List<IQuestion> load = LoaderController.load(d);
             List<IQuestion> result = load.parallelStream()
@@ -95,6 +80,13 @@ public class PipelineController {
                     .collect(Collectors.toList());
             trainQuestions.addAll(HAWKQuestionFactory.createInstances(result));
         }*/
+        List<HAWKQuestion> trainQuestions = new ArrayList<>();
+        List<IQuestion> load = readJson(new File("limboqa.json"));
+
+        List<IQuestion> result = load.parallelStream()
+                .filter(question -> question.getSparqlQuery() != null)
+                .collect(Collectors.toList());
+        trainQuestions.addAll(HAWKQuestionFactory.createInstances(result));
         Map<String, String> trainQuestionsWithQuery = new HashMap<>();
         for (HAWKQuestion q : trainQuestions) {
             //only use unique trainQuestions in case multiple datasets are used
@@ -109,7 +101,7 @@ public class PipelineController {
         //log.info("Ontology Mapping: " + OntologyMappingProvider.getOntologyMapping());
 
         log.info("Getting DBpedia properties from SPARQL endpoint...");
-        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+        List<String> dBpediaProperties = null;//DBpediaPropertiesProvider.getDBpediaProperties();
 
         log.info("Parsing DBpedia n-triples from file...");
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
@@ -176,7 +168,7 @@ public class PipelineController {
                 String entity = matcher.group().replace("<", "").replace(">", "");
                 if (!entity.startsWith("http://dbpedia.org/resource/")) {
                     for (String word : words) {
-                        Map<String, String> lemmas = SemanticAnalysisHelper.getLemmas(word);
+                        Map<String, String> lemmas = semanticAnalysisHelper.getLemmas(word);
                         String lemma;
                         if (lemmas.size() == 1 && lemmas.containsKey(word)) {
                             lemma = lemmas.get(word);
@@ -189,16 +181,16 @@ public class PipelineController {
                             //Equal ontologies like parent -> http://dbpedia.org/ontology/parent are detected already
                             continue;
                         }
-                        String wordPosString = SemanticAnalysisHelper.getPOS(lemma).getOrDefault(lemma, "");
+                        String wordPosString = semanticAnalysisHelper.getPOS(lemma).getOrDefault(lemma, "");
                         POS currentWordPOS = PosTransformation.transform(wordPosString);
-                        String posStringOfEntity = SemanticAnalysisHelper.getPOS(entityName).getOrDefault(entityName, "");
+                        String posStringOfEntity = semanticAnalysisHelper.getPOS(entityName).getOrDefault(entityName, "");
                         POS entityPOS = PosTransformation.transform(posStringOfEntity);
                         Double similarity;
                         if (entityPOS == null || currentWordPOS == null) {
                             continue;
                         }
                         if (entityName.length() > 1 && SemanticAnalysisHelper.countUpperCase(entityName.substring(1, entityName.length() - 1)) > 0) {
-                            similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord(entityName, lemma);
+                            similarity = wordNetWrapper.semanticSimilarityBetweenWordgroupAndWord(entityName, lemma,semanticAnalysisHelper);
                         } else {
                             similarity = wordNetWrapper.semanticWordSimilarity(lemma, entityName);
                         }
@@ -221,10 +213,12 @@ public class PipelineController {
     }
 
     public AnswerToQuestion answerQuestion(String question) {
+        //semanticAnalysisHelper=new SemanticAnalysisHelperGerman();
         question = TextUtilities.trim(question);
-        List<String> dBpediaProperties = DBpediaPropertiesProvider.getDBpediaProperties();
+        List<String> dBpediaProperties = null; //DBpediaPropertiesProvider.getDBpediaProperties();
         Set<RDFNode> ontologyNodes = NTripleParser.getNodes();
-        QueryMappingFactory mappingFactory = new QueryMappingFactory(question, "", Lists.newArrayList(ontologyNodes), dBpediaProperties);
+        //QueryMappingFactory mappingFactory = new QueryMappingFactory(question, "", Lists.newArrayList(ontologyNodes), dBpediaProperties);
+        QueryMappingFactoryLabels mappingFactory = new QueryMappingFactoryLabels(question, "",semanticAnalysisHelper);
         Set<ResultsetBinding> results = new HashSet<>();
 //        StopWatch watch = new StopWatch("QA");
 //        int annotationAndQueryGenerationTotal = 0;
@@ -250,7 +244,7 @@ public class PipelineController {
 //        watch.start("Execute Queries 1");
         results.addAll(executeQueries(queries));
 
-        final int expectedAnswerType = SemanticAnalysisHelper.detectQuestionAnswerType(question);
+        final int expectedAnswerType = semanticAnalysisHelper.detectQuestionAnswerType(question);
         ResultsetBinding rsBinding = semanticAnalysisHelper.getBestAnswer(results, mappingFactory.getEntitiyToQuestionMapping(), expectedAnswerType, false);
 
         //If there still is no suitable answer, use all query templates to find one

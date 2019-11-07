@@ -144,8 +144,8 @@ public class Utilities {
 
 
 
-        String filterClauses = SPARQLUtilities.createFilterClauses(triplesWithoutFilters, replacements);
-
+        //String filterClauses = SPARQLUtilities.createFilterClauses(triplesWithoutFilters, replacements);
+        String filterClauses="";
         return addToLastTriple(pattern, classValues.append(propertyValues.toString()).append(filterClauses).toString());
     }
 

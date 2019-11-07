@@ -3,7 +3,9 @@ package de.uni.leipzig.tebaqa.model;
 
 import de.uni.leipzig.tebaqa.controller.QueryIsomorphism;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class QueryTemplateMapping {
@@ -21,12 +23,14 @@ public class QueryTemplateMapping {
     private Set<String> selectCountTemplates = new HashSet<>();
 
 
-    private int numberOfClasses;
-    private int numberOfProperties;
+    private List<Integer> numberOfClasses;
+    private List<Integer> numberOfProperties;
 
     public QueryTemplateMapping(int numberOfClasses, int numberOfProperties) {
-        this.numberOfClasses = numberOfClasses;
-        this.numberOfProperties = numberOfProperties;
+        this.numberOfClasses = new ArrayList<>();
+        this.numberOfClasses.add(numberOfClasses);
+        this.numberOfProperties = new ArrayList<>();
+        this.numberOfProperties.add(numberOfProperties);
     }
 
     public void addSelectTemplate(String template, String originalQuery) {
@@ -114,11 +118,11 @@ public class QueryTemplateMapping {
         return selectCountTemplates;
     }
 
-    public int getNumberOfClasses() {
+    public List<Integer> getNumberOfClasses() {
         return numberOfClasses;
     }
 
-    public int getNumberOfProperties() {
+    public List<Integer> getNumberOfProperties() {
         return numberOfProperties;
     }
 }
