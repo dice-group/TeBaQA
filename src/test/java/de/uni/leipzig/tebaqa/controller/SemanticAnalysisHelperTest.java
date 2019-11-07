@@ -312,19 +312,22 @@ public class SemanticAnalysisHelperTest {
 
     @Test
     public void testDetectQuestionAnswerTypeNumberAnswer() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("How many cities exist?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("How many cities exist?");
         assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeNumberAnswer2() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("How many companies were founded in the same year as Google?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("How many companies were founded in the same year as Google?");
         assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeNumberAnswer3() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("how big is the total area of North Rhine- Westphalia?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("how big is the total area of North Rhine- Westphalia?");
         assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, answerType);
     }
 
@@ -332,7 +335,8 @@ public class SemanticAnalysisHelperTest {
     //TODO implement
     @Ignore
     public void testDetectQuestionAnswerTypeNumberAnswer4() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("What is the population of Cairo?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("What is the population of Cairo?");
         assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, answerType);
     }
 
@@ -340,85 +344,99 @@ public class SemanticAnalysisHelperTest {
     @Ignore
     //TODO implement
     public void testDetectQuestionAnswerTypeNumberAnswer5() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("What is the percentage of area water in Brazil?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("What is the percentage of area water in Brazil?");
         assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeNumberAnswer6() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("how large is the area of UK?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("how large is the area of UK?");
         assertEquals(SPARQLResultSet.NUMBER_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeDateAnswer() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("When was the Titanic completed?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("When was the Titanic completed?");
         assertEquals(SPARQLResultSet.DATE_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeDateAnswer2() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("When was the death  of  Shakespeare?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("When was the death  of  Shakespeare?");
         assertEquals(SPARQLResultSet.DATE_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeBooleanAnswer() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Is there a god?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("Is there a god?");
         assertEquals(BOOLEAN_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeBooleanAnswer2() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Does Neymar play for Real Madrid?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("Does Neymar play for Real Madrid?");
         assertEquals(BOOLEAN_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeBooleanAnswer3() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Was the Cuban Missile Crisis earlier than the Bay of Pigs Invasion?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("Was the Cuban Missile Crisis earlier than the Bay of Pigs Invasion?");
         assertEquals(BOOLEAN_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeListAnswer() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Give me all professional skateboarders from Sweden.");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("Give me all professional skateboarders from Sweden.");
         assertEquals(LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeListAnswer2() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Which ingredients do I need for carrot cake?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("Which ingredients do I need for carrot cake?");
         assertEquals(LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeListAnswer3() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("List all episodes of the first season of the HBO television series The Sopranos.");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("List all episodes of the first season of the HBO television series The Sopranos.");
         assertEquals(LIST_OF_RESOURCES_ANSWER_TYPE, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeSingleAnswer() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Which computer scientist won an oscar?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("Which computer scientist won an oscar?");
         assertEquals(SINGLE_ANSWER, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeSingleAnswer2() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("In which UK city are the headquarters of the MI6?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("In which UK city are the headquarters of the MI6?");
         assertEquals(SINGLE_ANSWER, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeSingleAnswer3() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("From whom was Adorno influenced by?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("From whom was Adorno influenced by?");
         assertEquals(SINGLE_ANSWER, answerType);
     }
 
     @Test
     public void testDetectQuestionAnswerTypeUsesLemma() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("Does a question always makes sense?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("Does a question always makes sense?");
         assertEquals(BOOLEAN_ANSWER_TYPE, answerType);
     }
 
@@ -426,8 +444,9 @@ public class SemanticAnalysisHelperTest {
     @Test
     @Ignore
     public void testGetBestAnswerWithSingleResultExpectedWith3Answers() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("To which party does the mayor of Paris belong?");
-        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("To which party does the mayor of Paris belong?");
+
         Set<ResultsetBinding> results = new HashSet<>();
         ResultsetBinding rs = new ResultsetBinding();
         rs.addResult("http://dbpedia.org/resource/Socialist_Party_(France)");
@@ -444,8 +463,9 @@ public class SemanticAnalysisHelperTest {
     @Test
     @Ignore
     public void testGetBestAnswerWithSingleResultExpectedWithSingleAnswer() {
-        int answerType = SemanticAnalysisHelper.detectQuestionAnswerType("To which party does the mayor of Paris belong?");
-        SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        int answerType = semanticAnalysisHelper.detectQuestionAnswerType("To which party does the mayor of Paris belong?");
+
         Set<ResultsetBinding> results = new HashSet<>();
         ResultsetBinding rs = new ResultsetBinding();
         rs.addResult("http://dbpedia.org/resource/Socialist_Party_(France)");
@@ -634,111 +654,132 @@ public class SemanticAnalysisHelperTest {
 
     @Test
     public void testHasAscAggregation() {
-        assertFalse(SemanticAnalysisHelper.hasAscAggregation("What is the largest country in the world?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertFalse(semanticAnalysisHelper.hasAscAggregation("What is the largest country in the world?"));
     }
 
     @Test
     public void testHasAscAggregation2() {
-        assertFalse(SemanticAnalysisHelper.hasAscAggregation("What was the last movie with Alec Guinness?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertFalse(semanticAnalysisHelper.hasAscAggregation("What was the last movie with Alec Guinness?"));
     }
 
     @Test
     public void testHasAscAggregation3() {
-        assertFalse(SemanticAnalysisHelper.hasAscAggregation("What is the highest mountain in Australia?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertFalse(semanticAnalysisHelper.hasAscAggregation("What is the highest mountain in Australia?"));
     }
 
     @Test
     public void testHasAscAggregation4() {
-        assertFalse(SemanticAnalysisHelper.hasAscAggregation("Which city has the most inhabitants?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertFalse(semanticAnalysisHelper.hasAscAggregation("Which city has the most inhabitants?"));
     }
 
     @Test
     public void testHasAscAggregation5() {
-        assertFalse(SemanticAnalysisHelper.hasAscAggregation("Which city has the most inhabitants?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertFalse(semanticAnalysisHelper.hasAscAggregation("Which city has the most inhabitants?"));
     }
 
     @Test
     public void testHasAscAggregation6() {
-        assertFalse(SemanticAnalysisHelper.hasAscAggregation("Which city has the most inhabitants?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertFalse(semanticAnalysisHelper.hasAscAggregation("Which city has the most inhabitants?"));
     }
 
     @Test
     public void testHasAscAggregatio7() {
-        assertTrue(SemanticAnalysisHelper.hasAscAggregation("Which city has the least inhabitants?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertTrue(semanticAnalysisHelper.hasAscAggregation("Which city has the least inhabitants?"));
     }
 
     @Test
     public void testHasAscAggregation8() {
-        assertTrue(SemanticAnalysisHelper.hasAscAggregation("What was the first Queen album?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertTrue(semanticAnalysisHelper.hasAscAggregation("What was the first Queen album?"));
     }
 
     @Test
     public void testHasAscAggregation9() {
-        assertTrue(SemanticAnalysisHelper.hasAscAggregation("Who is the oldest child of Meryl Streep?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertTrue(semanticAnalysisHelper.hasAscAggregation("Who is the oldest child of Meryl Streep?"));
     }
 
     @Test
     public void testHasAscAggregationFalseMatch() {
-        assertFalse(SemanticAnalysisHelper.hasAscAggregation("Is there a company called leasterious?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertFalse(semanticAnalysisHelper.hasAscAggregation("Is there a company called leasterious?"));
     }
 
     @Test
     public void testHasDescAggregation() {
-        assertTrue(SemanticAnalysisHelper.hasDescAggregation("What is the largest country in the world?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertTrue(semanticAnalysisHelper.hasDescAggregation("What is the largest country in the world?"));
     }
 
     @Test
     public void testHasDescAggregation2() {
-        assertTrue(SemanticAnalysisHelper.hasDescAggregation("What was the last movie with Alec Guinness?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertTrue(semanticAnalysisHelper.hasDescAggregation("What was the last movie with Alec Guinness?"));
     }
 
     @Test
     public void testHasDescAggregation3() {
-        assertTrue(SemanticAnalysisHelper.hasDescAggregation("What is the highest mountain in Australia?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertTrue(semanticAnalysisHelper.hasDescAggregation("What is the highest mountain in Australia?"));
     }
 
     @Test
     public void testHasDescAggregation4() {
-        assertTrue(SemanticAnalysisHelper.hasDescAggregation("Which city has the most inhabitants?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertTrue(semanticAnalysisHelper.hasDescAggregation("Which city has the most inhabitants?"));
     }
 
     @Test
     public void testHasDescAggregation5() {
-        assertTrue(SemanticAnalysisHelper.hasDescAggregation("Which city has the most inhabitants?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertTrue(semanticAnalysisHelper.hasDescAggregation("Which city has the most inhabitants?"));
     }
 
 
     @Test
     public void testHasDescAggregation6() {
-        assertTrue(SemanticAnalysisHelper.hasDescAggregation("Which city has the most inhabitants?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertTrue(semanticAnalysisHelper.hasDescAggregation("Which city has the most inhabitants?"));
     }
 
     @Test
     public void testHasDescAggregationFalseMatch() {
-        assertFalse(SemanticAnalysisHelper.hasDescAggregation("Is there a company called mosterious?"));
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        assertFalse(semanticAnalysisHelper.hasDescAggregation("Is there a company called mosterious?"));
     }
 
     @Test
     public void testGetHypernym() {
-        List<String> actual = SemanticAnalysisHelper.getHypernymsFromWiktionary("wife");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        List<String> actual = semanticAnalysisHelper.getHypernymsFromWiktionary("wife");
         assertTrue(actual.contains("spouse"));
     }
 
     @Test
     public void testRemoveQuestionWords() {
-        String actual = SemanticAnalysisHelper.removeQuestionWords("Give me something.");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        String actual = semanticAnalysisHelper.removeQuestionWords("Give me something.");
         assertTrue(actual.equals("something."));
     }
 
     @Test
     public void testRemoveQuestionWords2() {
-        String actual = SemanticAnalysisHelper.removeQuestionWords("Who invented Slack?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        String actual = semanticAnalysisHelper.removeQuestionWords("Who invented Slack?");
         assertTrue(actual.equals("invented Slack?"));
     }
 
     @Test
     public void testRemoveQuestionWordsOnlyRemovesFirstQuestionWord() {
-        String actual = SemanticAnalysisHelper.removeQuestionWords("Who plays in the Who?");
+        SemanticAnalysisHelper semanticAnalysisHelper=new SemanticAnalysisHelper();
+        String actual = semanticAnalysisHelper.removeQuestionWords("Who plays in the Who?");
         assertTrue(actual.equals("plays in the Who?"));
     }
 }

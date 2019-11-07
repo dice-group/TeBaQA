@@ -18,13 +18,14 @@ public class CoOccurrenceEntityMapping {
     private String entity;
     private int size;
     private List<String> matchingWords;
+    SemanticAnalysisHelper semanticAnalysisHelper;
 
     public CoOccurrenceEntityMapping(String wordGroup, String entityURI) {
         this.wordGroup = wordGroup;
         this.entity = entityURI;
         this.size = 0;
         this.matchingWords = new ArrayList<>();
-        Map<String, String> lemmas = SemanticAnalysisHelper.getLemmas(wordGroup);
+        Map<String, String> lemmas = semanticAnalysisHelper.getLemmas(wordGroup);
         String[] split = entityURI.split("/");
         String entity = split[split.length - 1];
         Set<String> wordsInWordGroup = Sets.newHashSet(Arrays.asList(wordGroup.split(NON_WORD_CHARACTERS_REGEX)));

@@ -28,16 +28,17 @@ public class QueryBuilder {
 
     private Map<String, String> processQuestion(String question) {
         //TODO detect entities, properties and classes from the question
-        SemanticGraph semanticGraph = analysis.extractDependencyGraph(question);
+        //SemanticGraph semanticGraph = analysis.extractDependencyGraph(question);
 
-        List<IndexedWord> sequence = analysis.getDependencySequence(semanticGraph);
-        Map<String, String> posSequence = new HashMap<>();
+        //List<IndexedWord> sequence = analysis.getDependencySequence(semanticGraph);
+        //Map<String, String> posSequence = new HashMap<>();
         //Remove the part-of-speech tag from the word: "Atacama/NNP" => "Atacama"
-        for (int i = 0; i < sequence.size(); i++) {
+        /*for (int i = 0; i < sequence.size(); i++) {
             IndexedWord word = sequence.get(i);
             posSequence.put(word.toString().split("/")[0],
                     word.get(PartOfSpeechAnnotation.class) + i);
-        }
+        }*/
+        Map<String, String> posSequence=analysis.getPosTags(question);
         //log.info(semanticGraph);
         return posSequence;
     }

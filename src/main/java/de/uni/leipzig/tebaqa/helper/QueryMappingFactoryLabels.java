@@ -1,12 +1,11 @@
 package de.uni.leipzig.tebaqa.helper;
 
+
 import com.google.common.collect.Sets;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import de.uni.leipzig.tebaqa.controller.ElasticSearchEntityIndex;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
-import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
-import de.uni.leipzig.tebaqa.model.RatedEntity;
-import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
-import de.uni.leipzig.tebaqa.model.WordNetWrapper;
+import de.uni.leipzig.tebaqa.model.*;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
@@ -20,6 +19,7 @@ import org.aksw.qa.annotation.index.IndexDBO_properties;
 import org.aksw.qa.commons.datastructure.Entity;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jena.base.Sys;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.log4j.Logger;
 import org.ehcache.Cache;
@@ -27,6 +27,7 @@ import org.ehcache.PersistentCacheManager;
 import org.jetbrains.annotations.NotNull;
 import weka.core.Stopwords;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -35,6 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+//import static de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper.getLemmas;
 import static de.uni.leipzig.tebaqa.helper.TextUtilities.NON_WORD_CHARACTERS_REGEX;
 import static de.uni.leipzig.tebaqa.helper.Utilities.getLevenshteinRatio;
 import static edu.stanford.nlp.ling.CoreAnnotations.*;
@@ -64,14 +66,14 @@ import static org.apache.commons.lang3.StringUtils.getLevenshteinDistance;
  * <p>
  * </ol>
  */
-public class QueryMappingFactory {
+public class QueryMappingFactoryLabels {
 
     private int queryType;
     private static Logger log = Logger.getLogger(QueryMappingFactory.class);
     private String queryPattern;
     private String question;
-    private List<RDFNode> ontologyNodes;
-    private List<String> properties;
+    //private List<RDFNode> ontologyNodes;
+    //private List<String> properties;
     private Map<String, String> entitiyToQuestionMapping;
     private Map<String, String> entitiyToQuestionMappingWithSynonyms;
     private boolean entitiyToQuestionMappingWasSet;
@@ -80,27 +82,35 @@ public class QueryMappingFactory {
     //private Configuration pattyPhrases;
     private PersistentCacheManager cacheManager;
     private Patty_relations patty_relations;
-    SemanticAnalysisHelper semanticAnalysisHelper;
-    public QueryMappingFactory(String question, String sparqlQuery, List<RDFNode> ontologyNodes, List<String> properties,SemanticAnalysisHelper semanticAnalysisHelper) {
-        this.ontologyNodes = ontologyNodes;
+    private ElasticSearchEntityIndex entityIndex;
+    WordsGenerator wordsGenerator;
+    RelationsGenerator relationsGenerator;
+    private SemanticAnalysisHelper semanticAnalysisHelper;
+    public QueryMappingFactoryLabels(String question, String sparqlQuery,SemanticAnalysisHelper semanticAnalysisHelper) {
+        //this.ontologyNodes = ontologyNodes;
+         wordsGenerator=new WordsGenerator();
         ontologyURIs = new HashSet<>();
-        ontologyNodes.forEach(rdfNode -> ontologyURIs.add(rdfNode.toString()));
-        this.properties = properties;
+        relationsGenerator=new RelationsGenerator();
         this.semanticAnalysisHelper=semanticAnalysisHelper;
+        //ontologyNodes.forEach(rdfNode -> ontologyURIs.add(rdfNode.toString()));
+        //this.properties = properties;
         this.queryType = semanticAnalysisHelper.determineQueryType(question);
         this.entitiyToQuestionMapping = new HashMap<>();
         this.entitiyToQuestionMappingWasSet = false;
         this.entitiyToQuestionMappingWithSynonyms = new HashMap<>();
         this.entitiyToQuestionMappingWithSynonymsWasSet = false;
         //this.pattyPhrases = PattyPhrasesProvider.getPattyPhrases();
-        //this.patty_relations = new Patty_relations();
-        this.patty_relations=null;
-        this.question = question;
+        this.patty_relations = null;
 
+        this.question = question;
         String queryString = SPARQLUtilities.resolveNamespaces(sparqlQuery);
 
         this.cacheManager = CacheProvider.getSingletonCacheInstance();
-
+        try {
+            entityIndex= new ElasticSearchEntityIndex();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         // queryString.replaceAll("<(.*?)>", )
         int i = 0;
         String regex = "<(.+?)>";
@@ -238,19 +248,20 @@ public class QueryMappingFactory {
     }
 
     public Set<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph, boolean useSynonyms) {
-        if (!useSynonyms && !this.entitiyToQuestionMappingWasSet) {
+        if (!this.entitiyToQuestionMappingWasSet) {
             entitiyToQuestionMapping.putAll(extractEntities(question));
             this.entitiyToQuestionMappingWasSet = true;
-        } else if (useSynonyms && !this.entitiyToQuestionMappingWithSynonymsWasSet) {
+        }
+        /*} else if (useSynonyms && !this.entitiyToQuestionMappingWithSynonymsWasSet) {
             entitiyToQuestionMappingWithSynonyms.putAll(extractEntitiesUsingSynonyms(question));
             this.entitiyToQuestionMappingWithSynonymsWasSet = true;
-        }
+        }*/
 
         List<String> suitableMappings = getSuitableMappings(mappings, queryType, graph);
         Set<String> queries;
-        if (!useSynonyms) {
+        //if (!useSynonyms) {
             queries = fillPatterns(entitiyToQuestionMapping, suitableMappings);
-        } else {
+        /*} else {
             Map<String, String> m = new HashMap<>();
             m.putAll(entitiyToQuestionMapping);
             m.putAll(entitiyToQuestionMappingWithSynonyms);
@@ -260,129 +271,328 @@ public class QueryMappingFactory {
                 queries = new HashSet<>();
                 log.error("There are too many entities, skipping this query");
             }
-        }
+        }*/
         return queries;
     }
+    private List<String[]>getbestResourcesByLevenstheinRatio(String coOccurrence,String index,HashMap<String,Double>minScores){
+        List<String[]> foundResources = entityIndex.search(coOccurrence, index);
+        double minScore=0.4;
+        List<String[]>bestResourcesByLevenstheinRatio=new ArrayList<>();
+        for(String[]resource:foundResources){
+            double ratio = Utilities.getLevenshteinRatio(coOccurrence, resource[1].toLowerCase());
+            if(ratio<minScore){
+                minScore=ratio;
+                bestResourcesByLevenstheinRatio.clear();
+                bestResourcesByLevenstheinRatio.add(resource);
+            }
+            else if(ratio==minScore) bestResourcesByLevenstheinRatio.add(resource);
+        }
+        if(bestResourcesByLevenstheinRatio.size()>0) minScores.put(coOccurrence,minScore);
+        return bestResourcesByLevenstheinRatio;
+    }
+    private String generateTypeFromResourceUriSubset(List<String[]>ambigiousResources) {
+        Set<String>urisToTest=new HashSet();
+        Random rand = new Random();
+        Set<Integer>alreadySet=new HashSet<>();
+        for (int i = 0; i < 10; i++) {
+            boolean col=true;
+            while(col) {
+                int randomNumber = rand.nextInt(ambigiousResources.size());
 
-    Map<String, String> extractEntities(String question) {
-        Map<String, String> entitiyToQuestionMapping = new HashMap<>();
-        question = semanticAnalysisHelper.removeQuestionWords(question);
+                String[] res = ambigiousResources.get(rand.nextInt(ambigiousResources.size()));
+                if(!urisToTest.contains(res[0])) {
+                    urisToTest.add(res[0]);
+                    col=false;
+                }
 
-//        Map<String, List<Entity>> spotlightEntities = extractSpotlightEntities(question);
-//        if (spotlightEntities.size() > 0) {
-//            spotlightEntities.get("en").forEach(entity -> {
-//                Set<String> uris = entity.getUris().stream().map(Resource::getURI).collect(Collectors.toSet());
-//                uris.forEach(s -> entitiyToQuestionMapping.put(s, entity.getLabel()));
-//            });
-//        }
+            }
 
-        List<String> wordsFromQuestion = Arrays.asList(question.split(NON_WORD_CHARACTERS_REGEX));
-        for (String word : wordsFromQuestion) {
-            Map<String, String> lemmas = semanticAnalysisHelper.getLemmas(word);
-            Map<String, String> pos = semanticAnalysisHelper.getPOS(word);
-            if (!Stopwords.isStopword(word)
-                    && !lemmas.getOrDefault(word, "").equalsIgnoreCase("be")
-                    && !lemmas.getOrDefault(word, "").equalsIgnoreCase("the")
-                    && !pos.getOrDefault(word, "").equalsIgnoreCase("WP")
-                    && !pos.getOrDefault(word, "").equalsIgnoreCase("DT")
-                    && !pos.getOrDefault(word, "").equalsIgnoreCase("IN")) {
-                List<String> hypernyms = semanticAnalysisHelper.getHypernymsFromWiktionary(word);
-                Set<String> matchingHypernyms = hypernyms.stream().map(this::getProperties).flatMap(s -> s.keySet().stream()).collect(Collectors.toSet());
-                matchingHypernyms.addAll(hypernyms.stream().map(this::getOntologyClass).flatMap(s -> s.keySet().stream()).collect(Collectors.toSet()));
-                matchingHypernyms.forEach(s -> entitiyToQuestionMapping.put(s, word));
+        }
+        HashMap<String,Integer>types=new HashMap<>();
+        for(String uri:urisToTest){
+            List<Triple> triples=entityIndex.search(uri,"http://www.w3.org/1999/02/22-rdf-syntax-ns#type",null);
+            for(Triple triple:triples){
+                if(types.containsKey(triple.getObject())){
+                    int value=types.get(triple.getObject())+1;
+                    types.put(triple.getObject(),value);
+                }
+                else types.put(triple.getObject(),1);
             }
         }
+        for(String type:types.keySet()){
+            if(types.get(type)>8)return type;
+        }
+        return null;
+    }
+    private int rateCoOccurenceMappingWithOtherCoOccurenceConnections(String coOccurence,List<String>resourceUris,List<String>propertyUris,List<String>predicateUris){
+        return 0;
+    }
+    private Set<String>generateEntityConnectionCandidates(String coOccurence,HashMap<String,String[]>coOccurenceEntityMap,HashMap<String,String>ambigiousResoorces){
+        Set<String> entityCandidates=new HashSet<>();
+        for(String key:coOccurenceEntityMap.keySet()){
+            if(coOccurence.contains(key)&&!ambigiousResoorces.containsKey(key)&&!"entity".equals(ambigiousResoorces.get(key)))
+                entityCandidates.add(coOccurenceEntityMap.get(key)[0]);
 
-        Map<String, String> wordPosMap = semanticAnalysisHelper.getPOS(question);
-        List<String> coOccurrences = getNeighborCoOccurrencePermutations(wordsFromQuestion);
-        coOccurrences = coOccurrences.parallelStream()
-                .filter(s -> s.split(NON_WORD_CHARACTERS_REGEX).length <= 6)
-                .collect(Collectors.toList());
+        }
+        return entityCandidates;
+    }
+    private Set<String>getLinkedResources(String candidate){
+        Set<String>linkedResources=new HashSet<>();
+        entityIndex.search(candidate,null,null).forEach(triple->{linkedResources.add(triple.getObject());
+        linkedResources.add(triple.getPredicate());});
+        entityIndex.search(null,null,candidate).forEach(triple->{linkedResources.add(triple.getSubject());
+        linkedResources.add(triple.getPredicate());});
+        return linkedResources;
+    }
+    public double scoreCoOccurencesCandidateMappingByInterlinking(String candidate1,String candidate2,HashMap<String,Set<String>> linkingMap){
+        if(!linkingMap.containsKey(candidate1)) linkingMap.put(candidate1,getLinkedResources(candidate1));
+        if(!linkingMap.containsKey(candidate2)) linkingMap.put(candidate2,getLinkedResources(candidate2));
+        if(linkingMap.get(candidate1).contains(candidate2)||linkingMap.get(candidate2).contains(candidate1))
+            return 1.0;
+        else return 0;
+    }
+    public double scoreCoOccurencesCandidateMappingByInterlinkingProperty(String property,String candidate,HashMap<String,Set<String>> linkingMap){
+        if(!linkingMap.containsKey(candidate)) linkingMap.put(candidate,getLinkedResources(candidate));
+        if(linkingMap.get(candidate).contains(property))
+            return 1.0;
+        else return 0;
+    }
+    private HashMap<String,String>generateMappings(Map<String,List<String[]>>candidateMapping, HashMap<String,Double>resourceToLinkingScore){
+        HashMap<String,String>entityToQuestionMapping=new HashMap<>();
+        HashMap<String,List<String[]>>skippedCoOccurences=new HashMap<>();
+        for(String coOccurence : candidateMapping.keySet()){
+            List<String[]> resources=candidateMapping.get(coOccurence);
+            if(resources.size()==1) {
+                if(!entitiyToQuestionMapping.containsKey(resources.get(0)[0])||entitiyToQuestionMapping.get(resources.get(0)[0]).length()<coOccurence.length())
+                    entityToQuestionMapping.put(resources.get(0)[0], coOccurence);
+            }
+            else if(resources.size()>0){
+                List<String>bestResourcesByLinkingScore=new ArrayList<>();
+                double bestScore=0;
+                for(String[]resource:resources){
+                    if(resourceToLinkingScore.get(resource[0])>bestScore){
+                        bestScore=resourceToLinkingScore.get(resource[0]);
+                        bestResourcesByLinkingScore.clear();
+                        bestResourcesByLinkingScore.add(resource[0]);
 
-        Cache<String, HashMap> cache = cacheManager.getCache("persistent-cache", String.class, HashMap.class);
-        Consumer<String> coOccurrenceConsumer = coOccurrence -> {
-            if (cache.containsKey(coOccurrence)) {
-                entitiyToQuestionMapping.putAll(cache.get(coOccurrence));
-            } else {
-                HashMap<String, String> mapping = new HashMap<>();
-
-                String[] coOccurrenceSplitted = coOccurrence.split(NON_WORD_CHARACTERS_REGEX);
-                if (coOccurrenceSplitted.length > 0 && (coOccurrenceSplitted.length > 1 ||
-                        (!wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("DT")
-                                && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("WP")
-                                && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("EX")
-                                && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("IN")))) {
-                    boolean containsOnlyStopwords = true;
-                    for (String word : coOccurrenceSplitted) {
-                        if (!Stopwords.isStopword(word)) {
-                            containsOnlyStopwords = false;
-                        }
                     }
-                    if (!containsOnlyStopwords) {
-                        List<RatedEntity> ratedResources = new ArrayList<>();
-                        List<RatedEntity> ratedOntologies = new ArrayList<>();
-
-                        mapping.putAll(getProperties(coOccurrence));
-                        mapping.putAll(getOntologyClass(coOccurrence));
-
-                        String lemmasJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, true);
-                        Consumer<String> addResourceWithLevenshteinRatio = s -> {
-                            if (isResource(s)) {
-                                ratedResources.add(new RatedEntity(s, coOccurrence, getLevenshteinRatio(s, coOccurrence)));
-                            } else {
-                                ratedOntologies.add(new RatedEntity(s, coOccurrence, getLevenshteinRatio(s, coOccurrence)));
-                            }
-                        };
-                        if (coOccurrenceSplitted.length > 1 || (!wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").equals("DT") && !wordPosMap.getOrDefault(coOccurrenceSplitted[0], "").startsWith("W"))) {
-                            boolean isImportantEntity = true;
-                            if (coOccurrenceSplitted.length == 1) {
-                                Map<String, String> lemmas = semanticAnalysisHelper.getLemmas(coOccurrenceSplitted[0]);
-                                if (lemmas.getOrDefault(coOccurrenceSplitted[0], "").equals("be")
-                                        || lemmas.getOrDefault(coOccurrenceSplitted[0], "").equals("the")) {
-                                    isImportantEntity = false;
-                                }
-                            }
-                            String coOccurrenceJoinedWithUnderScore = "http://dbpedia.org/resource/" + join("_", coOccurrenceSplitted);
-                            if (isImportantEntity && existsAsEntity(coOccurrenceJoinedWithUnderScore)) {
-                                mapping.put(coOccurrenceJoinedWithUnderScore, coOccurrence);
-                            }
-                        }
-                        tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoined).forEach(addResourceWithLevenshteinRatio);
-
-                        String lemmasJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, true);
-                        tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, lemmasJoinedCapitalized).forEach(addResourceWithLevenshteinRatio);
-
-                        String wordsJoined = joinCapitalizedLemmas(coOccurrenceSplitted, false, false);
-                        tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoined).forEach(addResourceWithLevenshteinRatio);
-
-                        String wordsJoinedCapitalized = joinCapitalizedLemmas(coOccurrenceSplitted, true, false);
-                        //tryDBpediaResourceNamingCombinations(ontologyURIs, coOccurrenceSplitted, wordsJoinedCapitalized).forEach(addResourceWithLevenshteinRatio);
-                        //searchInDBOIndex(coOccurrence).forEach(addResourceWithLevenshteinRatio);
-
-                        ratedOntologies.sort(Comparator.comparing(RatedEntity::getRating));
-                        ratedResources.sort(Comparator.comparing(RatedEntity::getRating));
-                        Set<String> resourcesFoundInFullText = findResourcesInFullText(coOccurrence);
-                        resourcesFoundInFullText.forEach(s -> mapping.put(s, coOccurrence));
-                        if (ratedOntologies.size() > 1) {
-                            mapping.put(ratedOntologies.get(0).getUri(), ratedOntologies.get(0).getOrigin());
-                        }
-                        if (ratedResources.size() > 1) {
-                            mapping.put(ratedResources.get(0).getUri(), ratedResources.get(0).getOrigin());
-                        }
-                        cache.put(coOccurrence, mapping);
-                        entitiyToQuestionMapping.putAll(mapping);
+                    else if(resourceToLinkingScore.get(resource[0])==bestScore)
+                        bestResourcesByLinkingScore.add(resource[0]);
+                }
+                if(bestResourcesByLinkingScore.size()==1){
+                    if(!entitiyToQuestionMapping.containsKey(bestResourcesByLinkingScore.get(0))||entitiyToQuestionMapping.get(bestResourcesByLinkingScore.get(0)).length()<coOccurence.length())
+                        entityToQuestionMapping.put(bestResourcesByLinkingScore.get(0),coOccurence);
+                }
+                //else if(bestResourcesByLinkingScore.size()>1&&bestScore>0) skippedCoOccurences.put(coOccurence,resources);
+                else if(bestResourcesByLinkingScore.size()>1) skippedCoOccurences.put(coOccurence,resources);
+            }
+        }
+        for(String coOccurence:skippedCoOccurences.keySet()){
+            boolean contains=false;
+            Iterator<String> i=entityToQuestionMapping.values().iterator();
+            while (!contains&&i.hasNext()){
+                String mappedCoOccurence=i.next();
+                if(mappedCoOccurence.contains(coOccurence)){
+                    contains=true;
+                }
+            }
+            if(!contains){
+                for(String key:entityToQuestionMapping.keySet()){
+                    for(String[]candidate:skippedCoOccurences.get(coOccurence)){
+                        if(candidate[0].equals(key))
+                            contains=true;
                     }
                 }
             }
-        };
-        ForkJoinPool forkJoinPool = new ForkJoinPool(16);
-        List<String> finalCoOccurrences = coOccurrences;
-        try {
-            forkJoinPool.submit(() -> finalCoOccurrences.parallelStream().filter(s -> !s.isEmpty()).forEach(coOccurrenceConsumer)).get();
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Exception while extracting entities from wordgroups of the question!", e);
+            //if(!contains) entityToQuestionMapping.put(skippedCoOccurences.get(coOccurence).get(0)[0],coOccurence);
+            if(!contains) skippedCoOccurences.get(coOccurence).forEach(s->entityToQuestionMapping.put(s[0],coOccurence));
         }
-        return entitiyToQuestionMapping;
+        return entityToQuestionMapping;
+    }
+    private List<String[]>disambiguateHighlyAmbigResources(String ambiqueCoOccurences,String type,
+                                                           Set<String>entResources,Set<String>propResources,
+                                                           double minScore,HashMap<String,Set<String>> linkingMap){
+
+        List<String[]>candidateMappings=new ArrayList<>();
+        Set<String>alreadyknown=new HashSet<>();
+        for(String resource:entResources){
+            List<String[]>connResources=relationsGenerator.getRelatedResourcesByType(resource, type);
+            for(String[]res:connResources){
+                alreadyknown.add(res[0]);
+            }
+            candidateMappings.addAll(connResources);
+        }
+        Set<String>resourcesToMap=new HashSet<>();
+        for(String entResource:entResources){
+            if(!linkingMap.containsKey(entResource)){
+                linkingMap.put(entResource,getLinkedResources(entResource));
+                resourcesToMap.addAll(linkingMap.get(entResource));
+            }
+        }
+        for (String property : propResources) {
+            List<String[]>connResources=relationsGenerator.getRelatedResourcesByTypeProperty(property, type);
+            for(String[]res:connResources){
+                if(resourcesToMap.contains(res[0])&&!alreadyknown.contains(res[0]))
+                    candidateMappings.add(res);
+            }
+        }
+
+        System.out.println();
+        List<String[]>bestResourcesByLevenstheinRatio=new ArrayList<>();
+        boolean modified=false;
+        for(String[]resource:candidateMappings){
+            double ratio = Utilities.getLevenshteinRatio(ambiqueCoOccurences, resource[1].toLowerCase());
+            if(ratio<minScore){
+                modified=true;
+                minScore=ratio;
+                bestResourcesByLevenstheinRatio.clear();
+                bestResourcesByLevenstheinRatio.add(resource);
+            }
+            else if(ratio==minScore) {
+                if(!modified){
+                    modified=true;
+                    minScore=ratio;
+                    bestResourcesByLevenstheinRatio.clear();
+                    bestResourcesByLevenstheinRatio.add(resource);
+                }
+                else bestResourcesByLevenstheinRatio.add(resource);
+            }
+        }
+        //if(bestResourcesByLevenstheinRatio.size()>0) minScores.put(coOccurrence,minScore);
+        return bestResourcesByLevenstheinRatio;
+    }
+    Map<String, String> extractEntities(String question) {
+        //Map<String, List<String[]>> coOccurenceToentitiyCandidateMapping = new HashMap<>();
+        //Map<String, List<String[]>> coOccurenceTopropertyCandidateMapping = new HashMap<>();
+        //Map<String, List<String[]>> coOccurenceToclassCandidateMapping = new HashMap<>();
+        question = semanticAnalysisHelper.removeQuestionWords(question);
+        Map<String,List<String[]>>bestCoOccurencesToEntitieMappingsByLevensthein=new HashMap<>();
+        Map<String,List<String[]>>bestCoOccurencesToPropertyMappingsByLevensthein=new HashMap<>();
+        Map<String,List<String[]>>bestCoOccurencesToClassMappingsByLevensthein=new HashMap<>();
+        HashMap<String,String>highlyAmbiqueCoOccurences=new HashMap<>();
+        HashMap<String,Double>minScoresEntities=new HashMap<>();
+        HashMap<String,Double>minScoresPredicates=new HashMap<>();
+        HashMap<String,Double>minScoresClasses=new HashMap<>();
+        //List<String> wordsFromQuestion = Arrays.asList(question.split(NON_WORD_CHARACTERS_REGEX));
+        List<String> wordsFromQuestion=wordsGenerator.generateTokens(question,"de");
+        List<String> coOccurrences = getNeighborCoOccurrencePermutations(wordsFromQuestion);
+        for(String coOccurrence:coOccurrences) {
+            List<String[]>best=getbestResourcesByLevenstheinRatio(coOccurrence,"entity",minScoresEntities);
+            if(best.size()>0)
+                bestCoOccurencesToEntitieMappingsByLevensthein.put(coOccurrence,best);
+            if(best.size()>50) highlyAmbiqueCoOccurences.put(coOccurrence,"entity");
+            best=getbestResourcesByLevenstheinRatio(coOccurrence,"property",minScoresPredicates);
+            if(best.size()>0)
+                bestCoOccurencesToPropertyMappingsByLevensthein.put(coOccurrence,best);
+            if(best.size()>50) highlyAmbiqueCoOccurences.put(coOccurrence,"property");
+            best=getbestResourcesByLevenstheinRatio(coOccurrence,"class",minScoresClasses);
+            if(best.size()>0)
+                bestCoOccurencesToClassMappingsByLevensthein.put(coOccurrence,best);
+            if(best.size()>50) highlyAmbiqueCoOccurences.put(coOccurrence,"class");
+        }
+        Set<String>entResources=new HashSet<>();
+        for(String coOccurence:bestCoOccurencesToEntitieMappingsByLevensthein.keySet()){
+            bestCoOccurencesToEntitieMappingsByLevensthein.get(coOccurence).forEach(s->{if(!highlyAmbiqueCoOccurences.containsKey(coOccurence))entResources.add(s[0]);});
+        }
+        Set<String>propResources=new HashSet<>();
+        for(String coOccurence:bestCoOccurencesToPropertyMappingsByLevensthein.keySet()){
+            bestCoOccurencesToPropertyMappingsByLevensthein.get(coOccurence).forEach(s->{if(!highlyAmbiqueCoOccurences.containsKey(coOccurence))propResources.add(s[0]);});
+        }
+        HashMap<String,Set<String>>alreadyScored=new HashMap<>();
+        //Score Entity to Entity
+        HashMap<String,Set<String>>linkingMap=new HashMap<>();
+
+        List<String>ambResources=new ArrayList<>();
+        highlyAmbiqueCoOccurences.keySet().forEach(res->{if(highlyAmbiqueCoOccurences.get(res).equals("entity"))ambResources.add(res);});
+        for(String ambResource:ambResources) {
+            String type=generateTypeFromResourceUriSubset( bestCoOccurencesToEntitieMappingsByLevensthein.get(ambResource));
+            if(type!=null) {
+                List<String[]> best = disambiguateHighlyAmbigResources(ambResource, type, entResources,propResources, minScoresEntities.get(ambResource),linkingMap);
+                if (best.size() > 0) {
+                    bestCoOccurencesToEntitieMappingsByLevensthein.put(ambResource, best);
+                    highlyAmbiqueCoOccurences.remove(ambResource);
+                }
+                else bestCoOccurencesToEntitieMappingsByLevensthein.remove(ambResource);
+            }
+            else System.out.println();
+        }
+        HashMap<String,Double>resourceToLinkingScore=new HashMap<>();
+        for(String coOccurence:bestCoOccurencesToEntitieMappingsByLevensthein.keySet()){
+            bestCoOccurencesToEntitieMappingsByLevensthein.get(coOccurence).forEach(s->{if(!highlyAmbiqueCoOccurences.containsKey(coOccurence))resourceToLinkingScore.put(s[0],0.0);});
+        }
+        for(String coOccurence1:bestCoOccurencesToEntitieMappingsByLevensthein.keySet()) {
+            for (String coOccurence2 : bestCoOccurencesToEntitieMappingsByLevensthein.keySet()){
+                if(!coOccurence1.contains(coOccurence2)&&!coOccurence2.contains(coOccurence1)
+                &&!highlyAmbiqueCoOccurences.containsKey(coOccurence1)&&!highlyAmbiqueCoOccurences.containsKey(coOccurence2)){
+                    for(String[]candidate1:bestCoOccurencesToEntitieMappingsByLevensthein.get(coOccurence1)){
+                        for(String[]candidate2:bestCoOccurencesToEntitieMappingsByLevensthein.get(coOccurence2)){
+                            if(!alreadyScored.containsKey(candidate1[0])||!alreadyScored.get(candidate1[0]).contains(candidate2[0])){
+                                double score=scoreCoOccurencesCandidateMappingByInterlinking(candidate1[0],candidate2[0],linkingMap);
+                                if(!alreadyScored.containsKey(candidate1[0]))alreadyScored.put(candidate1[0],new HashSet<String>());
+                                if(!alreadyScored.containsKey(candidate2[0]))alreadyScored.put(candidate2[0],new HashSet<String>());
+                                if(alreadyScored.containsKey(candidate1[0]))alreadyScored.get(candidate1[0]).add(candidate2[0]);
+                                if(alreadyScored.containsKey(candidate2[0]))alreadyScored.get(candidate2[0]).add(candidate1[0]);
+                                resourceToLinkingScore.put(candidate1[0],resourceToLinkingScore.get(candidate1[0])+score);
+                                resourceToLinkingScore.put(candidate2[0],resourceToLinkingScore.get(candidate2[0])+score);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        HashMap<String,Double>propertyToLinkingScore=new HashMap<>();
+        for(String coOccurence:bestCoOccurencesToPropertyMappingsByLevensthein.keySet()){
+            bestCoOccurencesToPropertyMappingsByLevensthein.get(coOccurence).forEach(s->{if(!highlyAmbiqueCoOccurences.containsKey(coOccurence))propertyToLinkingScore.put(s[0],0.0);});
+        }
+        for(String coOccurence1:bestCoOccurencesToPropertyMappingsByLevensthein.keySet()) {
+            for (String coOccurence2 : bestCoOccurencesToEntitieMappingsByLevensthein.keySet()){
+                if(!coOccurence1.contains(coOccurence2)&&!coOccurence2.contains(coOccurence1)
+                        &&!highlyAmbiqueCoOccurences.containsKey(coOccurence1)&&!highlyAmbiqueCoOccurences.containsKey(coOccurence2)){
+                    for(String[]candidate1:bestCoOccurencesToPropertyMappingsByLevensthein.get(coOccurence1)){
+                        for(String[]candidate2:bestCoOccurencesToEntitieMappingsByLevensthein.get(coOccurence2)){
+                            if(!alreadyScored.containsKey(candidate1[0])||!alreadyScored.get(candidate1[0]).contains(candidate2[0])){
+                                double score=scoreCoOccurencesCandidateMappingByInterlinkingProperty(candidate1[0],candidate2[0],linkingMap);
+                                if(!alreadyScored.containsKey(candidate1[0]))alreadyScored.put(candidate1[0],new HashSet<String>());
+                                if(!alreadyScored.containsKey(candidate2[0]))alreadyScored.put(candidate2[0],new HashSet<String>());
+                                if(alreadyScored.containsKey(candidate1[0]))alreadyScored.get(candidate1[0]).add(candidate2[0]);
+                                if(alreadyScored.containsKey(candidate2[0]))alreadyScored.get(candidate2[0]).add(candidate1[0]);
+                                propertyToLinkingScore.put(candidate1[0],propertyToLinkingScore.get(candidate1[0])+score);
+                                resourceToLinkingScore.put(candidate2[0],resourceToLinkingScore.get(candidate2[0])+score);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        HashMap<String,String>entityToQuestionMapping=generateMappings(bestCoOccurencesToEntitieMappingsByLevensthein,resourceToLinkingScore);
+        entityToQuestionMapping.putAll(generateMappings(bestCoOccurencesToPropertyMappingsByLevensthein,propertyToLinkingScore));
+        for(String classCoOccurence:bestCoOccurencesToClassMappingsByLevensthein.keySet()){
+            if(bestCoOccurencesToClassMappingsByLevensthein.get(classCoOccurence).size()>1){
+                double maxScore=0.0;
+                String bestResource=null;
+                for(String[]classCandidate:bestCoOccurencesToClassMappingsByLevensthein.get(classCoOccurence)){
+                    double score=0.0;
+                    for(String key:linkingMap.keySet()){
+                        if(linkingMap.get(key).contains(classCandidate[0]))
+                            score++;
+                    }
+                    if(score>maxScore){
+                        bestResource=classCandidate[0];
+                        maxScore=score;
+                    }
+                }
+                if(bestResource!=null)
+                    entityToQuestionMapping.put(bestResource,classCoOccurence);
+                else{
+                    for(String[] coOccurrence:bestCoOccurencesToClassMappingsByLevensthein.get(classCoOccurence)){
+                        entityToQuestionMapping.put(coOccurrence[0],classCoOccurence);
+                    }
+                }
+            }
+            else entityToQuestionMapping.put(bestCoOccurencesToClassMappingsByLevensthein.get(classCoOccurence).get(0)[0],classCoOccurence);
+
+        }
+        return entityToQuestionMapping;
     }
 
     Map<String, String> extractEntitiesUsingSynonyms(String question) {
@@ -444,7 +654,6 @@ public class QueryMappingFactory {
         Map<String, String> rdfResources = new HashMap<>();
 
         List<String> coOccurrences = getNeighborCoOccurrencePermutations(Arrays.asList(question.split(NON_WORD_CHARACTERS_REGEX)));
-
         coOccurrences.parallelStream().forEach(coOccurrence -> {
 
             Set<String> puttyEntities = Sets.newHashSet(patty_relations.search(coOccurrence));
@@ -638,7 +847,7 @@ public class QueryMappingFactory {
         return result;
     }
 
-    Map<String, String> getProperties(String words) {
+    /*Map<String, String> getProperties(String words) {
         if (words.isEmpty()) {
             return new HashMap<>();
         }
@@ -666,7 +875,7 @@ public class QueryMappingFactory {
         }
 
         if (this.queryType == SPARQLUtilities.SELECT_COUNT_QUERY || this.queryType == SPARQLUtilities.SELECT_QUERY) {
-            Map<String, String> pos = semanticAnalysisHelper.getPOS(words);
+            Map<String, String> pos = SemanticAnalysisHelper.getPOS(words);
             Set<String> nouns = pos.keySet().parallelStream().filter(s -> pos.get(s).startsWith("NN")).collect(Collectors.toSet());
             nouns.parallelStream().forEach(s -> {
                 String propertyCandidate = "http://dbpedia.org/property/" + s + "Total";
@@ -686,9 +895,9 @@ public class QueryMappingFactory {
             }
         });
         return result;
-    }
+    }*/
 
-    Map<String, String> getOntologyClass(String words) {
+    /*Map<String, String> getOntologyClass(String words) {
         if (words.isEmpty()) {
             return new HashMap<>();
         }
@@ -713,7 +922,7 @@ public class QueryMappingFactory {
         }
 
         if (this.queryType == SPARQLUtilities.SELECT_COUNT_QUERY) {
-            Map<String, String> pos = semanticAnalysisHelper.getPOS(words);
+            Map<String, String> pos = SemanticAnalysisHelper.getPOS(words);
             Set<String> nouns = pos.keySet().parallelStream().filter(s -> pos.get(s).startsWith("NN")).collect(Collectors.toSet());
             nouns.parallelStream().forEach(s -> {
                 String propertyCandidateLowercase = "http://dbpedia.org/ontology/" + s + "Total";
@@ -751,15 +960,19 @@ public class QueryMappingFactory {
         }
 
         return result;
-    }
+    }*/
 
     private boolean resourceStartsLowercase(String rdfResource) {
-        return rdfResource.startsWith("http://dbpedia.org/property/")
+        return (rdfResource.startsWith("http://dbpedia.org/property/")
                 || rdfResource.startsWith("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
-                || (rdfResource.contains("/") && rdfResource.charAt(rdfResource.length() - 1) != '/' && Character.isLowerCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0)));
+                || (rdfResource.contains("/") && rdfResource.charAt(rdfResource.length() - 1) != '/' && Character.isLowerCase(rdfResource.substring(rdfResource.lastIndexOf('/') + 1).charAt(0))))
+                &&!rdfResource.equals("http://linkedgeodata.org/vocabulary#platform")
+                &&!rdfResource.startsWith("https://portal.limbo-project.org/traffic-lights");
     }
 
     public Map<String, String> getEntitiyToQuestionMapping() {
         return entitiyToQuestionMapping;
     }
 }
+
+

@@ -1,6 +1,6 @@
 package de.uni.leipzig.tebaqa.helper;
 
-import de.uni.leipzig.tebaqa.analyzer.Analyzer;
+import de.uni.leipzig.tebaqa.analyzerGerman.Analyzer;
 import org.apache.log4j.Logger;
 import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.Classifier;

@@ -1,7 +1,7 @@
 package de.uni.leipzig.tebaqa.controller;
 
 import com.hp.hpl.jena.rdf.model.RDFNode;
-import de.uni.leipzig.tebaqa.analyzer.Analyzer;
+import de.uni.leipzig.tebaqa.analyzerGerman.Analyzer;
 import de.uni.leipzig.tebaqa.helper.ClassifierProvider;
 import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
 import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
@@ -15,10 +15,13 @@ import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.IndexedWord;
+import edu.stanford.nlp.ling.Label;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
+import edu.stanford.nlp.trees.Dependency;
+import edu.stanford.nlp.trees.TreeCoreAnnotations;
 import edu.stanford.nlp.util.CoreMap;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
@@ -27,15 +30,8 @@ import weka.classifiers.Classifier;
 import weka.core.Instance;
 
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -56,8 +52,10 @@ public class SemanticAnalysisHelper {
     public SemanticAnalysisHelper() {
         this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
     }
-
-    public static int determineQueryType(String q) {
+    public SemanticAnalysisHelper(StanfordCoreNLP pipeline) {
+            this.pipeline = pipeline;
+    }
+    public int determineQueryType(String q) {
         List<String> selectIndicatorsList = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which".split("\\|"));
         List<String> askIndicatorsList = Arrays.asList("is|are|did|was|does|can".split("\\|"));
         //log.debug("String question: " + q);
@@ -68,11 +66,11 @@ public class SemanticAnalysisHelper {
         } else {
             firstThreeWords.addAll(Arrays.asList(split));
         }
-        if (SemanticAnalysisHelper.hasAscAggregation(q)) {
+        if (hasAscAggregation(q)) {
             return SPARQLUtilities.SELECT_SUPERLATIVE_ASC_QUERY;
-        } else if (SemanticAnalysisHelper.hasDescAggregation(q)) {
+        } else if (hasDescAggregation(q)) {
             return SPARQLUtilities.SELECT_SUPERLATIVE_DESC_QUERY;
-        } else if (SemanticAnalysisHelper.hasCountAggregation(q)) {
+        } else if (hasCountAggregation(q)) {
             return SPARQLUtilities.SELECT_COUNT_QUERY;
         } else if (firstThreeWords.parallelStream().anyMatch(s -> selectIndicatorsList.contains(s.toLowerCase()))) {
             return SPARQLUtilities.SELECT_QUERY;
@@ -105,6 +103,7 @@ public class SemanticAnalysisHelper {
             log.error("There is more than one sentence to analyze: " + text);
         }
         CoreMap sentence = sentences.get(0);
+        //SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
         SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
         if (dependencyGraph == null) {
             return sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
@@ -125,7 +124,7 @@ public class SemanticAnalysisHelper {
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         for (CustomQuestion question : questions) {
             String query = question.getQuery();
-            QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question.getQuestionText(), query, nodes, properties);
+            QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question.getQuestionText(), query, nodes, properties,this);
             String queryPattern = queryMappingFactory.getQueryPattern();
             boolean isSuperlativeDesc = false;
             boolean isSuperlativeAsc = false;
@@ -168,7 +167,11 @@ public class SemanticAnalysisHelper {
                 int queryType = SPARQLUtilities.getQueryType(query);
                 if (mappings.containsKey(graph)) {
                     QueryTemplateMapping mapping = mappings.get(graph);
-                    if (mapping.getNumberOfClasses() == finalClassCnt && mapping.getNumberOfClasses() == finalPropertyCnt) {
+                    if (!mapping.getNumberOfClasses().contains(finalClassCnt) || !mapping.getNumberOfProperties().contains(finalPropertyCnt)) {
+                        mapping.getNumberOfClasses().add(finalClassCnt);
+                        mapping.getNumberOfProperties().add(finalPropertyCnt);
+
+                    }
                         if (isSuperlativeDesc) {
                             mapping.addSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
                         } else if (isSuperlativeAsc) {
@@ -182,7 +185,7 @@ public class SemanticAnalysisHelper {
                         } else if (queryType == SPARQLUtilities.QUERY_TYPE_UNKNOWN) {
                             log.error("Unknown query type: " + query);
                         }
-                    }
+
                 } else {
                     QueryTemplateMapping mapping = new QueryTemplateMapping(classCnt, propertyCnt);
                     if (isSuperlativeDesc) {
@@ -205,7 +208,7 @@ public class SemanticAnalysisHelper {
         return mappings;
     }
 
-    public static Map<String, String> getLemmas(String q) {
+    public Map<String, String> getLemmas(String q) {
         if (q.isEmpty()) {
             return new HashMap<>();
         }
@@ -225,7 +228,7 @@ public class SemanticAnalysisHelper {
         return lemmas;
     }
 
-    public static Map<String, String> getPOS(String q) {
+    public Map<String, String> getPOS(String q) {
         if (q.isEmpty()) {
             return new HashMap<>();
         }
@@ -251,7 +254,7 @@ public class SemanticAnalysisHelper {
      * @param sentence A string which contains a sentence.
      * @return If the sentence contains keywords which are used in ascending aggregation queries.
      */
-    public static boolean hasAscAggregation(String sentence) {
+    public boolean hasAscAggregation(String sentence) {
         String[] ascIndicators = new String[]{"first", "oldest", "smallest", "lowest", "shortest", "least"};
         String[] words = sentence.split(NON_WORD_CHARACTERS_REGEX);
         return Arrays.stream(words).anyMatch(Arrays.asList(ascIndicators)::contains);
@@ -263,14 +266,14 @@ public class SemanticAnalysisHelper {
      * @param sentence A string which contains a sentence.
      * @return If the sentence contains keywords which are used in descending aggregation queries.
      */
-    public static boolean hasDescAggregation(String sentence) {
+    public boolean hasDescAggregation(String sentence) {
         String[] descIndicators = new String[]{"largest", "last", "highest", "most", "biggest", "youngest", "longest", "tallest"};
         String[] words = sentence.split(NON_WORD_CHARACTERS_REGEX);
         return Arrays.stream(words).anyMatch(Arrays.asList(descIndicators)::contains);
     }
 
 
-    private static boolean hasCountAggregation(String sentence) {
+    private boolean hasCountAggregation(String sentence) {
         return sentence.toLowerCase().trim().startsWith("how many") || sentence.toLowerCase().trim().startsWith("how much");
     }
 
@@ -341,13 +344,32 @@ public class SemanticAnalysisHelper {
                 //remove every consecutive spaces
                 .replaceAll("\\s+", " ");
     }
+    public HashMap<String,String>getPosTags(String text){
+        Annotation annotation = new Annotation(text);
+        pipeline.annotate(annotation);
+        List<CoreLabel> tokens = annotation.get(CoreAnnotations.TokensAnnotation.class);
+        HashMap<String,String>posTags=new HashMap<>();
+        for(CoreLabel token:tokens){
+            String value = token.getString(CoreAnnotations.ValueAnnotation.class);
+            String pos = token.getString(CoreAnnotations.PartOfSpeechAnnotation.class);
+            posTags.put(value,pos);
+        }
 
+
+        return posTags;
+    }
+    public List<CoreLabel>getTokens(String text){
+        Annotation annotation = new Annotation(text);
+        pipeline.annotate(annotation);
+        return annotation.get(CoreAnnotations.TokensAnnotation.class);
+
+    }
     public List<IndexedWord> getDependencySequence(SemanticGraph semanticGraph) {
         IndexedWord firstRoot = semanticGraph.getFirstRoot();
         return getDependenciesFromEdge(firstRoot, semanticGraph);
     }
 
-    private static List<IndexedWord> getDependenciesFromEdge(IndexedWord root, SemanticGraph semanticGraph) {
+    private List<IndexedWord> getDependenciesFromEdge(IndexedWord root, SemanticGraph semanticGraph) {
         final String posExclusion = "DT|IN|WDT|W.*|\\.";
         final String lemmaExclusion = "have|do|be|many|much|give|call|list";
         List<IndexedWord> sequence = new ArrayList<>();
@@ -376,14 +398,14 @@ public class SemanticAnalysisHelper {
         return sequence;
     }
 
-    public static int detectQuestionAnswerType(String question) {
+    public int detectQuestionAnswerType(String question) {
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         SemanticGraph semanticGraph = semanticAnalysisHelper.extractDependencyGraph(question);
         List<IndexedWord> sequence = semanticAnalysisHelper.getDependencySequence(semanticGraph);
         Pattern pattern = Pattern.compile("\\w+");
         Matcher m = pattern.matcher(question);
         if (m.find()) {
-            Optional<String> first = SemanticAnalysisHelper.getLemmas(m.group()).values().stream().findFirst();
+            Optional<String> first = getLemmas(m.group()).values().stream().findFirst();
             if (first.isPresent()) {
                 if (first.get().toLowerCase().matches("be|do|have"))
                     return SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
@@ -487,7 +509,7 @@ public class SemanticAnalysisHelper {
         }
     }
 
-    public static List<String> getHypernymsFromWiktionary(String s) {
+    public List<String> getHypernymsFromWiktionary(String s) {
         Map<String, List<String>> hypernymMapping = getHypernymMapping();
         return hypernymMapping.getOrDefault(s, new ArrayList<>());
     }
@@ -497,7 +519,7 @@ public class SemanticAnalysisHelper {
         return s.chars().filter(Character::isUpperCase).count();
     }
 
-    public static String removeQuestionWords(String question) {
+    public String removeQuestionWords(String question) {
         List<String> questionWords = Arrays.asList("list|give me|give|show me|show|who|when|were|what|why|whose|how|where|which|is|are|did|was|does".split("\\|"));
 
         for (String questionWord : questionWords) {

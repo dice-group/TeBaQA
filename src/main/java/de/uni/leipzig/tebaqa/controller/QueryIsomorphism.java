@@ -19,10 +19,7 @@ import org.apache.jena.sparql.syntax.ElementVisitorBase;
 import org.apache.jena.sparql.syntax.ElementWalker;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Source: https://github.com/AKSW/NLIWOD/blob/master/qa.hawk/src/main/java/org/aksw/hawk/experiment/QueryIsomorphism.java
@@ -127,7 +124,9 @@ public class QueryIsomorphism {
         queries.add(q1);
         queries.add(q2);
         HashMap<Graph, Integer> graphs = new HashMap<Graph, Integer>();
+        HashMap<String,HashSet<String>>variableStrings=new HashMap<>();
         for (String s : queries) {
+            HashSet<String>tripleStructures=new HashSet<>();
             //build the graph associated to the query
             final Graph g = GraphFactory.createDefaultGraph();
             Query query = new Query();
@@ -147,6 +146,14 @@ public class QueryIsomorphism {
                         for (TriplePath t : path.getList()) {
                             Node s = t.getSubject();
                             Node o = t.getObject();
+                            String tripleStructure="";
+                            if(s.isVariable())tripleStructure+="var";
+                            else tripleStructure+="val";
+                            if(t.getPredicate().isVariable())tripleStructure+="-var-";
+                            else tripleStructure+="-val-";
+                            if(o.isVariable())tripleStructure+="var";
+                            else tripleStructure+="val";
+                            tripleStructures.add(tripleStructure);
                             Node p = NodeFactory.createLiteral("p");
                             if (!dict.containsKey(s)) {
                                 dict.put(s, NodeFactory.createLiteral(String.valueOf(i)));
@@ -157,12 +164,13 @@ public class QueryIsomorphism {
                                 i++;
                             }
                             Triple tmp = Triple.create(dict.get(s), p, dict.get(o));
+
                             g.add(tmp);
                         }
                     }
                 });
                 //if the Graph is not isomorphic to previously seen graphs add it to the List
-
+                variableStrings.put(s,tripleStructures);
                 Boolean present = false;
                 for (Graph g_present : graphs.keySet()) {
                     if (g.isIsomorphicWith(g_present)) {
@@ -178,7 +186,17 @@ public class QueryIsomorphism {
                 log.warn(e.toString(), e);
             }
         }
-        return graphs.size() == 1;
+        HashSet<String>tripleStructures1=variableStrings.get(q1);
+        HashSet<String>tripleStructures2=variableStrings.get(q2);
+        if(graphs.size() != 1)
+            return false;
+        for(String tripleStructure:tripleStructures1){
+            if(!tripleStructures2.contains(tripleStructure)){
+                return false;
+            }
+            tripleStructures2.remove(tripleStructure);
+        }
+        return true;
     }
 
     List<Cluster> getClusters() {

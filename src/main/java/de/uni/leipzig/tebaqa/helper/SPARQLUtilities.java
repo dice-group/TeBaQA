@@ -8,15 +8,7 @@ import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.jena.graph.Node;
-import org.apache.jena.query.ParameterizedSparqlString;
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryException;
-import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.QueryParseException;
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
+import org.apache.jena.query.*;
 import org.apache.jena.sparql.core.ResultBinding;
 import org.apache.jena.sparql.core.Var;
 import org.apache.jena.sparql.engine.binding.Binding;
@@ -94,7 +86,7 @@ public class SPARQLUtilities {
             if (isSelectType) {
                 ResultSet rs;
                 try {
-                    rs = qe.execSelect();
+                    rs = ResultSetFactory.copyResults(qe.execSelect());
                 } catch (QueryExceptionHTTP e) {
                     log.error("HTTP Exception while executing SPARQL query: " + sparlQuery, e);
                     return results;
@@ -218,20 +210,24 @@ public class SPARQLUtilities {
                 countBindings = retrieveBinings(transformCountToStarQuery(query.toString()));
             }
 
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            //QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo-suche/query", query);
             qe.setTimeout(10000, 10000);
             if (query.isSelectType()) {
                 ResultSet rs = null;
                 try {
-                    rs = qe.execSelect();
+                    rs = ResultSetFactory.copyResults(qe.execSelect());
+                    qe.close();
                 } catch (QueryExceptionHTTP e) {
                     log.error("HTTP Exception while executing SPARQL query: " + sparlQuery, e);
                 }
+
+
                 while (rs.hasNext()) {
-                    ResultBinding s = (ResultBinding) rs.nextSolution();
-                    Map<String, String> binding = getBinding(s);
                     ResultsetBinding selectBinding = new ResultsetBinding();
                     ResultsetBinding askBinding = new ResultsetBinding();
+                    ResultBinding s = (ResultBinding) rs.nextSolution();
+                    Map<String, String> binding = getBinding(s);
                     for (String variable : binding.keySet()) {
                         if (isAskType) {
                             if ("uri".equalsIgnoreCase(variable)) {
