@@ -354,7 +354,7 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
         }
 
         public String removeQuestionWords(String question) {
-            List<String> questionWords = Arrays.asList("liste|gib|zeig mir|wer|wo|wann|was|warum|wessen|wie|welche|welches|ist|sind|hat|war".split("\\|"));
+            List<String> questionWords = Arrays.asList("liste|gib|gibt|zeig mir|wer|wo|wann|was|warum|wessen|wie|welche|welches|ist|sind|hat|war".split("\\|"));
 
             for (String questionWord : questionWords) {
                 if (question.toLowerCase().startsWith(questionWord)) {

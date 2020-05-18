@@ -47,23 +47,27 @@ public class ElasticSearchEntityIndex {
         String index =envDefaultIndex != null ? envDefaultIndex : prop.getProperty("entity_index");
     }
 
-    public List<String[]> search(String coOcurrence,String index) {
+    public List<String[]> search(String coOcurrence,String index,String lang) {
         int defaultMaxNumberOfDocsRetrievedFromIndex = 100;
-        return search(coOcurrence, defaultMaxNumberOfDocsRetrievedFromIndex,index);
+        return search(coOcurrence, defaultMaxNumberOfDocsRetrievedFromIndex,index,lang);
     }
 
-    public List<String[]> search(String coOcurrence, int maxNumberOfResults,String index) {
+    public List<String[]> search(String coOcurrence, int maxNumberOfResults,String index,String lang) {
         QueryBuilder queryBuilder;
+        String language;
+        if(lang.equals("en"))
+            language="label_en";
+        else language="label_de";
         if(coOcurrence.contains(" ")) {
-            queryBuilder = new MatchQueryBuilder("label", coOcurrence).operator(Operator.AND).fuzziness(Fuzziness.AUTO).prefixLength(0).maxExpansions(2).fuzzyTranspositions(true);
+            queryBuilder = new MatchQueryBuilder(language, coOcurrence).operator(Operator.AND).fuzziness(Fuzziness.TWO).prefixLength(0).maxExpansions(2).fuzzyTranspositions(true);
             //NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
         }
         else
-            queryBuilder=QueryBuilders.fuzzyQuery("label",coOcurrence).fuzziness(Fuzziness.AUTO).prefixLength(0).maxExpansions(2);
+            queryBuilder=QueryBuilders.fuzzyQuery(language,coOcurrence).fuzziness(Fuzziness.TWO).prefixLength(0).maxExpansions(2);
 
             List<String[]> resources=new ArrayList<>();
         try {
-            resources = getFromIndex(maxNumberOfResults, queryBuilder,index);
+            resources = getFromIndex(maxNumberOfResults, queryBuilder,index,language);
         } catch (IOException e1) {
             e1.printStackTrace();
         }
@@ -73,7 +77,7 @@ public class ElasticSearchEntityIndex {
     }
 
 
-    private List<String[]> getFromIndex(int maxNumberOfResults, QueryBuilder bq,String index) throws IOException {
+    private List<String[]> getFromIndex(int maxNumberOfResults, QueryBuilder bq,String index,String label) throws IOException {
         SearchRequest searchRequest = new SearchRequest();
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(bq);
@@ -86,96 +90,21 @@ public class ElasticSearchEntityIndex {
         List<String[]> resources = new ArrayList<>();
         for (SearchHit hit : hits) {
             Map<String, Object> sources = hit.getSourceAsMap();
-            resources.add(new String[]{sources.get("url").toString(),sources.get("label").toString()});
+            resources.add(new String[]{sources.get("uri").toString(),sources.get(label).toString()});
         }
 
         return resources;
     }
-    public List<Triple> search(String subject, String predicate, String object) {
-        int defaultMaxNumberOfDocsRetrievedFromIndex = 100;
-        return search(subject, predicate, object, defaultMaxNumberOfDocsRetrievedFromIndex);
-    }
-    public List<Triple> search(String subject, String predicate, String object, int maxNumberOfResults) {
-        BoolQueryBuilder booleanQueryBuilder = new BoolQueryBuilder();
-        List<Triple> triples = new ArrayList<>();
 
-        try {
-            /*if (subject != null && subject.equals("http://aksw.org/notInWiki")) {
 
-            }*/
 
-            if (subject != null) {
-                QueryBuilder q = termQuery("subject", subject);
-                booleanQueryBuilder.must(q);
-            }
-            if (predicate != null) {
-                QueryBuilder q = termQuery("predicate", predicate);
-                booleanQueryBuilder.must(q);
-            }
-            if (object != null) {
-                QueryBuilder q = termQuery("object_uri", object);
-                booleanQueryBuilder.must(q);
-            }
-            else{
-                QueryBuilder q=existsQuery("object_uri");
-            }
-            /*if (object != null && object.length() > 0) {
-                QueryBuilder bq;
-                if (urlValidator.isValid(object)) {
-
-                    bq = termQuery("object_uri", object);
-                    booleanQueryBuilder.must(bq);
-
-                } else {
-                    bq = matchQuery("object_literal",object).operator(Operator.AND);
-                    booleanQueryBuilder.must(bq);
-
-                }
-
-            }*/
-            triples = getFromIndexLinks(maxNumberOfResults, booleanQueryBuilder);
-            //cache.put(bq, triples);
-
-        } catch (Exception e) {
-            //log.error(e.getLocalizedMessage() + " -> " + subject);
-            e.printStackTrace();
-        }
-        return triples;
-    }
-
-    private List<Triple> getFromIndexLinks(int maxNumberOfResults, QueryBuilder bq) throws IOException {
-        SearchRequest searchRequest = new SearchRequest();
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(bq);
-        searchSourceBuilder.size(maxNumberOfResults);
-        searchRequest.source(searchSourceBuilder);
-        searchRequest.indices("trindexqa2");
-        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-        SearchHit[] hits = searchResponse.getHits().getHits();
-
-        List<Triple> triples = new ArrayList<>();
-        String s, p, o;
-        for (SearchHit hit : hits) {
-            Map<String, Object> sources = hit.getSourceAsMap();
-            s = sources.get("subject").toString();
-            p = sources.get("predicate").toString();
-            if (sources.containsKey("object_uri"))
-                o = sources.get("object_uri").toString();
-            else
-                o = sources.get("object_literal").toString();
-            Triple triple = new Triple(s, p, o);
-            triples.add(triple);
-        }
-
-        return triples;
-    }
     public void close() throws IOException {
         client.close();
     }
     public static void main(String[]args){
         try {
             ElasticSearchEntityIndex en=new ElasticSearchEntityIndex();
-            List<String[]>uris=en.search("Tankstellen","class");
+            List<String[]>uris=en.search("Distributionen","propdcat3","de");
             for(String[] res:uris)
                 System.out.println(res[0]+" "+res[1]);
             en.close();

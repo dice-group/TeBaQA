@@ -48,12 +48,13 @@ public class PipelineController {
     private List<Dataset> trainDatasets = new ArrayList<>();
     private Map<String, QueryTemplateMapping> mappings;
     private Boolean evaluateWekaAlgorithms = true;
-
+    SearchOntology searchOntology;
 
     public PipelineController(List<Dataset> trainDatasets) {
         log.info("Configuring controller");
         //semanticAnalysisHelper = new SemanticAnalysisHelper();
         semanticAnalysisHelper = new SemanticAnalysisHelperGerman();
+        searchOntology=new SearchOntology(semanticAnalysisHelper);
         trainDatasets.forEach(this::addTrainDataset);
         log.info("Starting controller...");
         run();
@@ -71,6 +72,7 @@ public class PipelineController {
         return out;
     }
     private void run() {
+        //TODO anything that has to be done before starting the applications can be added here
         /*List<HAWKQuestion> trainQuestions = new ArrayList<>();
         for (Dataset d : trainDatasets) {
             //Remove all trainQuestions without SPARQL query
@@ -80,7 +82,7 @@ public class PipelineController {
                     .collect(Collectors.toList());
             trainQuestions.addAll(HAWKQuestionFactory.createInstances(result));
         }*/
-        List<HAWKQuestion> trainQuestions = new ArrayList<>();
+        /*List<HAWKQuestion> trainQuestions = new ArrayList<>();
         List<IQuestion> load = readJson(new File("limboqa.json"));
 
         List<IQuestion> result = load.parallelStream()
@@ -94,13 +96,13 @@ public class PipelineController {
             if (!semanticAnalysisHelper.containsQuestionText(trainQuestionsWithQuery, questionText)) {
                 trainQuestionsWithQuery.put(q.getSparqlQuery(), questionText);
             }
-        }
+        }*/
 
         //log.info("Generating ontology mapping...");
         //createOntologyMapping(trainQuestionsWithQuery);
         //log.info("Ontology Mapping: " + OntologyMappingProvider.getOntologyMapping());
 
-        log.info("Getting DBpedia properties from SPARQL endpoint...");
+        /*log.info("Getting DBpedia properties from SPARQL endpoint...");
         List<String> dBpediaProperties = null;//DBpediaPropertiesProvider.getDBpediaProperties();
 
         log.info("Parsing DBpedia n-triples from file...");
@@ -131,7 +133,7 @@ public class PipelineController {
 
         HashSet<String> graphs = new HashSet<>();
         customTrainQuestions.parallelStream().forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
-        ClassifierProvider.init(graphs);
+        ClassifierProvider.init(graphs);*/
 
 //        testQuestions.parallelStream().forEach(q -> answerQuestion(graphs, q));
     }
@@ -211,7 +213,23 @@ public class PipelineController {
         });
         OntologyMappingProvider.setOntologyMapping(lemmaOntologyMapping);
     }
+    public AnswerToQuestion answerQuestionDct(String question) {
+        question = TextUtilities.trim(question);
+        HashMap<String,List<String[]>>properties=searchOntology.getProperties(question,"de");
+        HashMap<String,List<String[]>>classes=searchOntology.getClasses(question,"de");
+        //TODO modify Query Mapping Factory, so that it works with your templates
+        final int expectedAnswerType = semanticAnalysisHelper.detectQuestionAnswerType(question);
+        QueryMappingFactoryLabels mappingFactory = new QueryMappingFactoryLabels(question, "",semanticAnalysisHelper);
+        //TODO use your rule based classifier to find matching templates
+        //TODO fill your templates with properties+ classes+ filters +(entities)
+        //TODO execute your query
+        Set<ResultsetBinding> results = new HashSet<>();
+        //TODO keep and modify this if your approach finds more than one query
 
+        ResultsetBinding rsBinding = semanticAnalysisHelper.getBestAnswer(results, mappingFactory.getEntitiyToQuestionMapping(), expectedAnswerType, false);
+        return new AnswerToQuestion(rsBinding, mappingFactory.getEntitiyToQuestionMapping());
+
+    }
     public AnswerToQuestion answerQuestion(String question) {
         //semanticAnalysisHelper=new SemanticAnalysisHelperGerman();
         question = TextUtilities.trim(question);

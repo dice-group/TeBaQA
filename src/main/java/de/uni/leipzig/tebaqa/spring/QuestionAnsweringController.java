@@ -28,12 +28,13 @@ public class QuestionAnsweringController {
     public String answerQuestion(@RequestParam String query,
                                  @RequestParam(required = false, defaultValue = "en") String lang,
                                  HttpServletResponse response) {
+        //method used for gerbil
         log.info(String.format("/qa received POST request with: query='%s' and lang='%s'", query, lang));
         if (!query.isEmpty() && isValidQuestion(query)) {
             PipelineController qaPipeline = getQAPipeline();
             String result;
             try {
-                result = new ExtendedQALDAnswer(qaPipeline.answerQuestion(query)).getResult();
+                result = new ExtendedQALDAnswer(qaPipeline.answerQuestionDct(query)).getResult();
             } catch (Exception e) {
                 result = new ExtendedQALDAnswer(new AnswerToQuestion(new ResultsetBinding(), new HashMap<>())).getResult();
                 log.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);
@@ -62,7 +63,7 @@ public class QuestionAnsweringController {
             PipelineController qaPipeline = getQAPipeline();
             String result;
             try {
-                AnswerToQuestion answer = qaPipeline.answerQuestion(query);
+                AnswerToQuestion answer = qaPipeline.answerQuestionDct(query);
                 JsonArrayBuilder resultArray = Json.createArrayBuilder();
                 answer.getAnswer().forEach(a -> resultArray.add(extractAnswerString(a)));
                 result = Json.createObjectBuilder()
