@@ -4,23 +4,14 @@ package de.uni.leipzig.tebaqa.helper;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelperGerman;
 import de.uni.leipzig.tebaqa.model.TripleTemplate;
-import de.uni.leipzig.tebaqa.model.WordNetWrapper;
-import edu.cmu.lti.jawjaw.JAWJAW;
 import edu.cmu.lti.jawjaw.db.*;
 import edu.cmu.lti.jawjaw.pobj.*;
-import edu.cmu.lti.lexical_db.NictWordNet;
-import edu.cmu.lti.lexical_db.data.Concept;
-import javafx.geometry.Pos;
-import org.apache.jena.graph.Node;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
-import org.apache.jena.sparql.core.BasicPattern;
-import org.apache.jena.sparql.expr.ExprAggregator;
-import org.apache.jena.sparql.expr.ExprVar;
-import org.apache.jena.sparql.syntax.Template;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FillPatternTest {
     @Test
