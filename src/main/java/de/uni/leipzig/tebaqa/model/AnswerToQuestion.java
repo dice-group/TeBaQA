@@ -22,7 +22,7 @@ public class AnswerToQuestion {
             this.answerType = "uri";
         } else {
             //NO uri but date, string or number
-            if (!this.answer.parallelStream().allMatch(StringUtils::isNumeric)) {
+            if (this.answer.parallelStream().allMatch(StringUtils::isNumeric)) {
                 this.answerType = "number";
             } else {
                 this.answerType = "literal";

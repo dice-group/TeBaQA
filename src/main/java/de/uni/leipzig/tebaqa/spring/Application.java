@@ -10,6 +10,7 @@ import javax.annotation.PostConstruct;
 
 import static de.uni.leipzig.tebaqa.helper.HypernymMappingProvider.getHypernymMapping;
 import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipeline;
+import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipelineTripleTemplates;
 
 @SpringBootApplication
 public class Application extends SpringBootServletInitializer {
@@ -22,6 +23,7 @@ public class Application extends SpringBootServletInitializer {
     @PostConstruct
     public void init() {
         getQAPipeline();
+        //getQAPipelineTripleTemplates();
         Logger logger = Logger.getRootLogger();
         getHypernymMapping();
         logger.info("Initialisation of TeBaQA finished.");

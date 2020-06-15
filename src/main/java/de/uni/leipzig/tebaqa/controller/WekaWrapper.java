@@ -92,7 +92,7 @@ class WekaWrapper {
         }
 
         //uncomment this line for some statistics from the cross validation run
-        //log.info(eval.toSummaryString("=== " + folds + "-fold Cross-validation ===", false));
+        log.info(eval.toSummaryString("=== " + folds + "-fold Cross-validation ===", false));
 
         // create copy
         Instances labeled = new Instances(unlabeled);

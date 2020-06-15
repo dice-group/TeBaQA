@@ -2,6 +2,13 @@ package de.uni.leipzig.tebaqa.helper;
 
 import de.uni.leipzig.tebaqa.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
+import org.apache.jena.query.QueryExecution;
+import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.query.ResultSet;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -260,7 +267,13 @@ public class SPARQLUtilitiesTest {
 
     @Test
     public void testTetrieveBiningsWithCountQuery() {
-        final List<ResultsetBinding> bindings = SPARQLUtilities.retrieveBinings("SELECT  (count(distinct *) AS ?c)\n" +
+        final List<ResultsetBinding> bindings = SPARQLUtilities.retrieveBinings("SELECT  ?uri\n" +
+                        "WHERE\n" +
+                        "  { ?uri      ?p  ?class_0 .\n" +
+                        "           \n" +
+                        "    VALUES ?class_0 { <http://dbpedia.org/ontology/City> <http://dbpedia.org/resource/City> <http://dbpedia.org/ontology/Population> <http://dbpedia.org/resource/Mexico_City> <http://dbpedia.org/resource/Population> <http://dbpedia.org/resource/Mexico> }}"
+
+                /*"SELECT  (count(distinct *) AS ?c)\n" +
                 "WHERE\n" +
                 "  { ?uri      ?property_0  ?class_0 ;\n" +
                 "              ?property_1  ?year .\n" +
@@ -277,7 +290,25 @@ public class SPARQLUtilitiesTest {
                 "    FILTER ( concat(?uri, ?property_1, ?year) != concat(?class_1, ?property_2, ?year) )\n" +
                 "    FILTER ( concat(?class_1, ?property_2, ?year) != concat(?uri, ?property_0, ?class_0) )\n" +
                 "    FILTER ( concat(?class_1, ?property_2, ?year) != concat(?uri, ?property_1, ?year) )\n" +
-                "  }");
+                "  }"*/,"");
         assertEquals(1, bindings.size());
+    }
+    @Test
+    public void describe(){
+        QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", "describe <http://dbpedia.org/property/birthplace>");
+        Model m=qe.execDescribe();
+        StmtIterator i=m.listStatements();
+        while(i.hasNext()){
+            Statement s=i.nextStatement();
+            if(!s.getPredicate().toString().equals("http://dbpedia.org/ontology/wikiPageWikiLink")) {
+                System.out.println(s.getSubject());
+                System.out.println(s.getPredicate());
+                System.out.println(s.getObject());
+                System.out.println();
+            }
+
+        }
+
+
     }
 }

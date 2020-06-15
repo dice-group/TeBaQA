@@ -13,9 +13,10 @@ import static edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
 
 public class QueryBuilder {
     private SemanticAnalysisHelper analysis;
-    private List<CustomQuestion> questions;
+    //private List<CustomQuestion> questions;
+    private List<Cluster> questions;
 
-    public QueryBuilder(List<CustomQuestion> questions, SemanticAnalysisHelper analysis) {
+    /*public QueryBuilder(List<CustomQuestion> questions, SemanticAnalysisHelper analysis) {
         this.analysis = analysis;
         for (CustomQuestion question : questions) {
             int i = questions.indexOf(question);
@@ -24,7 +25,20 @@ public class QueryBuilder {
             questions.set(i, question);
         }
         this.questions = questions;
+    }*/
+    public QueryBuilder(List<Cluster> clusters, SemanticAnalysisHelper analysis) {
+        this.analysis = analysis;
+        for(Cluster c:clusters) {
+            for (CustomQuestion question : c.getQuestions()) {
+                //int i = c,getQu.indexOf(question);
+                Map<String, String> dependencySequence = processQuestion(question.getQuestionText());
+                question.setDependencySequencePosMap(dependencySequence);
+                //questions.set(i, question);
+            }
+        }
+        this.questions = clusters;
     }
+
 
     private Map<String, String> processQuestion(String question) {
         //TODO detect entities, properties and classes from the question
@@ -43,11 +57,11 @@ public class QueryBuilder {
         return posSequence;
     }
 
-    public List<CustomQuestion> getQuestions() {
+    public List<Cluster> getQuestions() {
         return questions;
     }
 
-    public void setQuestions(List<CustomQuestion> questions) {
+    public void setQuestions(List<Cluster> questions) {
         this.questions = questions;
     }
 }

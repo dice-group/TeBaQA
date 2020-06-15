@@ -2,7 +2,9 @@ package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import de.uni.leipzig.tebaqa.helper.Utilities;
 import de.uni.leipzig.tebaqa.model.Cluster;
+import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import org.aksw.qa.commons.datastructure.Question;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
@@ -18,8 +20,11 @@ import org.apache.jena.sparql.syntax.ElementPathBlock;
 import org.apache.jena.sparql.syntax.ElementVisitorBase;
 import org.apache.jena.sparql.syntax.ElementWalker;
 import org.apache.log4j.Logger;
+import org.dllearner.utilities.QueryUtils;
 
 import java.util.*;
+
+import static de.uni.leipzig.tebaqa.controller.PipelineController.getSimpleModifiers;
 
 /**
  * Source: https://github.com/AKSW/NLIWOD/blob/master/qa.hawk/src/main/java/org/aksw/hawk/experiment/QueryIsomorphism.java
@@ -29,7 +34,9 @@ public class QueryIsomorphism {
 
     private List<Cluster> clusters;
 
-    QueryIsomorphism(Map<String, String> queries) {
+    QueryIsomorphism(Map<String, String> queries,HashMap<String,Set<String>>[]commonPredicates) {
+        //HashMap<String,Set<String>>predicateToSubjectType=commonPredicates[0];
+        //HashMap<String,Set<String>>predicateToObjectType=commonPredicates[1];
         log.debug("Generating SPARQL Query graphs...");
         BiMap<String, String> inverseQueryMap = HashBiMap.create(queries).inverse();
         clusters = new ArrayList<>(new ArrayList<>());
@@ -54,17 +61,34 @@ public class QueryIsomorphism {
                         int i = 1;
                         for (TriplePath t : path.getList()) {
                             Node s = t.getSubject();
-                            Node o = t.getObject();
-                            Node p = NodeFactory.createLiteral("p");
+                            String s_string="";
+                            if(s.isVariable()) s_string="v"+String.valueOf(i);
+                            else s_string="r"+String.valueOf(i);
                             if (!dict.containsKey(s)) {
-                                dict.put(s, NodeFactory.createLiteral(String.valueOf(i)));
+                                dict.put(s, NodeFactory.createLiteral(s_string));
                                 i++;
                             }
+
+                            Node o = t.getObject();
+                            String o_string="";
+                            if(o.isVariable()) o_string="v"+String.valueOf(i);
+                            else o_string="r"+String.valueOf(i);
                             if (!dict.containsKey(o)) {
-                                dict.put(o, NodeFactory.createLiteral(String.valueOf(i)));
+                                dict.put(o, NodeFactory.createLiteral(o_string));
                                 i++;
                             }
-                            Triple tmp = Triple.create(dict.get(s), p, dict.get(o));
+                            Node p=t.getPredicate();
+                            String p_string="";
+                            if(p.isVariable()) p_string="v"+String.valueOf(i);
+                            //else if(p.isURI()&&predicateToSubjectType.containsKey(p.getURI())) p_string=p.getURI();
+                            //else if(p.isURI()&&predicateToObjectType.containsKey(p.getURI()))p_string=p.getURI();
+                            else p_string="r"+String.valueOf(i);
+                            //Node p = NodeFactory.createLiteral("p");
+                            if (!dict.containsKey(p)) {
+                                dict.put(p, NodeFactory.createLiteral(p_string));
+                                i++;
+                            }
+                            Triple tmp = Triple.create(dict.get(s), dict.get(p), dict.get(o));
                             g.add(tmp);
                         }
                     }
@@ -108,25 +132,27 @@ public class QueryIsomorphism {
             Cluster cluster = new Cluster(graph);
             List<String> list = graphsWithQuestion.get(graph);
             for (String s : list) {
-                Question question = new Question();
+                CustomQuestion question = new CustomQuestion(inverseQueryMap.get(s),s,getSimpleModifiers(inverseQueryMap.get(s)),graph);
                 HashMap<String, String> languageToQuestion = new HashMap<>();
-                languageToQuestion.put("en", s);
-                question.setLanguageToQuestion(languageToQuestion);
-                question.setSparqlQuery(inverseQueryMap.get(s));
+                languageToQuestion.put("de", s);
+                //question.setLanguageToQuestion(languageToQuestion);
+                //question.setSparqlQuery(inverseQueryMap.get(s));
                 cluster.addQuestion(question);
             }
+            //if(cluster.getQuestions().size()>=10)
             clusters.add(cluster);
         }
     }
+
 
     public static boolean areIsomorph(String q1, String q2) {
         List<String> queries = new ArrayList<>();
         queries.add(q1);
         queries.add(q2);
         HashMap<Graph, Integer> graphs = new HashMap<Graph, Integer>();
-        HashMap<String,HashSet<String>>variableStrings=new HashMap<>();
+        HashMap<String,ArrayList<String>>variableStrings=new HashMap<>();
         for (String s : queries) {
-            HashSet<String>tripleStructures=new HashSet<>();
+            ArrayList<String>tripleStructures=new ArrayList<>();
             //build the graph associated to the query
             final Graph g = GraphFactory.createDefaultGraph();
             Query query = new Query();
@@ -186,8 +212,8 @@ public class QueryIsomorphism {
                 log.warn(e.toString(), e);
             }
         }
-        HashSet<String>tripleStructures1=variableStrings.get(q1);
-        HashSet<String>tripleStructures2=variableStrings.get(q2);
+        ArrayList<String>tripleStructures1=variableStrings.get(q1);
+        ArrayList<String>tripleStructures2=variableStrings.get(q2);
         if(graphs.size() != 1)
             return false;
         for(String tripleStructure:tripleStructures1){

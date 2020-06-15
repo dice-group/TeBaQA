@@ -1,7 +1,7 @@
 package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.Lists;
-import de.uni.leipzig.tebaqa.analyzerGerman.Analyzer;
+import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;
 import org.apache.log4j.Logger;
 import org.springframework.core.io.ClassPathResource;
@@ -49,12 +49,12 @@ import java.util.stream.Collectors;
 public class ArffGenerator {
     private static Logger log = Logger.getLogger(ArffGenerator.class);
 
-    ArffGenerator(List<CustomQuestion> trainQuestions, List<CustomQuestion> testQuestions, Boolean evaluateWekaAlgorithms) {
+    ArffGenerator(List<String>graphs,List<CustomQuestion> trainQuestions, List<CustomQuestion> testQuestions, Boolean evaluateWekaAlgorithms) {
         log.info("Calculate the features per question and cluster");
         List<Attribute> attributes = new ArrayList<>();
 
         // Add all occurring graphs(=class attribute) as possible attribute values
-        Set<String> graphs = trainQuestions.parallelStream().map(CustomQuestion::getGraph).collect(Collectors.toSet());
+        //Set<String> graphs = trainQuestions.parallelStream().map(CustomQuestion::getGraph).collect(Collectors.toSet());
         Attribute classAttribute = new Attribute("class", Lists.newArrayList(graphs));
         attributes.add(classAttribute);
         Analyzer analyzer = new Analyzer(attributes);
@@ -78,6 +78,15 @@ public class ArffGenerator {
             trainInstance.setValue(classAttribute, question.getGraph());
             trainingSet.add(trainInstance);
         });
+        /*testQuestions.forEach(question -> {
+            Instance instance = analyzer.analyze(question.getQuestionText());
+
+            //Create instance and set the class attribute missing for testing
+            Instance testInstance = instance;
+            testInstance.setValue(classAttribute, question.getGraph());
+            testSet.add(testInstance);
+
+        });*/
         try {
             File file = new File(new ClassPathResource("Train.arff").getFile().getAbsolutePath());
             file.createNewFile();
@@ -95,6 +104,7 @@ public class ArffGenerator {
 
         //AbstractClassifier classifier = new MultilayerPerceptron();
         AbstractClassifier classifier = new RandomizableFilteredClassifier();
+
         try {
             trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
             classifier.buildClassifier(trainingSet);

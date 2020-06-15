@@ -29,7 +29,13 @@ public class ResultsetBinding {
         this.rating = -1.0;
         this.answerType = SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
     }
-
+    public boolean isSameBinding(Map<String,String>binding){
+        for(String key:this.bindings.keySet()){
+            if(!this.bindings.get(key).equals(binding.get(key)))
+                return false;
+        }
+        return true;
+    }
     public Map<String, String> getBindings() {
         return bindings;
     }

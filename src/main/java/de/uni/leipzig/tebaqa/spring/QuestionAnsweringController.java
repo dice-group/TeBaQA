@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.spring;
 
 import de.uni.leipzig.tebaqa.controller.PipelineController;
+import de.uni.leipzig.tebaqa.controller.PipelineControllerTripleTemplates;
 import de.uni.leipzig.tebaqa.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.model.ResultsetBinding;
 import org.apache.log4j.Logger;
@@ -17,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 
 import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipeline;
+import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipelineTripleTemplates;
 import static de.uni.leipzig.tebaqa.spring.ExtendedQALDAnswer.extractAnswerString;
 
 @RestController

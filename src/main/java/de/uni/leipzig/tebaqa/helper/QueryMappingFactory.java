@@ -1,7 +1,6 @@
 package de.uni.leipzig.tebaqa.helper;
 
 import com.google.common.collect.Sets;
-import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.model.RatedEntity;
@@ -20,6 +19,7 @@ import org.aksw.qa.annotation.index.IndexDBO_properties;
 import org.aksw.qa.commons.datastructure.Entity;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.log4j.Logger;
 import org.ehcache.Cache;
@@ -81,7 +81,7 @@ public class QueryMappingFactory {
     private PersistentCacheManager cacheManager;
     private Patty_relations patty_relations;
     SemanticAnalysisHelper semanticAnalysisHelper;
-    public QueryMappingFactory(String question, String sparqlQuery, List<RDFNode> ontologyNodes, List<String> properties,SemanticAnalysisHelper semanticAnalysisHelper) {
+    public QueryMappingFactory(String question, String sparqlQuery, List<RDFNode> ontologyNodes, List<String> properties, SemanticAnalysisHelper semanticAnalysisHelper) {
         this.ontologyNodes = ontologyNodes;
         ontologyURIs = new HashSet<>();
         ontologyNodes.forEach(rdfNode -> ontologyURIs.add(rdfNode.toString()));

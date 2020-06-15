@@ -37,7 +37,7 @@ public class CustomQuestion {
         return dependencySequencePosMap;
     }
 
-    void setDependencySequencePosMap(Map<String, String> dependencySequencePosMap) {
+    public void setDependencySequencePosMap(Map<String, String> dependencySequencePosMap) {
         this.dependencySequencePosMap = dependencySequencePosMap;
     }
 

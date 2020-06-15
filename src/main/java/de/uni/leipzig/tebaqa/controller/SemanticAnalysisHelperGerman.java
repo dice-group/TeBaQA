@@ -1,7 +1,6 @@
 package de.uni.leipzig.tebaqa.controller;
 
 import com.clarkparsia.pellet.sparqldl.model.Core;
-import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.helper.*;
 import de.uni.leipzig.tebaqa.model.CustomQuestion;

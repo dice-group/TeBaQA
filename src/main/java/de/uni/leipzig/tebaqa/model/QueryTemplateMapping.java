@@ -32,8 +32,49 @@ public class QueryTemplateMapping {
         this.numberOfProperties = new ArrayList<>();
         this.numberOfProperties.add(numberOfProperties);
     }
-
+    public QueryTemplateMapping() {
+        this.numberOfClasses = new ArrayList<>();
+        this.numberOfProperties = new ArrayList<>();
+    }
     public void addSelectTemplate(String template, String originalQuery) {
+
+        if (this.getSelectTemplates().isEmpty()) {
+            this.selectTemplates.add(template);
+            this.originalSelectQueries.add(originalQuery);
+        }
+    }
+
+    public void addSelectSuperlativeAscTemplate(String template, String originalQuery) {
+        if (this.getSelectSuperlativeAscTemplate().isEmpty()) {
+            this.selectSuperlativeAscTemplate.add(template);
+            this.originalSuperlativeAscQueries.add(originalQuery);
+        }
+    }
+
+    public void addCountTemplate(String template, String originalQuery) {
+
+        if (this.getSelectCountTemplates().isEmpty()) {
+            this.selectCountTemplates.add(template);
+            this.originalCountQueries.add(originalQuery);
+        }
+    }
+
+    public void addSelectSuperlativeDescTemplate(String template, String originalQuery) {
+
+        if (this.selectSuperlativeDescTemplate.isEmpty()) {
+            this.selectSuperlativeDescTemplate.add(template);
+            this.originalSuperlativeDescQueries.add(originalQuery);
+        }
+    }
+
+    public void addAskTemplate(String template, String originalQuery) {
+
+        if (this.askTemplates.isEmpty()) {
+            this.askTemplates.add(template);
+            this.originalAskQueries.add(originalQuery);
+        }
+    }
+    /*public void addSelectTemplate(String template, String originalQuery) {
         final boolean[] templateIsIsomorph = {false};
         originalSelectQueries.forEach(s -> {
             if (QueryIsomorphism.areIsomorph(s, originalQuery)) {
@@ -96,7 +137,7 @@ public class QueryTemplateMapping {
             this.askTemplates.add(template);
             this.originalAskQueries.add(originalQuery);
         }
-    }
+    }*/
 
     public Set<String> getAskTemplates() {
         return askTemplates;

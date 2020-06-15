@@ -4,7 +4,7 @@ import java.util.*;
 public class WordsGenerator {
 
 
-        private Map<String, Set<String>>stopWordMap;
+        private static Map<String, Set<String>>stopWordMap;
         public WordsGenerator(){
             Properties prop = new Properties();
             try {
@@ -16,7 +16,7 @@ public class WordsGenerator {
 
             }
             catch (IOException ex) {
-                System.out.println("QUANT properties not found use default settings");
+                System.out.println("Properties not found");
             }
         }
         private Optional<Set<String>> loadStopwords(String filename){
@@ -38,9 +38,18 @@ public class WordsGenerator {
             return Optional.empty();
 
         }
-        public boolean hasStopwords(String lang){
-            return stopWordMap.containsKey(lang);
+        public  boolean containsOnlyStopwords(String coOccurence,String lang){
+            String[] words = coOccurence.replaceAll("[\\-.?¿!,;]", "").toLowerCase().split("\\s+");
+            for(String word:words)
+                if(!stopWordMap.get(lang).contains(word))return false;
+            return true;
         }
+        public static boolean containsAnyStopword(String coOccurence,String lang){
+            String[] words = coOccurence.replaceAll("[\\-.?¿!,;]", "").toLowerCase().split("\\s+");
+            for(String word:words)
+                if(stopWordMap.get(lang).contains(word))return true;
+            return false;
+    }
         public List<String> generateTokens(String question, String lang){
             Set<String> stopwords = stopWordMap.get(lang);
             String[] words = question.replaceAll("[\\-.?¿!,;]", "").toLowerCase().split("\\s+"); //[\\p{Alnum},\\s#\\-.]

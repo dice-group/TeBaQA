@@ -7,7 +7,7 @@ import java.util.List;
 
 public class Cluster {
     private String graph;
-    private List<Question> questions;
+    private List<CustomQuestion> questions;
 
     public String getGraph() {
         return graph;
@@ -22,11 +22,11 @@ public class Cluster {
         return questions.size();
     }
 
-    public void addQuestion(Question question) {
+    public void addQuestion(CustomQuestion question) {
         this.questions.add(question);
     }
 
-    public List<Question> getQuestions() {
+    public List<CustomQuestion> getQuestions() {
         return questions;
     }
 }

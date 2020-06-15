@@ -2,7 +2,6 @@ package de.uni.leipzig.tebaqa.helper;
 
 
 import com.google.common.collect.Sets;
-import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.controller.ElasticSearchEntityIndex;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.*;
@@ -83,12 +82,13 @@ public class QueryMappingFactoryLabels {
     private PersistentCacheManager cacheManager;
     private Patty_relations patty_relations;
     private ElasticSearchEntityIndex entityIndex;
+    ResourceLinker resourceLinker;
     WordsGenerator wordsGenerator;
     RelationsGenerator relationsGenerator;
     private SemanticAnalysisHelper semanticAnalysisHelper;
     public QueryMappingFactoryLabels(String question, String sparqlQuery,SemanticAnalysisHelper semanticAnalysisHelper) {
         //this.ontologyNodes = ontologyNodes;
-         wordsGenerator=new WordsGenerator();
+        wordsGenerator=new WordsGenerator();
         ontologyURIs = new HashSet<>();
         relationsGenerator=new RelationsGenerator();
         this.semanticAnalysisHelper=semanticAnalysisHelper;
@@ -113,14 +113,21 @@ public class QueryMappingFactoryLabels {
         }
         // queryString.replaceAll("<(.*?)>", )
         int i = 0;
+        queryString = queryString.replace("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>","a");
+
         String regex = "<(.+?)>";
         Pattern pattern = Pattern.compile(regex);
         Matcher m = pattern.matcher(queryString);
+        HashMap<String,Integer>mappedUris=new HashMap<>();
         while (m.find()) {
             String group = m.group();
-            if (!group.contains("^")) {
-                queryString = queryString.replaceFirst(Pattern.quote(group), "<^VAR_" + i + "^>");
-                i++;
+            if (!group.contains("^")&&!group.contains("http://www.w3.org/2001/XMLSchema")) {
+                //if(!wellKnownPredicates.contains(Pattern.quote(group))) {
+                    if (!mappedUris.containsKey(Pattern.quote(group)))
+                        mappedUris.put(Pattern.quote(group), i);
+                    queryString = queryString.replaceFirst(Pattern.quote(group), "res/" + mappedUris.get(Pattern.quote(group)) + ">");
+                    i++;
+                //}
             }
         }
         this.queryPattern = queryString
@@ -128,6 +135,7 @@ public class QueryMappingFactoryLabels {
                 .replaceAll("\\s+", " ")
                 .trim();
     }
+
 
 
     private String replaceSpotlightEntities(Map<String, String> dependencySequencePos, List<String> permutations,
@@ -218,6 +226,21 @@ public class QueryMappingFactoryLabels {
         }
         return permutations;
     }
+    public static List<CooccurenceGroup> getNeighborCoOccurrencePermutationsGroups(String[] s) {
+        List<CooccurenceGroup> permutations = new ArrayList<>();
+        for (int i = 0; i <= s.length; i++) {
+            CooccurenceGroup group=new CooccurenceGroup();
+            for (int y = 1; y <= s.length - i; y++) {
+                if (y - i < 6) {
+                    group.addCooccurence((join(" ", Arrays.asList(s).subList(i, i + y))),null);
+                }
+
+            }
+            if(group.getCoOccurences().size()>0)
+                permutations.add(group);
+        }
+        return permutations;
+    }
 
     public static List<String> getNeighborCoOccurrencePermutations(List<String> s) {
         return getNeighborCoOccurrencePermutations(s.toArray(new String[0]));
@@ -248,6 +271,7 @@ public class QueryMappingFactoryLabels {
     }
 
     public Set<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph, boolean useSynonyms) {
+
         if (!this.entitiyToQuestionMappingWasSet) {
             entitiyToQuestionMapping.putAll(extractEntities(question));
             this.entitiyToQuestionMappingWasSet = true;
@@ -274,6 +298,34 @@ public class QueryMappingFactoryLabels {
         }*/
         return queries;
     }
+    public HashMap<String,String> generateQueriesWithResourceLinker(Map<String, QueryTemplateMapping> mappings, String graph, ResourceLinker links) {
+
+        List<String> suitableMappings = getSuitableMappings(mappings, queryType, graph);
+        HashMap<String,String> queries=new HashMap<>();
+        //if (!useSynonyms) {
+
+        for (String pattern : suitableMappings) {
+
+            HashMap<String,String> p=Utilities.fillWithTuples(pattern, links);
+            if(p!=null)
+                queries.putAll(p);
+        }
+
+        return queries;
+    }
+    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph,  FillTemplatePatternsWithResources tripleGenerator) {
+        List<String> suitableMappings = getSuitableMappings(mappings, queryType, graph);
+        List<String> queries=new ArrayList<>();
+        //if (!useSynonyms) {
+
+        for (String pattern : suitableMappings) {
+
+            queries.addAll(Utilities.fillTemplates(pattern, tripleGenerator));
+        }
+
+        return queries;
+    }
+
     private List<String[]>getbestResourcesByLevenstheinRatio(String coOccurrence,String index,HashMap<String,Double>minScores){
         List<String[]> foundResources = entityIndex.search(coOccurrence, index);
         double minScore=0.4;
@@ -831,7 +883,7 @@ public class QueryMappingFactoryLabels {
                     .flatMap(Collection::stream).collect(Collectors.toList());
 
             //templatesForGraph.forEach(queryTemplateMapping -> result.addAll(queryTemplateMapping.getSelectTemplates()));
-        } else {
+        }/* else {
             result.addAll(templatesForGraph.parallelStream()
                     .map(QueryTemplateMapping::getAskTemplates)
                     .filter(Objects::nonNull)
@@ -840,10 +892,10 @@ public class QueryMappingFactoryLabels {
                     .map(QueryTemplateMapping::getSelectTemplates)
                     .filter(Objects::nonNull)
                     .flatMap(Collection::stream).collect(Collectors.toList()));
-
+                */
             // templatesForGraph.forEach(queryTemplateMapping -> result.addAll(queryTemplateMapping.getAskTemplates()));
             // templatesForGraph.forEach(queryTemplateMapping -> result.addAll(queryTemplateMapping.getSelectTemplates()));
-        }
+        //}
         return result;
     }
 
