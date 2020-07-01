@@ -64,7 +64,7 @@ public class QuestionAnsweringController {
             PipelineController qaPipeline = getQAPipeline();
             String result;
             try {
-                AnswerToQuestion answer = qaPipeline.answerQuestion(query);
+                AnswerToQuestion answer = qaPipeline.answerLimboQuestion(query);
                 JsonArrayBuilder resultArray = Json.createArrayBuilder();
                 answer.getAnswer().forEach(a -> resultArray.add(extractAnswerString(a)));
                 result = Json.createObjectBuilder()

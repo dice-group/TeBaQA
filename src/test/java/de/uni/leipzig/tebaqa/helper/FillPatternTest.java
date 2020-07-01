@@ -3,15 +3,21 @@ package de.uni.leipzig.tebaqa.helper;
 
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelperGerman;
+import de.uni.leipzig.tebaqa.model.ResourceCandidate;
 import de.uni.leipzig.tebaqa.model.TripleTemplate;
+import de.uni.leipzig.tebaqa.spring.AnnotateQualD8;
 import edu.cmu.lti.jawjaw.db.*;
 import edu.cmu.lti.jawjaw.pobj.*;
+import org.aksw.qa.commons.datastructure.IQuestion;
+import org.aksw.qa.commons.datastructure.Question;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class FillPatternTest {
     @Test
@@ -133,5 +139,66 @@ public class FillPatternTest {
         }
         System.out.println();
         }
+    }
+
+    public static void main(String[] args) {
+        List<IQuestion> questions = AnnotateQualD8.loadLimbo();
+        int total = 0;
+        int found = 0;
+        SemanticAnalysisHelper h=new SemanticAnalysisHelperGerman();
+
+        boolean printAll = true;
+        for(IQuestion q : questions)
+        {
+            String questionString = q.getLanguageToQuestion().get("de");
+//            if(!questionString.equals("Wie ist die Höhe von Gleis 1 des Hamburger Hbfs?"))
+//                continue;
+
+//            // Override
+//            questionString = "ist die";
+
+            Query query = QueryFactory.create(q.getSparqlQuery());
+            List<String> queryElements = Arrays.asList(query.getQueryPattern().toString().split("\\s{1,}"));
+            queryElements = queryElements.stream()
+                    .filter(element -> element.startsWith("<http"))
+                    .map(element -> element.replace("<", "").replace(">", ""))
+                    .collect(Collectors.toList());
+
+            h.determineQueryType(questionString);
+            FillTemplatePatternsWithResources l=new FillTemplatePatternsWithResources(h);
+            l.extractEntities(questionString);
+
+            List<String> allFound = new ArrayList<>();
+            allFound.addAll(l.entityCandidates.stream().map(ResourceCandidate::getUri).collect(Collectors.toList()));
+            allFound.addAll(l.classCandidates.stream().map(ResourceCandidate::getUri).collect(Collectors.toList()));
+            allFound.addAll(l.propertyCandidates.stream().map(ResourceCandidate::getUri).collect(Collectors.toList()));
+
+            total += queryElements.size();
+
+            List<String> retainList = new ArrayList<>(queryElements);
+            retainList.retainAll(allFound);
+            List<String> deleteList = new ArrayList<>(queryElements);
+            deleteList.removeAll(allFound);
+
+            found += retainList.size();
+
+            if(printAll || deleteList.size() > 0) {
+                // Sort for print
+                queryElements.sort(String::compareTo);
+                allFound.sort(String::compareTo);
+                retainList.sort(String::compareTo);
+                deleteList.sort(String::compareTo);
+
+                System.out.println("QUESTION: " + questionString);
+                System.out.println("QUERY: " + q.getSparqlQuery());
+                System.out.println("All in Query: " + queryElements);
+                System.out.println("All EL responses: " + allFound);
+                System.out.println(String.format("Found(%s/%s): %s", retainList.size(), queryElements.size(), retainList));
+                System.out.println(String.format("Not found(%s/%s): %s", deleteList.size(), queryElements.size(), deleteList));
+                System.out.println();
+            }
+        }
+
+        System.out.println("Coverage %: " + (found/(double)total)*100);
     }
 }

@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.Lists;
+import de.uni.leipzig.tebaqa.helper.FillTemplatePatternsWithResources;
 import de.uni.leipzig.tebaqa.helper.WordsGenerator;
 import de.uni.leipzig.tebaqa.model.*;
 import meka.core.A;
@@ -319,7 +320,11 @@ public class ElasticSearchEntityIndex {
             Map<String, Object> sources = hit.getSourceAsMap();
             if(type.equals("property")) {
                 Set<String>labels=new HashSet<>();
-                labels.add(sources.get(LABEL).toString());
+                Object foundLabels = sources.get(LABEL);
+                if(foundLabels instanceof List)
+                    labels.addAll((ArrayList<String>)foundLabels);
+                else
+                    labels.add(foundLabels.toString());
                 if(searchSynonyms) {
                     ArrayList<String>syns=(ArrayList)sources.get("synonyms");
                     if(syns!=null)
@@ -575,9 +580,23 @@ public class ElasticSearchEntityIndex {
             a.add("http://dbpedia.org/resource/BlaBlaCar");
             //Set<ResourceCandidate>uris=en.searchEntitiesById(a);
             //Set<ResourceCandidate>uris=en.searchEntity("Länge",Optional.empty(),Optional.empty(),Optional.empty(),100);
-            Set<ResourceCandidate>uris=en.searchResource("Länge","property",false);
+            Set<ResourceCandidate>uris;
+//
+//            FillTemplatePatternsWithResources template = new FillTemplatePatternsWithResources()
+//            getbestResourcesByLevenstheinRatio();
+
+//            uris=en.searchEntity("LSA 460", Optional.empty(),Optional.empty(), Optional.empty());
+//            for(ResourceCandidate res:uris)
+//                System.out.println(res.getUri());
+
+            uris=en.searchResource("EMail Adresse","property",true);
             for(ResourceCandidate res:uris)
                 System.out.println(res.getUri());
+
+//            uris=en.searchResource("Marken","class",false);
+//            for(ResourceCandidate res:uris)
+//                System.out.println(res.getUri());
+
             en.close();
         } catch (IOException e) {
             e.printStackTrace();

@@ -26,6 +26,9 @@ public class FillTemplatePatternsWithResources {
     Set<String>propertyUris;
     List<String> coOccurrences;
     SemanticGraph semanticGraph;
+    private static double MIN_SCORE_NORMAL = 0.32;
+    private static double MIN_SCORE_WITH_NUMBERS = 0.05;
+
     public FillTemplatePatternsWithResources(List<TripleTemplate>templates,SemanticAnalysisHelper semanticAnalysisHelper){
         this.semanticAnalysisHelper=semanticAnalysisHelper;
         this.candidateTriples=new ArrayList<>();
@@ -139,9 +142,10 @@ public class FillTemplatePatternsWithResources {
     }
     private Set<ResourceCandidate>getbestResourcesByLevenstheinRatio(String coOccurence,Set<ResourceCandidate>foundResources,String type,boolean syn){
         Set<ResourceCandidate> bestResourcesByLevenstheinRatio = new HashSet<>();
-        double minScore = 0.25;
+//        double minScore = 0.25;
         for (ResourceCandidate resource : foundResources) {
             double ratio=1;
+            String bestMatchedLabel=null;
             for(String label:resource.getResourceString()) {
                 //double ratiotemp = Utilities.getLevenshteinRatio(coOccurence, label);
                 double ratiotemp;
@@ -150,13 +154,14 @@ public class FillTemplatePatternsWithResources {
                 else ratiotemp = Utilities.getLevenshteinRatio(coOccurence, label);
                 if(ratiotemp < ratio) {
                     ratio = ratiotemp;
+                    bestMatchedLabel = label;
                     double numberOfWords=(TextUtilities.countWords(coOccurence));
                     double relFactor = (numberOfWords - (2*ratio*numberOfWords));
                     //double relFactor = 1- ratio;
                     resource.setRelatednessFactor(relFactor);
                 }
             }
-            if (ratio <= minScore) {
+            if (ratio <= getLevensteinThreshold(coOccurence, bestMatchedLabel)) {
                 resource.setCoOccurence(coOccurence);
                 //minScore = ratio;
                 resource.setLevenstheinScore(ratio);
@@ -168,6 +173,19 @@ public class FillTemplatePatternsWithResources {
             return foundResources;
         return bestResourcesByLevenstheinRatio;
     }
+
+    private static double getLevensteinThreshold(String coOccurence, String matched)
+    {
+        // If the co-occurence contains a number, then there should be high similarity. This helps in reducing matched
+        // entities in cases like Gleis 1 or LSA 460 where there is a high chance of getting many matches.
+        if(matched != null && (coOccurence.matches(".*\\d+.*") || matched.matches(".*\\d+.*")))
+        {
+            return MIN_SCORE_WITH_NUMBERS;
+        }
+
+        return MIN_SCORE_NORMAL;
+    }
+
     private Set<ResourceCandidate>disambiguateAmbiqueEntity(String coOccurence,Optional<String>type,List<ResourceCandidate>entityCandidates,List<ResourceCandidate>propertyCandidates){
         HashMap<String,ResourceCandidate> candidates=new HashMap<>();
         if(!coOccurence.contains(" ")){

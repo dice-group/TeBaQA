@@ -137,6 +137,7 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
                 e.printStackTrace();
             }
             props.remove("annotators");
+//            props.setProperty("annotators","tokenize,ssplit,pos,ner,parse,lemma");
             props.setProperty("annotators","tokenize,ssplit,pos,ner,parse,lemma,depparse");
             StanfordCoreNLP pipeline= new StanfordCoreNLP(props);
             //StanfordCoreNLP pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
