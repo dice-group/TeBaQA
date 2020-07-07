@@ -33,5 +33,4 @@ public class KeyWordController {
         }
         return candidates;
     }
-    
 }

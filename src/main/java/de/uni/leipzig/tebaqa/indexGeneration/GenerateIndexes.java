@@ -40,6 +40,9 @@ public class GenerateIndexes {
 
             String resourceIndex = prop.getProperty("resource_index");
             log.info("The resource index will be here: " + resourceIndex);
+            //uncomment this to get Data automatically from Limbo gitlab
+            //String metadataUrl = prop.getProperty("limbo_metadata_url");
+            //DownloadWithMetadataCatalog.getFilesFromMetadataCatalog(metadataUrl);
 
             String propertyIndex = prop.getProperty("property_index");
             log.info("The resource index will be here: " + propertyIndex);
