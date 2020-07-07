@@ -38,7 +38,7 @@ public class DownloadWithMetadataCatalog {
                         .getJSONArray("downloadURL").getJSONObject(0).getString("id"));
                 String filename=metadatacatalog.getJSONObject(i).getJSONObject("s").getJSONArray("distribution").getJSONObject(0)
                         .getJSONArray("localId").getString(0);
-                FileUtils.copyURLToFile(new URL(url),new File("limboDatasets/"+filename));
+                FileUtils.copyURLToFile(new URL(url),new File("limboDatasets/"+i+"_"+filename));
             }
             //System.out.println(metadatacatalog);
         } catch (IOException e) {
