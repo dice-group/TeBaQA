@@ -34,13 +34,14 @@ public class DownloadWithMetadataCatalog {
             FileUtils.cleanDirectory(new File("limboDatasets"));
             JSONArray metadatacatalog=readJsonFromUrl(metadataurl);
             for(int i=0;i<metadatacatalog.length();i++){
-                String url=(metadatacatalog.getJSONObject(i).getJSONObject("s").getJSONArray("distribution").getJSONObject(0)
-                        .getJSONArray("downloadURL").getJSONObject(0).getString("id"));
-                String filename=metadatacatalog.getJSONObject(i).getJSONObject("s").getJSONArray("distribution").getJSONObject(0)
-                        .getJSONArray("localId").getString(0);
-                FileUtils.copyURLToFile(new URL(url),new File("limboDatasets/"+i+"_"+filename));
+                JSONArray distributions=metadatacatalog.getJSONObject(i).getJSONObject("s").getJSONArray("distribution");
+                for(int j=0;j< distributions.length();j++){
+                    String url=distributions.getJSONObject(j).getJSONArray("downloadURL").getJSONObject(0).getString("id");
+                    String filename=distributions.getJSONObject(j).getJSONArray("localId").getString(0);
+                    FileUtils.copyURLToFile(new URL(url),new File("limboDatasets/"+i+"_"+j+"_"+filename));
+                }
+
             }
-            //System.out.println(metadatacatalog);
         } catch (IOException e) {
             e.printStackTrace();
         }
