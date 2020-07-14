@@ -275,7 +275,8 @@ public class ResourceIndexCreator {
             String object = st.getObject().stringValue();
 
             if(!names.contains(subject))names.add(subject);
-            if(!names.contains(object)&&st.getObject() instanceof URI&&object.startsWith("http://www.limbo-portal"))names.add(object);
+            if(!names.contains(object)&&st.getObject() instanceof URI&&object.startsWith("http://"))
+                names.add(object);
 
 
             if(predicate.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")) {
@@ -301,7 +302,9 @@ public class ResourceIndexCreator {
                 else nameToProperties_subject.put(subject,nameToProperties_subject.get(subject)+",,"+predicate);
             }
             if(predicate.equals("http://www.w3.org/2000/01/rdf-schema#label")||
-                    predicate.equals("http://www.w3.org/2004/02/skos/core#prefLabel")){
+                    predicate.equals("http://www.w3.org/2004/02/skos/core#prefLabel")||
+                    predicate.equals("https://portal.limbo-project.org/vocab/IndoorNavigationVocab/hasName")
+            ){
                 //if(nameToLabels.size()%1000==0)System.out.println("Mapsize Labels"+nameToLabels.size());
                 if(!nameToLabels.containsKey(subject)) nameToLabels.put(subject,object);
                 else nameToLabels.put(subject,nameToLabels.get(subject)+",,"+object);
