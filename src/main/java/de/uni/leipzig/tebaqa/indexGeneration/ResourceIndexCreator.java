@@ -49,6 +49,7 @@ public class ResourceIndexCreator {
         try {
             writeIndex = new WriteElasticSearchIndex();
             writeIndex.setResourceIndexes(index);
+            writeIndex.setLiteralIndexes("limboliterals");
             writeIndex.createBulkProcessor();
             for (File file : files) {
                 //String type = FileUtil.getFileExtension(file.getName());
@@ -296,10 +297,16 @@ public class ResourceIndexCreator {
                 else nameToProperties_object.put(subject,nameToProperties_object.get(object)+",,"+predicate);
             }
 
+
             else if(!predicate.equals("http://www.w3.org/2000/01/rdf-schema#label")){
                 //if(nameToProperties_subject.size()%1000==0)System.out.println("Mapsize Properties"+nameToProperties_subject.size());
                 if(!nameToProperties_subject.containsKey(subject))nameToProperties_subject.put(subject,predicate);
                 else nameToProperties_subject.put(subject,nameToProperties_subject.get(subject)+",,"+predicate);
+                try {
+                    writeIndex.indexLiteral(subject,predicate,object);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             if(predicate.equals("http://www.w3.org/2000/01/rdf-schema#label")||
                     predicate.equals("http://www.w3.org/2004/02/skos/core#prefLabel")||

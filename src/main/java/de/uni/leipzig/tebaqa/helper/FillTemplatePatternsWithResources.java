@@ -22,6 +22,7 @@ public class FillTemplatePatternsWithResources {
     List<ResourceCandidate>entityCandidates;
     List<ResourceCandidate>propertyCandidates;
     List<ResourceCandidate>classCandidates;
+    List<ResourceCandidate>literalCandidates;
     List<TripleTemplate>templates;
     Set<String>propertyUris;
     List<String> coOccurrences;
@@ -34,6 +35,7 @@ public class FillTemplatePatternsWithResources {
         this.candidateTriples=new ArrayList<>();
         this.entityCandidates=new ArrayList<>();
         this.propertyCandidates=new ArrayList<>();
+        this.literalCandidates=new ArrayList<>();
         this.classCandidates=new ArrayList<>();
         this.templates=templates;
         wordsGenerator=new WordsGenerator();
@@ -49,6 +51,7 @@ public class FillTemplatePatternsWithResources {
         this.entityCandidates=new ArrayList<>();
         this.propertyCandidates=new ArrayList<>();
         this.classCandidates=new ArrayList<>();
+        this.literalCandidates=new ArrayList<>();
         wordsGenerator=new WordsGenerator();
         this.templates=new ArrayList<>();
         this.templates.add(new TripleTemplate("r_r_v"));
@@ -333,6 +336,7 @@ public class FillTemplatePatternsWithResources {
         propertyUris=new HashSet<>();
 
         for(String coOccurence:coOccurrences) {
+            literalCandidates.addAll(index.searchLiteral(coOccurence,100));
             Set<ResourceCandidate> best = getbestResourcesByLevenstheinRatio( coOccurence, "entity",false,null);
             best.forEach(cand->{
                 propertyUris.addAll(((EntityCandidate)cand).getConnectedPropertiesSubject());

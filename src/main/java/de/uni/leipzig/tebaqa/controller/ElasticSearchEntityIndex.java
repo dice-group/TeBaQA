@@ -394,6 +394,67 @@ public class ElasticSearchEntityIndex {
         }
         return candidates;
     }
+    public Set<ResourceCandidate> searchLiteral(String coOccurence,int maxNumberOfResults) {
+        BoolQueryBuilder booleanQueryBuilder = new BoolQueryBuilder();
+        Set<ResourceCandidate> candidates=new HashSet<>();
+        //QueryBuilder queryBuilderMatchFuzzy=new MatchQueryBuilder("literal"+".full", coOccurence).operator(Operator.AND).fuzziness(2).prefixLength(0).maxExpansions(50).fuzzyTranspositions(true);
+        //queryBuilder = new MatchQueryBuilder(LABEL, coOccurence).operator(Operator.AND);
+        //NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
+        //}
+        //else {
+        //if(coOccurence.length()<4)
+        //QueryBuilder queryBuilderMatchTerm= new MatchQueryBuilder("literal"+".raw", coOccurence).operator(Operator.AND);
+        QueryBuilder queryBuilderTermFuzzy=QueryBuilders.fuzzyQuery("literal"+".raw",coOccurence).fuzziness(Fuzziness.TWO).prefixLength(0).maxExpansions(50);
+        //}
+
+        try {
+
+            candidates = getFromIndexLiteral(maxNumberOfResults, queryBuilderTermFuzzy);
+            //cache.put(bq, triples);
+
+        } catch (Exception e) {
+            //log.error(e.getLocalizedMessage() + " -> " + subject);
+            e.printStackTrace();
+        }
+        return candidates;
+    }
+    private Set<ResourceCandidate> getFromIndexLiteral(int maxNumberOfResults, QueryBuilder bq) throws IOException {
+        SearchRequest searchRequest = new SearchRequest();
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(bq);
+        TopHitsAggregationBuilder tl= AggregationBuilders.topHits("top").size(maxNumberOfResults);
+        searchSourceBuilder.aggregation(tl);
+
+        searchSourceBuilder.size(maxNumberOfResults);
+        searchRequest.source(searchSourceBuilder);
+        searchRequest.indices("limboliterals");
+        //searchRequest.source().aggregation(AggregationBuilders.max("prominence").script(new Script("doc['"+CONNECTED_RESOURCE_SUBJECT+"'].values.length + doc['"+CONNECTED_RESOURCE_OBJECT+"'].values.length ")));
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        //SearchHit[] hits = searchResponse.getHits().getHits();
+        TopHits topHits = searchResponse.getAggregations().get("top");
+        Set<ResourceCandidate> candidates = new HashSet<>();
+        String name;
+        Set<String>connectedResourcesSubject,connectedResourcesObject,connectedPropertiesSubject,connectedPropertiesObject,types,label;
+        for (SearchHit hit : topHits.getHits()) {
+            Map<String, Object> sources = hit.getSourceAsMap();
+            name = sources.get("literal").toString();
+            label = new HashSet<>();
+            label.add(sources.get("literal").toString());
+
+            connectedPropertiesSubject=new HashSet<>();
+            connectedPropertiesObject=new HashSet<>();
+            connectedPropertiesObject.add(sources.get("property").toString());
+            connectedResourcesSubject=new HashSet<>();
+            connectedResourcesObject=new HashSet<>();
+            connectedResourcesObject.add(sources.get("subject").toString());
+            types=new HashSet<>();
+            types.add("literal");
+            ResourceCandidate candidate = new EntityCandidate(name,label,connectedPropertiesSubject,connectedPropertiesObject,connectedResourcesSubject,connectedResourcesObject,types);
+            candidates.add(candidate);
+        }
+
+        return candidates;
+    }
     public Set<ResourceCandidate> searchEntity(String coOccurence, Optional<String> linkedResource,Optional<String>linkedProperty,Optional<String>type,int maxNumberOfResults) {
         BoolQueryBuilder booleanQueryBuilder = new BoolQueryBuilder();
         Set<ResourceCandidate> candidates=new HashSet<>();

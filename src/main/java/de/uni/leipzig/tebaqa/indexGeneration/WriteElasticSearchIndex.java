@@ -36,6 +36,7 @@ public class WriteElasticSearchIndex {
         RestHighLevelClient client;
         BulkProcessor bulkProcessor;
         private String resourceIndex;
+    private String literalIndex;
         private String propertyIndex;
         private String classIndex;
         final String TYPE="type";
@@ -180,6 +181,65 @@ public class WriteElasticSearchIndex {
             }
 
         }
+    public void setLiteralIndexes(String literalIndex){
+        this.literalIndex=literalIndex;
+        GetIndexRequest getIndexRequest = new GetIndexRequest();
+        getIndexRequest.indices(literalIndex);
+        boolean exists = false;
+        try {
+            exists = client.indices().exists(getIndexRequest, RequestOptions.DEFAULT);
+            if(!exists) {
+                XContentBuilder settingsBuilder = null;
+                settingsBuilder = jsonBuilder()
+                        .startObject()
+                        .startObject("analysis")
+                        .startObject("analyzer")
+                        .startObject("literal_analyzer")
+                        .field("type","custom")
+                        .field("tokenizer", "lowercase")
+                        .field("filter","asciifolding")
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject();
+                XContentBuilder mappingsBuilder =jsonBuilder()
+                        .startObject()
+                        .startObject("properties")
+                        .startObject("subject")
+                        .field("type", "keyword")
+                        .endObject()
+                        .startObject("property")
+                        .field("type", "keyword")
+                        .endObject()
+                        .startObject("literal")
+                        .field("type","text")
+                        .startObject("fields")
+                        .startObject("raw")
+                        .field("type","keyword")
+                        .endObject()
+                        .startObject("full")
+                        .field("type", "text")
+                        .field("analyzer", "standard")
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        .endObject()
+                        //.field("type", "text")
+                        //.field("analyzer", "standard")
+                        //.field("analyzer", "literal_analyzer")
+                        .endObject();
+                CreateIndexRequest request = new CreateIndexRequest(this.literalIndex);
+                request.mapping("_doc", mappingsBuilder);
+                //request.settings(Settings.EMPTY);
+                //request.settings(settingsBuilder);
+                CreateIndexResponse createIndexResponse = client.indices().create(request, RequestOptions.DEFAULT);
+                System.out.println(createIndexResponse);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
         public void createBulkProcessor() {
                 BulkProcessor.Listener listener = new BulkProcessor.Listener() {
                     @Override
@@ -212,14 +272,13 @@ public class WriteElasticSearchIndex {
                         .constantBackoff(TimeValue.timeValueSeconds(1L), 3));
                 bulkProcessor=builder.build();
         }
-        public void indexResource(String name,String nameToLabels,String nameToTypes,String nameToResource,String nameToProperties)throws IOException{
-            IndexRequest indexRequest = new IndexRequest(resourceIndex, "_doc",name)
+        public void indexLiteral(String subject,String property,String literal)throws IOException{
+            IndexRequest indexRequest = new IndexRequest(literalIndex, "_doc")
                     .source(jsonBuilder()
                             .startObject()
-                            .array(LABEL, nameToLabels.split(",,"))
-                            .array(TYPE,nameToTypes.split(",,"))
-                            .array(CONNECTED_PROPERTY_SUBJECT,nameToResource.split(",,"))
-                            .array(CONNECTED_RESOURCE_OBJECT,nameToProperties.split(",,"))
+                            .field("subject", subject)
+                            .field("property",property)
+                            .field("literal",literal)
                             .endObject()
                     );
             bulkProcessor.add(indexRequest);
