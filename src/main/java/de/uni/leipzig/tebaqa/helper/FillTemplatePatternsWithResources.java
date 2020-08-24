@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import de.uni.leipzig.tebaqa.controller.ElasticSearchEntityIndex;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
-import de.uni.leipzig.tebaqa.indexGeneration.Resource;
 import de.uni.leipzig.tebaqa.model.*;
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.semgraph.SemanticGraph;
@@ -541,15 +540,48 @@ public class FillTemplatePatternsWithResources {
 
         return triples;
     }
+
     public List<Triple> generateTuplesWithTwoVariables(Triple alreadyKnownTriple,TripleTemplate template) {
+        List<Triple> triplesFound;
+
+        if(TripleTemplate.Pattern.V_R_V.equals(template.getPattern())) {
+            triplesFound = twoVariablesVRV(alreadyKnownTriple, template);
+        } else if(TripleTemplate.Pattern.V_V_R.equals(template.getPattern())) {
+            triplesFound = twoVariablesVVR(alreadyKnownTriple, template);
+        } else {
+            triplesFound = new ArrayList<>();
+        }
+
+        return triplesFound;
+    }
+
+    private List<Triple> twoVariablesVVR(Triple alreadyKnownTriple, TripleTemplate template) {
+        Set<Triple> triplesFound = new HashSet<>();
+
+//        if(alreadyKnownTriple.isPredicateRDFTypeProperty()){
+        for(ResourceCandidate ec : entityCandidates)
+        {
+            // Check that entityCandidate is not used to replace a placeholder in already known triple
+            if(!alreadyKnownTriple.getObject().equals(ec.getUri()))
+            {
+                Triple t = new Triple(template.getSubject(), template.getPredicate(), ec.getUri());
+                triplesFound.add(t);
+            }
+        }
+//        }
+        return new ArrayList<>(triplesFound);
+    }
+
+    private List<Triple> twoVariablesVRV(Triple alreadyKnownTriple, TripleTemplate template) {
         Set<String> relevantResourceCandidates = new HashSet<>();
+
         //for(Triple triple:alreadyKnownTriples){
-        if (alreadyKnownTriple.getSubject().startsWith("http") && !alreadyKnownTriple.getPredicate().equals("country_prop")) {
+        if (alreadyKnownTriple.getSubject().startsWith("http")) {
             EntityCandidate ent = (EntityCandidate) getByURI(alreadyKnownTriple.getSubject(), entityCandidates);
             relevantResourceCandidates.addAll(ent.getConnectedResourcesSubject());
-        } else if (alreadyKnownTriple.getObject().startsWith("http") && !alreadyKnownTriple.getPredicate().equals("country_prop")) {
+        } else if (alreadyKnownTriple.getObject().startsWith("http")) {
             EntityCandidate ent = (EntityCandidate) getByURI(alreadyKnownTriple.getObject(), entityCandidates);
-            relevantResourceCandidates.addAll(ent.getConnectedResourcesObject());
+            if (ent !=null) relevantResourceCandidates.addAll(ent.getConnectedResourcesObject());
         }
         //}
         List<String> uris = Lists.newArrayList(relevantResourceCandidates);
@@ -574,7 +606,7 @@ public class FillTemplatePatternsWithResources {
                 Triple t = new Triple(template.getSubject(), prop.getUri(), "var");
                 if (!tripleContains(triplesFound, t)) triplesFound.add(t);
             });
-        //propertyCandidates.addAll(properties);
+            //propertyCandidates.addAll(properties);
         }
         else {
             Set relevantPropertiesCandidate = new HashSet();
@@ -588,8 +620,9 @@ public class FillTemplatePatternsWithResources {
             });
         }
         return triplesFound;
-
     }
+
+
     private boolean tripleContains(List<Triple>triples,Triple triple){
         for(Triple t:triples){
             if(triple.getSubject().equals(t.getSubject())&&

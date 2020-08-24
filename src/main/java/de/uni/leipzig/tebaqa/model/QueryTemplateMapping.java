@@ -1,8 +1,6 @@
 package de.uni.leipzig.tebaqa.model;
 
 
-import de.uni.leipzig.tebaqa.controller.QueryIsomorphism;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -165,5 +163,16 @@ public class QueryTemplateMapping {
 
     public List<Integer> getNumberOfProperties() {
         return numberOfProperties;
+    }
+
+    public Set<String> getAllAvailableTemples()
+    {
+        Set<String> allTemplates = new HashSet<>();
+        allTemplates.addAll(this.getAskTemplates());
+        allTemplates.addAll(this.getSelectTemplates());
+        allTemplates.addAll(this.getSelectCountTemplates());
+        allTemplates.addAll(this.getSelectSuperlativeAscTemplate());
+        allTemplates.addAll(this.getSelectSuperlativeDescTemplate());
+        return allTemplates;
     }
 }

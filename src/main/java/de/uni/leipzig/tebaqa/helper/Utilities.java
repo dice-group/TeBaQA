@@ -1,12 +1,10 @@
 package de.uni.leipzig.tebaqa.helper;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import de.uni.leipzig.tebaqa.model.*;
 import joptsimple.internal.Strings;
-import moa.recommender.rc.utils.Hash;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
-import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.graph.NodeFactory;
@@ -18,10 +16,10 @@ import org.apache.jena.sparql.engine.binding.Binding;
 import org.apache.jena.sparql.engine.binding.BindingFactory;
 import org.apache.jena.sparql.engine.binding.BindingMap;
 import org.apache.jena.sparql.syntax.ElementPathBlock;
-import org.apache.jena.sparql.syntax.ElementTriplesBlock;
 import org.apache.jena.sparql.syntax.ElementVisitorBase;
 import org.apache.jena.sparql.syntax.ElementWalker;
 import org.apache.log4j.Logger;
+import org.semarglproject.vocab.RDF;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -79,6 +77,7 @@ public class Utilities {
                     if (openingAngleBrackets == closingAngleBrackets) {
                         lastFoundTripleIndex = i;
                         String t = removeDotsFromStartAndEnd(possibleTriple);
+                        t = fixCompoundPattern(t, triples);
                         if (!t.isEmpty()) {
                             triples.add(t);
                         }
@@ -87,12 +86,46 @@ public class Utilities {
             }
             //Add the last triple which may not end with a .
             String t = removeDotsFromStartAndEnd(group.substring(lastFoundTripleIndex, group.length()));
+            t = fixCompoundPattern(t, triples);
             if (!t.isEmpty()) {
                 triples.add(t);
             }
         }
 
         return triples;
+    }
+
+    private static String fixCompoundPattern(String currentPattern, List<String> previousTriples)
+    {
+        // To handle compound patterns which express two patterns with same subject with a semicolon
+        // e.g. ?cs res/0 res/1 ; ?rel res/2 ; res/3 ?tel
+        if(currentPattern.startsWith(";") && previousTriples.size() > 0)
+        {
+            String previousTriple = previousTriples.get(previousTriples.size()-1); // Get previous triple to retrieve subject from it
+            String previousTripleSubject = previousTriple.split("\\s{1,}")[0];
+
+            // Replace leading semicolon in current triple with previous triple's subject
+            currentPattern = previousTripleSubject + currentPattern.substring(1);
+        }
+
+        return currentPattern;
+    }
+
+    private static String determinePatternStyle(TripleTemplate pattern){
+        String style = "sub_pred_obj";
+
+        String subject = "v";
+        String predicate = "v";
+        String object = "v";
+
+        if(pattern.isSubjectAResource())
+            subject = "r";
+        if(pattern.isPredicateAResource())
+            predicate = "r";
+        if(pattern.isObjectAResource())
+            object = "r";
+
+        return String.format("%s_%s_%s", subject, predicate, object);
     }
 
     private static String removeDotsFromStartAndEnd(String possibleTriple) {
@@ -466,10 +499,13 @@ public class Utilities {
         List<Triple[]>tripleCompounds=new ArrayList<>();
         for(Triple candidate:sourceCandidates) {
             List<Triple> compoundCandidates;
-            if(!candidate.getSubject().startsWith("http://dbpedia.org/resource")&&
-                    !candidate.getObject().startsWith("http://dbpedia.org/resource"))
+
+            if(TripleTemplate.Pattern.V_R_V.sameAs(target.getPatternString()) &&
+                    (candidate.getPredicate().equalsIgnoreCase("a") || candidate.getPredicate().equalsIgnoreCase(RDF.TYPE)))
                 compoundCandidates = tripleGenerator.generateTypePropertyTriples(candidate, target);
-            else compoundCandidates = tripleGenerator.generateTuplesWithTwoVariables(candidate, target);
+            else
+                compoundCandidates = tripleGenerator.generateTuplesWithTwoVariables(candidate, target);
+
             compoundCandidates.forEach(candComp->{
                 Triple[] tcomp = new Triple[]{candidate, candComp};
                 if (acceptTripleComound(tcomp, source, target)
@@ -489,81 +525,129 @@ public class Utilities {
         });
         return resources.size();
     }
+
     private static List<HashMap<String,String>> generateMappingsWithNPatterns(FillTemplatePatternsWithResources tripleGenerator,List<TripleTemplate>patterns) {
-        HashMap<Integer,List<Triple>>candidatesWith2Res=new HashMap<>();
-        patterns.forEach(pattern->{
-            if(pattern.getSubject().startsWith("res")||pattern.getObject().startsWith("res")) {
-                List<Triple>cands=generateSingleTriples(pattern, tripleGenerator);
-                if (pattern.getObject().startsWith("res"))cands.forEach(c->c.setSubject(pattern.getSubject()));
-                if (pattern.getSubject().startsWith("res"))cands.forEach(c->c.setObject(pattern.getObject()));
-                candidatesWith2Res.put(patterns.indexOf(pattern),cands);
+        // Triple with two resources calculation
+        HashMap<TripleTemplate, List<Triple>> candidatesWith2Res = new HashMap<>();
+        patterns.forEach(pattern -> {
+            if ((pattern.isSubjectAResource() || pattern.isObjectAResource()) && pattern.isPredicateAResource()) {
+                List<Triple> tripleCandidates = generateSingleTriples(pattern, tripleGenerator);
+                if (pattern.isObjectAResource()) tripleCandidates.forEach(c -> c.setSubject(pattern.getSubject()));
+                if (pattern.isSubjectAResource()) tripleCandidates.forEach(c -> c.setObject(pattern.getObject()));
+                candidatesWith2Res.put(pattern, tripleCandidates);
             }
         });
-        HashMap<Integer[],List<Triple[]>>compounds=new HashMap<>();
+
+        // Compound calculation
+        List<CompoundPatternCandidates> compoundss=new ArrayList<>();
         if(patterns.size()>candidatesWith2Res.size()) {
-            for(TripleTemplate pattern:patterns) {
-                if (!candidatesWith2Res.containsKey(patterns.indexOf(pattern))&&!pattern.getSubject().startsWith("res")&&!pattern.getObject().startsWith("res")) {
-                    for(Integer key:candidatesWith2Res.keySet()){
-                        if(patterns.get(key).getSubject().equals(pattern.getSubject())||
-                                patterns.get(key).getSubject().equals(pattern.getObject())||
-                                patterns.get(key).getObject().equals(pattern.getSubject())||
-                                patterns.get(key).getObject().equals(pattern.getObject())
-                        ) {
-                            List<Triple[]>foundcompounds=generateCompound(patterns.get(key),pattern,candidatesWith2Res.get(key),tripleGenerator);
-                            if(foundcompounds.size()>0) {
-                                compounds.put(new Integer[]{key,patterns.indexOf(pattern)},foundcompounds);
-                                break;
-                            }
+
+//            // Only process patterns with single resource, filter out patterns with two resources because they are already processed above.
+            List<TripleTemplate> allPatternsWith1Resource = patterns.stream().filter(triplePattern -> !candidatesWith2Res.containsKey(triplePattern)).collect(Collectors.toList());
+
+            for(TripleTemplate patternWith1Res:allPatternsWith1Resource) {
+
+                for(TripleTemplate patternWith2Res:candidatesWith2Res.keySet()){
+                    if(patternWith2Res.getSubject().equals(patternWith1Res.getSubject())||
+                            patternWith2Res.getSubject().equals(patternWith1Res.getObject())||
+                            patternWith2Res.getObject().equals(patternWith1Res.getSubject())||
+                            patternWith2Res.getObject().equals(patternWith1Res.getObject())
+                    ) {
+                        List<Triple[]>foundcompounds=generateCompound(patternWith2Res,patternWith1Res,candidatesWith2Res.get(patternWith2Res),tripleGenerator);
+                        if(foundcompounds.size()>0) {
+                            compoundss.add(new CompoundPatternCandidates(patternWith2Res, patternWith1Res, foundcompounds));
+                            break;
                         }
                     }
                 }
+
             }
+
         }
-        compounds.keySet().forEach(key->candidatesWith2Res.remove(key[0]));
+
+
+        compoundss.forEach(compoundCandidate -> candidatesWith2Res.remove(compoundCandidate.getPatternWith2Res()));
 
         List<HashMap<String,String>>mappings=new ArrayList<>();
-        compounds.keySet().forEach(comp ->{
-            gernerateMappingFromCompound(compounds.get(comp),patterns.get(comp[0]),patterns.get(comp[1]));
-        });
-        compounds.keySet().forEach(comp ->{
-            mappings.addAll(gernerateMappingFromCompound(compounds.get(comp),patterns.get(comp[0]),patterns.get(comp[1])));
+
+        compoundss.forEach(comp ->{
+            mappings.addAll(gernerateMappingFromCompound(comp.getCandidates(), comp.getPatternWith2Res(), comp.getPatternWith1Res()));
         });
         candidatesWith2Res.keySet().forEach(pat->{
-            mappings.addAll(gernerateMappingFromSingleTriple(candidatesWith2Res.get(pat),patterns.get(pat)));
+            mappings.addAll(gernerateMappingFromSingleTriple(candidatesWith2Res.get(pat),pat));
         });
-        List<HashMap<String,String>>mergedMappings=mergeMappings(mappings,tripleGenerator);
-        return mergedMappings;
+        List<HashMap<String, String>> mergeMappings = mergeMappings(mappings, tripleGenerator);
+        return mergeMappings;
+
     }
-    private static List<HashMap<String,String>>mergeMappings(List<HashMap<String,String>>mappings
-            ,FillTemplatePatternsWithResources tripleGenerator){
-        List<HashMap<String,String>>mergedMappings=new ArrayList<>();
-        for(HashMap<String,String>map1:mappings){
-            for(HashMap<String,String>map2:mappings){
-                HashMap<String,String>mergedMapping=new HashMap<>();
-                mergedMapping.putAll(map1);
-                Set<String>knownValues= Sets.newHashSet(mergedMapping.values());
-                boolean updated=false;
-                for(String key:map2.keySet()) {
-                    if (mergedMapping.containsKey(key) && !mergedMapping.get(key).equals(map2.get(key))) {
-                        updated=false;
-                        break;
+
+    private static List<HashMap<String, String>> mergeMappings(List<HashMap<String, String>> mappings, FillTemplatePatternsWithResources tripleGenerator) {
+        List<HashMap<String, String>> mergedMappings = new ArrayList<>();
+
+        for (int x = 0; x < mappings.size(); x++) {
+            for (int y = x + 1; y < mappings.size(); y++) {
+                boolean validMerge = true;
+                HashMap<String, String> merged = new HashMap<>();
+
+                HashMap<String, String> set1 = mappings.get(x);
+                HashMap<String, String> set2 = mappings.get(y);
+
+                // If both sets have same keys, ignore pair.
+                if (set1.keySet().containsAll(set2.keySet()) && set2.keySet().containsAll(set1.keySet())) {
+                    validMerge = false;
+                }
+
+                ImmutableSet<String> commonKeys = Sets.intersection(set1.keySet(), set2.keySet()).immutableCopy();
+
+                // Make sure that if a key exists in both sets, value associated with this key is same.
+                if(validMerge){
+                    for (String commonKey : commonKeys) {
+                        if (!Objects.equals(set1.get(commonKey), set2.get(commonKey))) {
+                            validMerge = false;
+                            break;
+                        }
                     }
-                    if (!mergedMapping.containsKey(key) && !knownValues.contains(map2.get(key))) {
-                        mergedMapping.put(key, map2.get(key));
-                        updated = true;
-                    }
-                    else if(!mergedMapping.containsKey(key) && knownValues.contains(map2.get(key))){
-                        updated=false;
-                        break;
+                    if (validMerge) {
+                        // Add common keys to merged
+                        commonKeys.forEach(commonKey -> merged.put(commonKey, set1.get(commonKey)));
                     }
                 }
-                if(updated&&tripleGenerator.acceptByCooccurence(Lists.newArrayList(mergedMapping.values())))
-                    mergedMappings.add(mergedMapping);
+
+                // Add remaining keys from set1
+                if (validMerge) validMerge = copyRemainingEntries(set1, merged, commonKeys);
+
+                // Add remaining keys from set2
+                if (validMerge) validMerge = copyRemainingEntries(set2, merged, commonKeys);
+
+                // Everything went well, successful merge. Add it to mergedMappings.
+                if (validMerge)
+                    mergedMappings.add(merged);
             }
         }
-        if(mergedMappings.size()==0)return mappings;
-        else return mergeMappings(mergedMappings,tripleGenerator);
+
+        if(mergedMappings.size()==0) return mappings;
+        else return mergeMappings(mergedMappings, tripleGenerator);
     }
+
+    private static boolean copyRemainingEntries(HashMap<String, String> from, HashMap<String, String> to, Set<String> commonKeys) {
+        boolean success = false;
+
+        // Prepare remaining mappings
+        ImmutableSet<String> remainingKeys = Sets.difference(from.keySet(), commonKeys).immutableCopy();
+        Map<String, String> remainingMappings = new HashMap<>();
+        for (String remainingKey : remainingKeys) {
+            remainingMappings.put(remainingKey, from.get(remainingKey));
+        }
+
+        // Merge is invalid if two different keys map to the same value. Check this condition.
+        if (Sets.intersection(Sets.newHashSet(to.values()), Sets.newHashSet(remainingMappings.values())).immutableCopy().size() == 0) {
+            to.putAll(remainingMappings);
+            success = true;
+        }
+
+        return success;
+    }
+
     private static List<HashMap<String,String>>gernerateMappingFromSingleTriple(List<Triple>triples,TripleTemplate pattern1){
         List<HashMap<String,String>>mappings=new ArrayList<>();
         triples.forEach(trip->{
@@ -575,14 +659,27 @@ public class Utilities {
         });
         return mappings;
     }
-    private static List<HashMap<String,String>>gernerateMappingFromCompound(List<Triple[]>compounds,TripleTemplate pattern1,TripleTemplate pattern2){
+    private static List<HashMap<String,String>>gernerateMappingFromCompound(List<Triple[]>compounds,TripleTemplate templateWith2Res,TripleTemplate templateWith1Res){
         List<HashMap<String,String>>mappings=new ArrayList<>();
+
         compounds.forEach(comp->{
             HashMap<String,String>mapping=new HashMap<>();
-            if(pattern1.getSubject().startsWith("res"))mapping.put(pattern1.getSubject(),comp[0].getSubject());
-            else mapping.put(pattern1.getObject(),comp[0].getObject());
-            mapping.put(pattern1.getPredicate(),comp[0].getPredicate());
-            mapping.put(pattern2.getPredicate(),comp[1].getPredicate());
+            Triple tripleWith2Res = comp[0];
+            Triple tripleWith1Res = comp[1];
+
+            // Handle pattern with two resources
+            mapping.put(templateWith2Res.getPredicate(), tripleWith2Res.getPredicate());
+            if(templateWith2Res.isSubjectAResource())
+                mapping.put(templateWith2Res.getSubject(), tripleWith2Res.getSubject());
+            else
+                mapping.put(templateWith2Res.getObject(), tripleWith2Res.getObject());
+
+            // Handle pattern with one resource
+            if(TripleTemplate.Pattern.V_R_V.equals(templateWith1Res.getPattern()))
+                mapping.put(templateWith1Res.getPredicate(), tripleWith1Res.getPredicate());
+            else if(TripleTemplate.Pattern.V_V_R.equals(templateWith1Res.getPattern()))
+                mapping.put(templateWith1Res.getObject(), tripleWith1Res.getObject());
+
             mappings.add(mapping);
         });
         return mappings;
@@ -676,10 +773,10 @@ public class Utilities {
         int popRanked=resourceGenerator.getPopularity(valuesRanked);
         if(popMapping>popRanked)return true;
         else if(popMapping<popRanked)return false;
-        int numberOfSemDependanciesMapping=resourceGenerator.getNumberOfDependantResourceCombinations(connResources);
-        int numberOfSemDependanciesMappingRanked=resourceGenerator.getNumberOfDependantResourceCombinations(connResourcesRanked);
-        if(numberOfSemDependanciesMapping>numberOfSemDependanciesMappingRanked)return true;
-        else if(numberOfSemDependanciesMappingRanked<numberOfSemDependanciesMapping)return false;
+//        int numberOfSemDependanciesMapping=resourceGenerator.getNumberOfDependantResourceCombinations(connResources);
+//        int numberOfSemDependanciesMappingRanked=resourceGenerator.getNumberOfDependantResourceCombinations(connResourcesRanked);
+//        if(numberOfSemDependanciesMapping>numberOfSemDependanciesMappingRanked)return true;
+//        else if(numberOfSemDependanciesMappingRanked<numberOfSemDependanciesMapping)return false;
 
         return false;
     }

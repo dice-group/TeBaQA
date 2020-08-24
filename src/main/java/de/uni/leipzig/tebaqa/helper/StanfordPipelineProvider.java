@@ -28,8 +28,8 @@ public class StanfordPipelineProvider {
         if (null == pipeline) {
             log.info("Creating StanfordCoreNLP pipeline...");
             pipeline = new StanfordCoreNLP(PropertiesUtils.asProperties(
-//                    "annotators", "tokenize,ssplit,pos,lemma,parse,natlog,ner",
-                    "annotators", "tokenize,ssplit,pos,lemma,parse,natlog,depparse,ner",
+                    "annotators", "tokenize,ssplit,pos,lemma,parse,natlog,ner",
+//                    "annotators", "tokenize,ssplit,pos,lemma,parse,natlog,depparse,ner",
                     "ssplit.isOneSentence", "true",
                     "tokenize.language", "en"));
         }

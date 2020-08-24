@@ -525,4 +525,12 @@ public class PipelineController {
     private void addTestDataset(Dataset dataset) {
         this.testDatasets.add(dataset);
     }
+
+    public Map<String, QueryTemplateMapping> getMappings() {
+        return mappings;
+    }
+
+    public void setMappings(Map<String, QueryTemplateMapping> mappings) {
+        this.mappings = mappings;
+    }
 }

@@ -1,5 +1,9 @@
 package de.uni.leipzig.tebaqa.model;
 
+import org.semarglproject.vocab.RDF;
+
+import java.util.Objects;
+
 public class Triple {
     public Triple(String subject, String predicate, String object) {
         super();
@@ -36,10 +40,28 @@ public class Triple {
         this.object = object;
     }
 
+    public boolean isPredicateRDFTypeProperty()
+    {
+        return predicate.equalsIgnoreCase("a") || predicate.equalsIgnoreCase(RDF.TYPE);
+    }
+
     @Override
     public String toString() {
         return subject + " " + predicate + " " + object;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Triple triple = (Triple) o;
+        return subject.equals(triple.subject) &&
+                predicate.equals(triple.predicate) &&
+                object.equals(triple.object);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(subject, predicate, object);
+    }
 }
