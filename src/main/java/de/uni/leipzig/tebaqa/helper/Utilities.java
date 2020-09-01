@@ -652,9 +652,20 @@ public class Utilities {
         List<HashMap<String,String>>mappings=new ArrayList<>();
         triples.forEach(trip->{
             HashMap<String,String>mapping=new HashMap<>();
-            if(pattern1.getSubject().startsWith("res"))mapping.put(pattern1.getSubject(),trip.getSubject());
-            else mapping.put(pattern1.getObject(),trip.getObject());
-            mapping.put(pattern1.getPredicate(),trip.getPredicate());
+            if(pattern1.getSubject().startsWith("res"))
+                mapping.put(pattern1.getSubject(), "<" + trip.getSubject() + ">");
+            else {
+                String objectValue = trip.getObject();
+                if(trip.isLiteralObject())
+                    objectValue = "\"" + objectValue + "\"";
+                else
+                    objectValue = "<" + objectValue + ">";
+                mapping.put(pattern1.getObject(), objectValue);
+            }
+
+            String predValue = trip.getPredicate();
+            if(!predValue.equals("a")) predValue = "<" + predValue + ">";
+            mapping.put(pattern1.getPredicate(),predValue);
             mappings.add(mapping);
         });
         return mappings;
@@ -668,17 +679,35 @@ public class Utilities {
             Triple tripleWith1Res = comp[1];
 
             // Handle pattern with two resources
-            mapping.put(templateWith2Res.getPredicate(), tripleWith2Res.getPredicate());
+            String predicateValue = tripleWith2Res.getPredicate();
+            if(!predicateValue.equals("a")) predicateValue = "<" + predicateValue + ">";
+            mapping.put(templateWith2Res.getPredicate(), predicateValue);
+
             if(templateWith2Res.isSubjectAResource())
-                mapping.put(templateWith2Res.getSubject(), tripleWith2Res.getSubject());
-            else
-                mapping.put(templateWith2Res.getObject(), tripleWith2Res.getObject());
+                mapping.put(templateWith2Res.getSubject(), "<" + tripleWith2Res.getSubject() + ">");
+            else {
+                String objectValue = tripleWith2Res.getObject();
+                if(tripleWith2Res.isLiteralObject())
+                    objectValue = "\"" + objectValue + "\"";
+                else
+                    objectValue = "<" + objectValue + ">";
+                mapping.put(templateWith2Res.getObject(), "<" + objectValue + ">");
+            }
 
             // Handle pattern with one resource
-            if(TripleTemplate.Pattern.V_R_V.equals(templateWith1Res.getPattern()))
-                mapping.put(templateWith1Res.getPredicate(), tripleWith1Res.getPredicate());
-            else if(TripleTemplate.Pattern.V_V_R.equals(templateWith1Res.getPattern()))
-                mapping.put(templateWith1Res.getObject(), tripleWith1Res.getObject());
+            if(TripleTemplate.Pattern.V_R_V.equals(templateWith1Res.getPattern())) {
+                predicateValue = tripleWith1Res.getPredicate();
+                if(!predicateValue.equals("a")) predicateValue = "<" + predicateValue + ">";
+                mapping.put(templateWith1Res.getPredicate(), predicateValue);
+            }
+            else if(TripleTemplate.Pattern.V_V_R.equals(templateWith1Res.getPattern())) {
+                String objectValue = tripleWith1Res.getObject();
+                if(tripleWith1Res.isLiteralObject())
+                    objectValue = "\"" + objectValue + "\"";
+                else
+                    objectValue = "<" + objectValue + ">";
+                mapping.put(templateWith1Res.getObject(), objectValue);
+            }
 
             mappings.add(mapping);
         });
@@ -798,6 +827,10 @@ public class Utilities {
         return rankedMappings;
     }
 
+    private static boolean isUrlResource(String str){
+        return str.startsWith("<") && str.endsWith(">");
+    }
+
     public static List<String>fillTemplates(String pattern,FillTemplatePatternsWithResources tripleGenerator){
         List<String> triples = extractTriples(pattern);
         List<String> triplesWithoutFilters = triples.parallelStream()
@@ -812,6 +845,28 @@ public class Utilities {
         }*/
         List<Triple>typeCandidateTriples=new ArrayList<>();
         List<HashMap<String,String>>mappings=generateMappingsWithNPatterns(tripleGenerator,patterns);
+
+        // Remove invalid mappings which use literal as a subject
+        List<String> disallowedLiteralPlaceholders = new ArrayList<>();
+        for(TripleTemplate template : patterns){
+            if(template.isSubjectAResource()){
+                disallowedLiteralPlaceholders.add(template.getSubject());
+            }
+        }
+
+        List<HashMap<String,String>> invalidMappings = new ArrayList<>();
+        mappings.forEach(mapping -> {
+            for(String placeholder : mapping.keySet())
+            {
+                if(disallowedLiteralPlaceholders.contains(placeholder) && !isUrlResource(mapping.get(placeholder))){
+                    invalidMappings.add(mapping);
+                    break;
+                }
+            }
+        });
+        mappings.removeAll(invalidMappings);
+
+
         List<String>queries=new ArrayList<>();
         if(mappings.size()>0&&mappings.get(0).size()==countResourcesToMatch(patterns)) {
             mappings = rankMappings(mappings, patterns, tripleGenerator);
@@ -820,8 +875,12 @@ public class Utilities {
                 for(String key:mapping.keySet()){
                     String val=mapping.get(key);
                     if(val.equals("country_prop"))query=query.replace(key,"?county_var");
-                    if(val.equals("a"))query=query.replace(key,val);
-                    else query=query.replace(key,"<"+mapping.get(key)+">");
+
+                    if(val.equals("a"))
+                        query=query.replace(key,val);
+                    else {
+                        query=query.replace(key,mapping.get(key));
+                    }
                 }
                 queries.add(query);
             }

@@ -10,6 +10,7 @@ import edu.stanford.nlp.semgraph.SemanticGraph;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static de.uni.leipzig.tebaqa.helper.QueryMappingFactoryLabels.getNeighborCoOccurrencePermutations;
 
@@ -336,6 +337,8 @@ public class FillTemplatePatternsWithResources {
 
         for(String coOccurence:coOccurrences) {
             literalCandidates.addAll(index.searchLiteral(coOccurence,100));
+            literalCandidates.forEach(lc -> propertyUris.addAll(((EntityCandidate)lc).getConnectedPropertiesObject()));
+
             Set<ResourceCandidate> best = getbestResourcesByLevenstheinRatio( coOccurence, "entity",false,null);
             best.forEach(cand->{
                 propertyUris.addAll(((EntityCandidate)cand).getConnectedPropertiesSubject());
@@ -509,9 +512,9 @@ public class FillTemplatePatternsWithResources {
         return null;
 
     }
-    public List<Triple> generateTuplesWithTwoResources(TripleTemplate template, List<ResourceCandidate> entityCandidates,
-                                                        List<ResourceCandidate> propertyCandidates){
-        List<Triple>triples=new ArrayList<>();
+    public Set<Triple> generateTuplesWithTwoResources(TripleTemplate template, List<ResourceCandidate> entityCandidates,
+                                                      List<ResourceCandidate> propertyCandidates){
+        Set<Triple>triples=new HashSet<>();
         if(template.getSubject().equals("v")){
             entityCandidates.forEach(ec->{
                 ((EntityCandidate)ec).getConnectedPropertiesObject().forEach(prop->{
@@ -522,7 +525,17 @@ public class FillTemplatePatternsWithResources {
                             triples.add(t);
                     }
                 });
+            });
 
+            // Add literal candidates
+            literalCandidates.forEach(lc -> {
+                ((EntityCandidate) lc).getConnectedPropertiesObject().forEach(prop -> {
+                    if (containsByURI(prop, propertyCandidates)
+                            && !coOccurenceContains(lc.getCoOccurence(), getByURI(prop, propertyCandidates).getCoOccurence())) {
+                        Triple t = new Triple("var", prop, lc.getUri(), true);
+                        triples.add(t);
+                    }
+                });
             });
         }
         if(template.getObject().equals("v")){
@@ -542,20 +555,20 @@ public class FillTemplatePatternsWithResources {
     }
 
     public List<Triple> generateTuplesWithTwoVariables(Triple alreadyKnownTriple,TripleTemplate template) {
-        List<Triple> triplesFound;
+        Set<Triple> triplesFound;
 
         if(TripleTemplate.Pattern.V_R_V.equals(template.getPattern())) {
             triplesFound = twoVariablesVRV(alreadyKnownTriple, template);
         } else if(TripleTemplate.Pattern.V_V_R.equals(template.getPattern())) {
             triplesFound = twoVariablesVVR(alreadyKnownTriple, template);
         } else {
-            triplesFound = new ArrayList<>();
+            triplesFound = new HashSet<>();
         }
 
-        return triplesFound;
+        return new ArrayList<>(triplesFound);
     }
 
-    private List<Triple> twoVariablesVVR(Triple alreadyKnownTriple, TripleTemplate template) {
+    private Set<Triple> twoVariablesVVR(Triple alreadyKnownTriple, TripleTemplate template) {
         Set<Triple> triplesFound = new HashSet<>();
 
 //        if(alreadyKnownTriple.isPredicateRDFTypeProperty()){
@@ -568,11 +581,21 @@ public class FillTemplatePatternsWithResources {
                 triplesFound.add(t);
             }
         }
+
+        for(ResourceCandidate lc : literalCandidates)
+        {
+            // Check that literalCandidate is not used to replace a placeholder in already known triple
+            if(!alreadyKnownTriple.getSubject().equals(lc.getUri()) && !alreadyKnownTriple.getObject().equals(lc.getUri()))
+            {
+                Triple t = new Triple(template.getSubject(), template.getPredicate(), lc.getUri(), true);
+                triplesFound.add(t);
+            }
+        }
 //        }
-        return new ArrayList<>(triplesFound);
+        return triplesFound;
     }
 
-    private List<Triple> twoVariablesVRV(Triple alreadyKnownTriple, TripleTemplate template) {
+    private Set<Triple> twoVariablesVRV(Triple alreadyKnownTriple, TripleTemplate template) {
         Set<String> relevantResourceCandidates = new HashSet<>();
 
         //for(Triple triple:alreadyKnownTriples){
@@ -596,7 +619,7 @@ public class FillTemplatePatternsWithResources {
         if(max<1000)
             cands.addAll(index.searchEntitiesById(uris.subList(current, max)));
 
-        List<Triple> triplesFound = new ArrayList<>();
+        Set<Triple> triplesFound = new HashSet<>();
         if (template.getSubject().equals(alreadyKnownTriple.getSubject())||
                 template.getSubject().equals(alreadyKnownTriple.getObject())){
             Set relevantPropertiesCandidate = new HashSet();
@@ -623,7 +646,7 @@ public class FillTemplatePatternsWithResources {
     }
 
 
-    private boolean tripleContains(List<Triple>triples,Triple triple){
+    private boolean tripleContains(Collection<Triple>triples,Triple triple){
         for(Triple t:triples){
             if(triple.getSubject().equals(t.getSubject())&&
             triple.getPredicate().equals(t.getPredicate())&&
@@ -754,9 +777,29 @@ public class FillTemplatePatternsWithResources {
         return triples;
     }
     public List<Triple> generateSingleTriples(Set<String> templates){
-        List<ResourceCandidate>candidatesCurrent=findProperties(Lists.newArrayList(propertyUris),coOccurrences);
+//        List<ResourceCandidate>candidatesCurrent=findProperties(Lists.newArrayList(propertyUris),coOccurrences);
+        List<ResourceCandidate> candidatesCurrent = getImportantProperties();
+
         List<Triple>triples=new ArrayList<>();
         templates.forEach(t->triples.addAll(generateTuplesWithTwoResources(new TripleTemplate(t),entityCandidates,candidatesCurrent)));
         return triples;
+    }
+
+    private List<ResourceCandidate> getImportantProperties()
+    {
+        List<ResourceCandidate> importantPropertyCandidates = new ArrayList<>();
+
+        Set<String> alreadyCollected = new HashSet<>();
+        Stream<ResourceCandidate> stream = this.propertyCandidates.stream()
+                .filter(propertyCandidate -> propertyUris.contains(propertyCandidate.getUri()));
+
+        stream.forEach(propertyCandidate -> {
+            if(!alreadyCollected.contains(propertyCandidate.getUri())) {
+                importantPropertyCandidates.add(propertyCandidate);
+                alreadyCollected.add(propertyCandidate.getUri());
+            }
+        });
+
+        return importantPropertyCandidates;
     }
 }

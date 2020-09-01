@@ -416,6 +416,7 @@ public class ElasticSearchEntityIndex {
             //log.error(e.getLocalizedMessage() + " -> " + subject);
             e.printStackTrace();
         }
+        candidates.forEach(resourceCandidate -> resourceCandidate.setCoOccurence(coOccurence));
         return candidates;
     }
     private Set<ResourceCandidate> getFromIndexLiteral(int maxNumberOfResults, QueryBuilder bq) throws IOException {

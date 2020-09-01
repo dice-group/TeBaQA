@@ -5,16 +5,26 @@ import org.semarglproject.vocab.RDF;
 import java.util.Objects;
 
 public class Triple {
+
+    String subject;
+    String predicate;
+    String object;
+    boolean literalObject;
+
     public Triple(String subject, String predicate, String object) {
         super();
         this.subject = subject;
         this.predicate = predicate;
         this.object = object;
+        this.literalObject = false;
     }
 
-    String subject;
-    String predicate;
-    String object;
+    public Triple(String subject, String predicate, String object, boolean literalObject) {
+        this.subject = subject;
+        this.predicate = predicate;
+        this.object = object;
+        this.literalObject = literalObject;
+    }
 
     public String getSubject() {
         return subject;
@@ -38,6 +48,14 @@ public class Triple {
 
     public void setObject(String object) {
         this.object = object;
+    }
+
+    public boolean isLiteralObject() {
+        return literalObject;
+    }
+
+    public void setLiteralObject(boolean literalObject) {
+        this.literalObject = literalObject;
     }
 
     public boolean isPredicateRDFTypeProperty()
