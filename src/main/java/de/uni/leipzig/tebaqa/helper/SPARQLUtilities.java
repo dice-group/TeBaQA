@@ -83,7 +83,8 @@ public class SPARQLUtilities {
                 log.error("QueryParseException: Unable to parse query: " + qs, e);
                 return results;
             }
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
+//            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
             qe.setTimeout(10000, 10000);
             boolean isAskType = query.isAskType();
             boolean isSelectType = query.isSelectType();
@@ -228,7 +229,8 @@ public class SPARQLUtilities {
     }
     public static ResultsetBinding executeQuery(String queryString){
         Query query = QueryFactory.create(queryString);
-        QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+        QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
+//        QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
         ResultsetBinding b=new ResultsetBinding();
         if (query.isSelectType()){
 
@@ -271,8 +273,8 @@ public class SPARQLUtilities {
                 isAskType = QueryFactory.create(queryWithValues).isAskType();
             boolean isCountQuery = isCountQuery(queryWithValues);
             boolean isLiteralResult=false;
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
-            //QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo-suche/query", query);
+//            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
             qe.setTimeout(10000, 10000);
             if (query.isSelectType()) {
                 ResultSet rs = null;

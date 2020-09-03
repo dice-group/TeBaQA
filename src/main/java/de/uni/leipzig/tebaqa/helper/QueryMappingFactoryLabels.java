@@ -90,7 +90,7 @@ public class QueryMappingFactoryLabels {
         //this.ontologyNodes = ontologyNodes;
         wordsGenerator=new WordsGenerator();
         ontologyURIs = new HashSet<>();
-        relationsGenerator=new RelationsGenerator();
+//        relationsGenerator=new RelationsGenerator();
         this.semanticAnalysisHelper=semanticAnalysisHelper;
         //ontologyNodes.forEach(rdfNode -> ontologyURIs.add(rdfNode.toString()));
         //this.properties = properties;
