@@ -691,7 +691,7 @@ public class Utilities {
                     objectValue = "\"" + objectValue + "\"";
                 else
                     objectValue = "<" + objectValue + ">";
-                mapping.put(templateWith2Res.getObject(), "<" + objectValue + ">");
+                mapping.put(templateWith2Res.getObject(), objectValue);
             }
 
             // Handle pattern with one resource

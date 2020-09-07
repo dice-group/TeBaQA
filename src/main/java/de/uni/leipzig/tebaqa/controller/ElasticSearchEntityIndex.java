@@ -404,12 +404,13 @@ public class ElasticSearchEntityIndex {
         //else {
         //if(coOccurence.length()<4)
         //QueryBuilder queryBuilderMatchTerm= new MatchQueryBuilder("literal"+".raw", coOccurence).operator(Operator.AND);
-        QueryBuilder queryBuilderTermFuzzy=QueryBuilders.fuzzyQuery("literal"+".raw",coOccurence).fuzziness(Fuzziness.TWO).prefixLength(0).maxExpansions(50);
+//        QueryBuilder queryBuilderTermFuzzy=QueryBuilders.fuzzyQuery("literal"+".raw",coOccurence).fuzziness(Fuzziness.TWO).prefixLength(0).maxExpansions(50);
+        QueryBuilder queryBuilderTerm=QueryBuilders.termQuery("literal"+".raw",coOccurence);
         //}
 
         try {
 
-            candidates = getFromIndexLiteral(maxNumberOfResults, queryBuilderTermFuzzy);
+            candidates = getFromIndexLiteral(maxNumberOfResults, queryBuilderTerm);
             //cache.put(bq, triples);
 
         } catch (Exception e) {

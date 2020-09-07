@@ -64,6 +64,7 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
 
         public SemanticAnalysisHelperGerman() {
             super(StanfordPipelineProviderGerman.getSingletonPipelineInstance());
+//            super(StanfordPipelineProviderGerman.getPipelineInstanceForAnnotators(StanfordPipelineProviderGerman.ANNOTATORS_WITHOUT_DEPPARSE));
 
             //this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
         }
@@ -305,7 +306,7 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
             //de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper semanticAnalysisHelper = new de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper();
             //HashMap<String,String> posTags = getPosTags(question);
             Pattern pattern = Pattern.compile("\\w+");
-            List<CoreLabel>tokens=this.getTokens("Welche Stadt hat mehr als 5000 Einwohner");
+            List<CoreLabel>tokens=this.getTokens(question);
             Matcher m = pattern.matcher(question);
             if (m.find()) {
                 String first = m.group();
@@ -329,14 +330,27 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
             if (question.toLowerCase().startsWith("wann")) {
                 return SPARQLResultSet.DATE_ANSWER_TYPE;
             }
-            for (CoreLabel token : tokens) {
-                String posTag = token.getString(CoreAnnotations.PartOfSpeechAnnotation.class);
-                if (question.toLowerCase().startsWith("welche")||question.toLowerCase().startsWith("welcher")||posTag.equalsIgnoreCase("NN") || posTag.equalsIgnoreCase("NE")) {
+
+            if (question.toLowerCase().startsWith("welche")||question.toLowerCase().startsWith("welcher")) {
+                boolean hasPluralNoun = false;
+                for (CoreLabel token : tokens) {
+                    String posTag = token.getString(CoreAnnotations.PartOfSpeechAnnotation.class);
+                    if (posTag.equalsIgnoreCase("NN")) {
+                        String nounText = token.getString(CoreAnnotations.OriginalTextAnnotation.class);
+                        if (nounText.endsWith("en")) {
+                            hasPluralNoun = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (hasPluralNoun) {
                     return SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
-                } else if (posTag.equalsIgnoreCase("NN") || posTag.equalsIgnoreCase("NE")) {
+                } else {
                     return SPARQLResultSet.SINGLE_ANSWER;
                 }
             }
+
             return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
         }
 
@@ -354,7 +368,8 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
         }
 
         public String removeQuestionWords(String question) {
-            List<String> questionWords = Arrays.asList("liste|gib|zeig mir|wer|wo|wann|was|warum|wessen|wie|welche|welches|ist|sind|hat|war".split("\\|"));
+            List<String> questionWords = Arrays.asList("liste|gib|zeig mir|wer|wo|wann|was|warum|wessen|wie|welche|welches|welcher|ist|sind|hat|war".split("\\|"));
+            questionWords.sort(Comparator.reverseOrder());
 
             for (String questionWord : questionWords) {
                 if (question.toLowerCase().startsWith(questionWord)) {
