@@ -385,6 +385,9 @@ public class SPARQLUtilities {
     static int determineAnswerType(ResultsetBinding rs) {
         Set<String> result = rs.getResult();
 
+        if(result.isEmpty())
+            return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
+
         //Check for scientific numbers like 3.40841e+10
         if (result.stream().allMatch(SPARQLUtilities::isNumericOrScientific)) {
             return SPARQLResultSet.NUMBER_ANSWER_TYPE;
@@ -399,7 +402,7 @@ public class SPARQLUtilities {
             } else {
                 return SPARQLResultSet.SINGLE_ANSWER;
             }
-        } else if (result.size() > 1 && result.stream().allMatch(SPARQLUtilities::isResource)) {
+        } else if (result.size() > 1 && (result.stream().allMatch(SPARQLUtilities::isResource) || result.stream().noneMatch(SPARQLUtilities::isResource))) {
             return SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
         } else {
             return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
@@ -467,8 +470,8 @@ public class SPARQLUtilities {
         return bindings;
     }
 
-    private static boolean isResource(String s) {
-        return s.startsWith("http://dbpedia.org/resource/");
+    public static boolean isResource(String s) {
+        return s.toLowerCase().startsWith("http:") || s.toLowerCase().startsWith("urn:");
     }
 
     public static boolean isNumericOrScientific(String s) {

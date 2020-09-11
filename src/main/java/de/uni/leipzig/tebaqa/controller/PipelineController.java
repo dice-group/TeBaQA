@@ -2,14 +2,7 @@ package de.uni.leipzig.tebaqa.controller;
 
 import com.google.common.collect.Lists;
 import de.uni.leipzig.tebaqa.helper.*;
-import de.uni.leipzig.tebaqa.model.AnswerToQuestion;
-import de.uni.leipzig.tebaqa.model.Cluster;
-import de.uni.leipzig.tebaqa.model.CustomQuestion;
-import de.uni.leipzig.tebaqa.model.QueryBuilder;
-import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
-import de.uni.leipzig.tebaqa.model.ResultsetBinding;
-import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
-import de.uni.leipzig.tebaqa.model.WordNetWrapper;
+import de.uni.leipzig.tebaqa.model.*;
 import edu.cmu.lti.jawjaw.pobj.POS;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
@@ -363,12 +356,18 @@ public class PipelineController {
 //        watch.start("Classify Question");
         FillTemplatePatternsWithResources tripleGenerator=new FillTemplatePatternsWithResources(semanticAnalysisHelper);
         tripleGenerator.extractEntities(question);
+        List<RatedQuery> ratedQueries = mappingFactory.generateQueries(mappings, null, tripleGenerator);
         List<String> queries=new ArrayList<>();
-        queries = mappingFactory.generateQueries(mappings,null, tripleGenerator);
+        queries = ratedQueries.stream().map(RatedQuery::getQuery).collect(Collectors.toList());
         //If the template from the predicted graph won't find suitable templates, try all other templates
         List<ResultsetBinding>queryResults=new ArrayList<>();
-        for(int i=0;i<10&&i<queries.size();i++){
-            queryResults.add(SPARQLUtilities.executeQuery(queries.get(i)));
+        for(int i=0;i<ratedQueries.size();i++){
+            RatedQuery ratedQuery = ratedQueries.get(i);
+            ResultsetBinding results = SPARQLUtilities.executeQuery(ratedQuery.getQuery());
+            if(!results.getResult().isEmpty()) {
+                results.setRating(ratedQuery.getRating());
+                queryResults.add(results);
+            }
         }
         //if (queries.isEmpty()) {
 //            watch.stop();
@@ -385,6 +384,7 @@ public class PipelineController {
         //results.addAll(executeQueries(queries));
         final int expectedAnswerType = semanticAnalysisHelper.detectQuestionAnswerType(question);
         //ResultsetBinding rsBinding = semanticAnalysisHelper.getBestAnswer(results,links, mappingFactory.getEntitiyToQuestionMapping(), expectedAnswerType, false);
+
         ResultsetBinding rsBinding=semanticAnalysisHelper.getBestAnswer(queryResults,expectedAnswerType, false);
 
         rsBinding.retrieveRedirects();
@@ -414,8 +414,9 @@ public class PipelineController {
         //links.extractEntities(question);
         //Set<String> queries = mappingFactory.generateQueriesWithResourceLinker(mappings, graphPattern, false);
         //HashMap<String,String> queries = mappingFactory.generateQueriesWithResourceLinker(mappings, graphPattern, links);
+        List<RatedQuery> ratedQueries = mappingFactory.generateQueries(mappings, graphPattern, tripleGenerator);
         List<String> queries=new ArrayList<>();
-        queries = mappingFactory.generateQueries(mappings, graphPattern, tripleGenerator);
+        queries = ratedQueries.stream().map(RatedQuery::getQuery).collect(Collectors.toList());
         //If the template from the predicted graph won't find suitable templates, try all other templates
         List<ResultsetBinding>queryResults=new ArrayList<>();
         for(int i=0;i<10&&i<queries.size();i++){
@@ -444,7 +445,8 @@ public class PipelineController {
 //            watch.stop();
 //            queryExecutionTotal += watch.getLastTaskTimeMillis();
 //            watch.start("Generate Queries 3 (all templates)");
-            queries = mappingFactory.generateQueries(mappings, null, tripleGenerator);
+            ratedQueries = mappingFactory.generateQueries(mappings, null, tripleGenerator);
+            queries = ratedQueries.stream().map(RatedQuery::getQuery).collect(Collectors.toList());
             queryResults=new ArrayList<>();
             for(int i=0;i<10&&i<queries.size();i++){
                 queryResults.add(SPARQLUtilities.executeQuery(queries.get(i)));

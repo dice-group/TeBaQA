@@ -526,7 +526,7 @@ public class Utilities {
         return resources.size();
     }
 
-    private static List<HashMap<String,String>> generateMappingsWithNPatterns(FillTemplatePatternsWithResources tripleGenerator,List<TripleTemplate>patterns) {
+    private static List<RatedMapping> generateMappingsWithNPatterns(FillTemplatePatternsWithResources tripleGenerator, List<TripleTemplate>patterns) {
         // Triple with two resources calculation
         HashMap<TripleTemplate, List<Triple>> candidatesWith2Res = new HashMap<>();
         patterns.forEach(pattern -> {
@@ -568,7 +568,7 @@ public class Utilities {
 
         compoundss.forEach(compoundCandidate -> candidatesWith2Res.remove(compoundCandidate.getPatternWith2Res()));
 
-        List<HashMap<String,String>>mappings=new ArrayList<>();
+        List<RatedMapping>mappings=new ArrayList<>();
 
         compoundss.forEach(comp ->{
             mappings.addAll(gernerateMappingFromCompound(comp.getCandidates(), comp.getPatternWith2Res(), comp.getPatternWith1Res()));
@@ -576,21 +576,24 @@ public class Utilities {
         candidatesWith2Res.keySet().forEach(pat->{
             mappings.addAll(gernerateMappingFromSingleTriple(candidatesWith2Res.get(pat),pat));
         });
-        List<HashMap<String, String>> mergeMappings = mergeMappings(mappings, tripleGenerator);
+        List<RatedMapping> mergeMappings = mergeMappings(mappings, tripleGenerator);
         return mergeMappings;
 
     }
 
-    private static List<HashMap<String, String>> mergeMappings(List<HashMap<String, String>> mappings, FillTemplatePatternsWithResources tripleGenerator) {
-        List<HashMap<String, String>> mergedMappings = new ArrayList<>();
+    private static List<RatedMapping> mergeMappings(List<RatedMapping> mappings, FillTemplatePatternsWithResources tripleGenerator) {
+        List<RatedMapping> mergedMappings = new ArrayList<>();
 
         for (int x = 0; x < mappings.size(); x++) {
             for (int y = x + 1; y < mappings.size(); y++) {
                 boolean validMerge = true;
-                HashMap<String, String> merged = new HashMap<>();
+                RatedMapping merged = new RatedMapping();
 
-                HashMap<String, String> set1 = mappings.get(x);
-                HashMap<String, String> set2 = mappings.get(y);
+                RatedMapping set1 = mappings.get(x);
+                RatedMapping set2 = mappings.get(y);
+
+                merged.multiplyRating(set1.getRating());
+                merged.multiplyRating(set2.getRating());
 
                 // If both sets have same keys, ignore pair.
                 if (set1.keySet().containsAll(set2.keySet()) && set2.keySet().containsAll(set1.keySet())) {
@@ -629,7 +632,7 @@ public class Utilities {
         else return mergeMappings(mergedMappings, tripleGenerator);
     }
 
-    private static boolean copyRemainingEntries(HashMap<String, String> from, HashMap<String, String> to, Set<String> commonKeys) {
+    private static boolean copyRemainingEntries(RatedMapping from, RatedMapping to, Set<String> commonKeys) {
         boolean success = false;
 
         // Prepare remaining mappings
@@ -648,10 +651,12 @@ public class Utilities {
         return success;
     }
 
-    private static List<HashMap<String,String>>gernerateMappingFromSingleTriple(List<Triple>triples,TripleTemplate pattern1){
-        List<HashMap<String,String>>mappings=new ArrayList<>();
+    private static List<RatedMapping> gernerateMappingFromSingleTriple(List<Triple>triples, TripleTemplate pattern1){
+        List<RatedMapping>mappings=new ArrayList<>();
         triples.forEach(trip->{
-            HashMap<String,String>mapping=new HashMap<>();
+            RatedMapping mapping=new RatedMapping();
+            mapping.multiplyRating(trip.getRating());
+
             if(pattern1.getSubject().startsWith("res"))
                 mapping.put(pattern1.getSubject(), "<" + trip.getSubject() + ">");
             else {
@@ -670,13 +675,16 @@ public class Utilities {
         });
         return mappings;
     }
-    private static List<HashMap<String,String>>gernerateMappingFromCompound(List<Triple[]>compounds,TripleTemplate templateWith2Res,TripleTemplate templateWith1Res){
-        List<HashMap<String,String>>mappings=new ArrayList<>();
+    private static List<RatedMapping> gernerateMappingFromCompound(List<Triple[]>compounds, TripleTemplate templateWith2Res, TripleTemplate templateWith1Res){
+        List<RatedMapping>mappings=new ArrayList<>();
 
         compounds.forEach(comp->{
-            HashMap<String,String>mapping=new HashMap<>();
+            RatedMapping mapping=new RatedMapping();
             Triple tripleWith2Res = comp[0];
             Triple tripleWith1Res = comp[1];
+
+            mapping.multiplyRating(tripleWith2Res.getRating());
+            mapping.multiplyRating(tripleWith1Res.getRating());
 
             // Handle pattern with two resources
             String predicateValue = tripleWith2Res.getPredicate();
@@ -764,13 +772,13 @@ public class Utilities {
 
 
     }
-    private static boolean containsProp(HashMap<String,String>mapping,String prop){
+    private static boolean containsProp(RatedMapping mapping,String prop){
         Set<String>values=Sets.newHashSet(mapping.values());
         if(values.contains(prop))return true;
         else return false;
     }
-    private static boolean compareMappings(HashMap<String,String> rankedMapping,HashMap<String,String>mapping,
-                                List<TripleTemplate> patterns,FillTemplatePatternsWithResources resourceGenerator){
+    private static boolean compareMappings(RatedMapping rankedMapping, RatedMapping mapping,
+                                           List<TripleTemplate> patterns, FillTemplatePatternsWithResources resourceGenerator){
         Set<String>valuesRanked=Sets.newHashSet(rankedMapping.values());
         Set<String>valuesMapping=Sets.newHashSet(mapping.values());
         if(containsProp(mapping,"country_prop")&&!containsProp(rankedMapping,"coutry_prop"))
@@ -809,10 +817,10 @@ public class Utilities {
 
         return false;
     }
-    private static List<HashMap<String,String>>rankMappings(List<HashMap<String,String>>mappings,
+    private static List<RatedMapping>rankMappings(List<RatedMapping>mappings,
                                                      List<TripleTemplate>patterns,FillTemplatePatternsWithResources tripleGenerator){
-        ArrayList<HashMap<String,String>>rankedMappings=new ArrayList<>();
-        for(HashMap mapping:mappings){
+        ArrayList<RatedMapping>rankedMappings=new ArrayList<>();
+        for(RatedMapping mapping:mappings){
             boolean added=false;
             for(int i=0;i<rankedMappings.size();i++){
                 if(compareMappings(rankedMappings.get(i),mapping,patterns,tripleGenerator)) {
@@ -831,20 +839,21 @@ public class Utilities {
         return str.startsWith("<") && str.endsWith(">");
     }
 
-    public static List<String>fillTemplates(String pattern,FillTemplatePatternsWithResources tripleGenerator){
+    public static List<RatedQuery> fillTemplates(String pattern, FillTemplatePatternsWithResources tripleGenerator){
         List<String> triples = extractTriples(pattern);
         List<String> triplesWithoutFilters = triples.parallelStream()
                 .filter(s -> !s.toLowerCase().contains("filter") && !s.toLowerCase().contains("optional"))
                 .collect(Collectors.toList());
         List<TripleTemplate>patterns=new ArrayList<>();
         triplesWithoutFilters.forEach(t->patterns.add(new TripleTemplate(t.split(" "))));
+        int resourceCount = countResourcesToMatch(patterns);
 
         //List<Triple>compoundCandidateTriples=new ArrayList<>();
         /*if(triplesWithoutFilters.size()>1) {
             compoundCandidateTriples.addAll(generateCompoundTriplePatterns(patterns, tripleGenerator, singleCandidateTriples));
         }*/
         List<Triple>typeCandidateTriples=new ArrayList<>();
-        List<HashMap<String,String>>mappings=generateMappingsWithNPatterns(tripleGenerator,patterns);
+        List<RatedMapping> mappings=generateMappingsWithNPatterns(tripleGenerator,patterns);
 
         // Remove invalid mappings which use literal as a subject
         List<String> disallowedLiteralPlaceholders = new ArrayList<>();
@@ -854,7 +863,7 @@ public class Utilities {
             }
         }
 
-        List<HashMap<String,String>> invalidMappings = new ArrayList<>();
+        List<RatedMapping> invalidMappings = new ArrayList<>();
         mappings.forEach(mapping -> {
             for(String placeholder : mapping.keySet())
             {
@@ -866,11 +875,10 @@ public class Utilities {
         });
         mappings.removeAll(invalidMappings);
 
-
-        List<String>queries=new ArrayList<>();
-        if(mappings.size()>0&&mappings.get(0).size()==countResourcesToMatch(patterns)) {
+        List<RatedQuery>queries=new ArrayList<>();
+        if(mappings.size()>0&&mappings.get(0).size()== resourceCount) {
             mappings = rankMappings(mappings, patterns, tripleGenerator);
-            for(HashMap<String,String>mapping:mappings){
+            for(RatedMapping mapping:mappings){
                 String query=""+pattern;
                 for(String key:mapping.keySet()){
                     String val=mapping.get(key);
@@ -882,9 +890,12 @@ public class Utilities {
                         query=query.replace(key,mapping.get(key));
                     }
                 }
-                queries.add(query);
+                queries.add(new RatedQuery(query, resourceCount));
             }
         }
+
+        // Give each query am initial rating based on number of res/n which are present in the pattern
+//        List<RatedQuery> ratedQueries = queries.stream().map(s -> new RatedQuery(s, resourceCount)).collect(Collectors.toList());
         return queries;
 
         /*if(patterns.size()==1) {

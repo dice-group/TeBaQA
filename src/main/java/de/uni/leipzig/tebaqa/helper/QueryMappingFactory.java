@@ -469,7 +469,7 @@ public class QueryMappingFactory {
     }
 
     private boolean isResource(String s) {
-        return s.startsWith("http://dbpedia.org/resource/");
+        return SPARQLUtilities.isResource(s);
     }
 
     private boolean isOntology(String s) {

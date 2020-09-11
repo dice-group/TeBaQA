@@ -10,6 +10,7 @@ public class Triple {
     String predicate;
     String object;
     boolean literalObject;
+    double rating;
 
     public Triple(String subject, String predicate, String object) {
         super();
@@ -17,6 +18,7 @@ public class Triple {
         this.predicate = predicate;
         this.object = object;
         this.literalObject = false;
+        this.rating = 0.0;
     }
 
     public Triple(String subject, String predicate, String object, boolean literalObject) {
@@ -24,6 +26,7 @@ public class Triple {
         this.predicate = predicate;
         this.object = object;
         this.literalObject = literalObject;
+        this.rating = 0.0;
     }
 
     public String getSubject() {
@@ -61,6 +64,23 @@ public class Triple {
     public boolean isPredicateRDFTypeProperty()
     {
         return predicate.equalsIgnoreCase("a") || predicate.equalsIgnoreCase(RDF.TYPE);
+    }
+
+    public double getRating() {
+        return rating;
+    }
+
+    public void setRating(double rating) {
+        this.rating = rating;
+    }
+
+    public void multiplyRating(double multiplier) {
+        if(this.rating == 0.0)
+            this.rating = multiplier;
+        else {
+            if (multiplier != 0)
+                this.rating = this.rating * multiplier;
+        }
     }
 
     @Override

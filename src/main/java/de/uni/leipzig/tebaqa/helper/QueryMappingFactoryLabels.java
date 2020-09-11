@@ -5,11 +5,7 @@ import com.google.common.collect.Sets;
 import de.uni.leipzig.tebaqa.controller.ElasticSearchEntityIndex;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.*;
-import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.simple.Sentence;
-import edu.stanford.nlp.util.CoreMap;
 import joptsimple.internal.Strings;
 import org.aksw.hawk.index.DBOIndex;
 import org.aksw.hawk.index.Patty_relations;
@@ -18,19 +14,14 @@ import org.aksw.qa.annotation.index.IndexDBO_properties;
 import org.aksw.qa.commons.datastructure.Entity;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.jena.base.Sys;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.log4j.Logger;
-import org.ehcache.Cache;
 import org.ehcache.PersistentCacheManager;
 import org.jetbrains.annotations.NotNull;
 import weka.core.Stopwords;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
-import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -38,7 +29,6 @@ import java.util.stream.Collectors;
 //import static de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper.getLemmas;
 import static de.uni.leipzig.tebaqa.helper.TextUtilities.NON_WORD_CHARACTERS_REGEX;
 import static de.uni.leipzig.tebaqa.helper.Utilities.getLevenshteinRatio;
-import static edu.stanford.nlp.ling.CoreAnnotations.*;
 import static java.lang.String.join;
 import static org.apache.commons.lang3.StringUtils.getLevenshteinDistance;
 
@@ -313,9 +303,10 @@ public class QueryMappingFactoryLabels {
 
         return queries;
     }
-    public List<String> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph,  FillTemplatePatternsWithResources tripleGenerator) {
+    public List<RatedQuery> generateQueries(Map<String, QueryTemplateMapping> mappings, String graph, FillTemplatePatternsWithResources tripleGenerator) {
         List<String> suitableMappings = getSuitableMappings(mappings, queryType, graph);
-        List<String> queries=new ArrayList<>();
+        System.out.println(String.format("Generating queries (query type, suitable mappings found): %s, %s", queryType, suitableMappings.size()));
+        List<RatedQuery> queries=new ArrayList<>();
         //if (!useSynonyms) {
 
         for (String pattern : suitableMappings) {
@@ -730,7 +721,7 @@ public class QueryMappingFactoryLabels {
     }
 
     private boolean isResource(String s) {
-        return s.startsWith("http://dbpedia.org/resource/");
+        return SPARQLUtilities.isResource(s);
     }
 
     private boolean isOntology(String s) {

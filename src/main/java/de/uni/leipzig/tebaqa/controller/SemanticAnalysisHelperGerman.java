@@ -47,6 +47,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static de.uni.leipzig.tebaqa.helper.HypernymMappingProvider.getHypernymMapping;
 import static de.uni.leipzig.tebaqa.helper.TextUtilities.NON_WORD_CHARACTERS_REGEX;
@@ -72,8 +73,8 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
         public int determineQueryType(String q) {
             //List<String> selectIndicatorsList = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which".split("\\|"));
             //List<String> askIndicatorsList = Arrays.asList("is|are|did|was|does|can".split("\\|"));
-            List<String> selectIndicatorsList = Arrays.asList("welche|liste|wie|wo|wann|warum|wessen".split("\\|"));
-            List<String> askIndicatorsList = Arrays.asList("gibt|sind".split("\\|"));
+            List<String> selectIndicatorsList = Arrays.asList("welche|liste|wie|wo|wann|warum|wessen|gib".split("\\|"));
+            List<String> askIndicatorsList = Arrays.asList("sind".split("\\|"));
             //log.debug("String question: " + q);
             String[] split = q.split("\\s+");
             List<String> firstThreeWords = new ArrayList<>();
@@ -326,12 +327,22 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
                 if (token.getString(CoreAnnotations.PartOfSpeechAnnotation.class).startsWith("AD")) {
                     return SPARQLResultSet.NUMBER_ANSWER_TYPE;
                 }
+
+                if(question.toLowerCase().startsWith("wie lauten")) {
+                    return SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
+                }
+
+                if(question.toLowerCase().startsWith("wie lautet")) {
+                    return SPARQLResultSet.SINGLE_ANSWER;
+                }
+
             }
             if (question.toLowerCase().startsWith("wann")) {
                 return SPARQLResultSet.DATE_ANSWER_TYPE;
             }
 
-            if (question.toLowerCase().startsWith("welche")||question.toLowerCase().startsWith("welcher")) {
+            if (question.toLowerCase().startsWith("welche")||question.toLowerCase().startsWith("welcher")||
+                    question.toLowerCase().startsWith("gib")) {
                 boolean hasPluralNoun = false;
                 for (CoreLabel token : tokens) {
                     String posTag = token.getString(CoreAnnotations.PartOfSpeechAnnotation.class);
@@ -378,6 +389,66 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
             }
             return question;
         }
+
+
+    public ResultsetBinding getBestAnswer(List<ResultsetBinding> results, int expectedAnswerType, boolean forceResult) {
+        long answersWithExpectedTypeCount = results.stream().filter(resultsetBinding -> resultsetBinding.getAnswerType() == expectedAnswerType).count();
+
+        if(answersWithExpectedTypeCount > 0) {
+            List<ResultsetBinding> matchingResults = results.stream().filter(resultsetBinding -> resultsetBinding.getAnswerType() == expectedAnswerType).collect(Collectors.toList());
+
+            // If only one answer of expected type, then return it
+            if(answersWithExpectedTypeCount == 1) {
+                return matchingResults.get(0);
+            }
+
+            // If more than one answer of expected type, then ranking
+            if(SPARQLResultSet.NUMBER_ANSWER_TYPE == expectedAnswerType) {
+                List<ResultsetBinding> nonZeroCounts = matchingResults.stream().filter(resultsetBinding -> resultsetBinding.getNumericalResultValue() != 0).collect(Collectors.toList());
+                if(nonZeroCounts.size() == 0)
+                    return matchingResults.get(0);
+
+                Map<Double, List<ResultsetBinding>> resultFrequencies = nonZeroCounts.stream().collect(Collectors.groupingBy(ResultsetBinding::getNumericalResultValue));
+                if(resultFrequencies.size() == 1) {
+                    return nonZeroCounts.get(0);
+                }
+                else {
+                    // Use those numerical results which appear most frequently
+                    int maxFrequency = 0;
+                    double valueWithMaxFrequency = 0;
+                    for(double key : resultFrequencies.keySet()) {
+                        int frequency = resultFrequencies.get(key).size();
+                        if(frequency > maxFrequency) {
+                            maxFrequency = frequency;
+                            valueWithMaxFrequency = key;
+                        }
+                    }
+
+                    double finalValueWithMaxFrequency = valueWithMaxFrequency;
+                    return nonZeroCounts.stream().filter(resultsetBinding -> resultsetBinding.getNumericalResultValue() == finalValueWithMaxFrequency).findFirst().get();
+                }
+
+            } else if (SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE == expectedAnswerType) {
+                // Ranking criteria: More number of results mean less significant query
+                matchingResults.forEach(resultsetBinding -> {
+                    resultsetBinding.setRating(resultsetBinding.getRating() / resultsetBinding.getResult().size());
+                });
+            } else {
+                // Ranking criteria: More number of results mean less significant query
+                matchingResults.forEach(resultsetBinding -> {
+                    resultsetBinding.setRating(resultsetBinding.getRating() / resultsetBinding.getResult().size());
+                });
+            }
+            return matchingResults.stream().max(Comparator.comparingDouble(ResultsetBinding::getRating)).get();
+
+        }
+        else {
+            return new ResultsetBinding();
+        }
+
+    }
+
+
         public static void main(String[]args){
             SemanticAnalysisHelper sem=new SemanticAnalysisHelperGerman();
             List<CoreLabel>tok=sem.getTokens("Welche Stadt hat mehr als 5000 Einwohner");

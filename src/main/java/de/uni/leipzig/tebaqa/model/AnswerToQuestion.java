@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.model;
 
+import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashSet;
@@ -18,7 +19,7 @@ public class AnswerToQuestion {
         this.sparqlQuery = answer.getQuery();
         this.rdfEntities = entitiyToQuestionMapping;
 
-        if (!this.answer.isEmpty() && this.answer.parallelStream().allMatch(a -> a.startsWith("http://"))) {
+        if (!this.answer.isEmpty() && this.answer.parallelStream().allMatch(SPARQLUtilities::isResource)) {
             this.answerType = "uri";
         } else {
             //NO uri but date, string or number
@@ -35,7 +36,7 @@ public class AnswerToQuestion {
         this.sparqlQuery = "";
         this.rdfEntities = null;
 
-        if (!this.answer.isEmpty() && this.answer.parallelStream().allMatch(a -> a.startsWith("http://"))) {
+        if (!this.answer.isEmpty() && this.answer.parallelStream().allMatch(SPARQLUtilities::isResource)) {
             this.answerType = "uri";
         } else {
             //NO uri but date, string or number

@@ -521,6 +521,7 @@ public class FillTemplatePatternsWithResources {
                     if(containsByURI(prop,propertyCandidates)
                             &&!coOccurenceContains(ec.getCoOccurence(),getByURI(prop,propertyCandidates).getCoOccurence())) {
                         Triple t=new Triple("var", prop, ec.getUri());
+                        t.multiplyRating(ec.getLevenstheinScore() * ec.getRelatednessFactor());
                         if(!tripleContains(triples,t))
                             triples.add(t);
                     }
@@ -533,6 +534,7 @@ public class FillTemplatePatternsWithResources {
                     if (containsByURI(prop, propertyCandidates)
                             && !coOccurenceContains(lc.getCoOccurence(), getByURI(prop, propertyCandidates).getCoOccurence())) {
                         Triple t = new Triple("var", prop, lc.getUri(), true);
+//                        t.multiplyRating(lc.getLevenstheinScore() * lc.getRelatednessFactor());
                         triples.add(t);
                     }
                 });
@@ -544,6 +546,7 @@ public class FillTemplatePatternsWithResources {
                     if(containsByURI(prop,propertyCandidates)
                     &&!coOccurenceContains(ec.getCoOccurence(),getByURI(prop,propertyCandidates).getCoOccurence())) {
                         Triple t=new Triple(ec.getUri(), prop, "var");
+                        t.multiplyRating(ec.getLevenstheinScore() * ec.getRelatednessFactor());
                         if(!tripleContains(triples,t)) triples.add(t);
                     }
                 });
@@ -578,6 +581,7 @@ public class FillTemplatePatternsWithResources {
             if(!alreadyKnownTriple.getObject().equals(ec.getUri()))
             {
                 Triple t = new Triple(template.getSubject(), template.getPredicate(), ec.getUri());
+                t.multiplyRating(ec.getLevenstheinScore() * ec.getRelatednessFactor());
                 triplesFound.add(t);
             }
         }
@@ -588,6 +592,7 @@ public class FillTemplatePatternsWithResources {
             if(!alreadyKnownTriple.getSubject().equals(lc.getUri()) && !alreadyKnownTriple.getObject().equals(lc.getUri()))
             {
                 Triple t = new Triple(template.getSubject(), template.getPredicate(), lc.getUri(), true);
+//                t.multiplyRating(lc.getLevenstheinScore() * lc.getRelatednessFactor());
                 triplesFound.add(t);
             }
         }
@@ -694,14 +699,17 @@ public class FillTemplatePatternsWithResources {
                 Set<ResourceCandidate>entityCandidates = index.searchByType(Optional.of(ent.getUri()),Optional.empty(),Optional.of(classCand.getUri()),100);
                 entityCandidates.forEach(cand ->{
                     Triple tClass =new Triple("varType_"+currindex,"a",classCand.getUri());
+                    tClass.multiplyRating(classCand.getLevenstheinScore() * classCand.getRelatednessFactor());
                     if(!tripleContains(triples,tClass))triples.add(tClass);
                     if(((EntityCandidate)cand).getConnectedResourcesSubject().contains(ent)) {
                         Triple t = new Triple("varType_" + currindex,"propvar" , ent.getUri());
+                        t.multiplyRating(ent.getLevenstheinScore() * ent.getRelatednessFactor());
                         if (!tripleContains(triples,t))
                             triples.add(t);
                     }
                     else {
                         Triple t = new Triple(ent.getUri(), "propVar", "varType" + currindex);
+                        t.multiplyRating(ent.getLevenstheinScore() * ent.getRelatednessFactor());
                         if (!tripleContains(triples,t))
                             triples.add(t);
                     }
@@ -725,6 +733,7 @@ public class FillTemplatePatternsWithResources {
                 ArrayList<ResourceCandidate> cands = Lists.newArrayList((index.searchEntitiesById(Lists.newArrayList(uri))));
                 if(cands.size()>0){
                     Triple t = new Triple(entCand.getUri(), "varProp", "varMapped");
+                    t.multiplyRating(entCand.getLevenstheinScore() * entCand.getRelatednessFactor());
                     for (ResourceCandidate propCand : propertyCandidates) {
                         if (((EntityCandidate) cands.get(0)).getConnectedPropertiesSubject().contains(propCand.getUri())) {
                             if (!tripleContains(triples, t)) triples.add(t);
@@ -745,6 +754,7 @@ public class FillTemplatePatternsWithResources {
                 ArrayList<ResourceCandidate> cands = Lists.newArrayList((index.searchEntitiesById(Lists.newArrayList(uri))));
                 if(cands.size()>0){
                     Triple t = new Triple("varMapped", "varProp", entCand.getUri());
+                    t.multiplyRating(entCand.getLevenstheinScore() * entCand.getRelatednessFactor());
                     for (ResourceCandidate propCand : propertyCandidates) {
                         if (((EntityCandidate) cands.get(0)).getConnectedPropertiesSubject().contains(propCand.getUri())) {
                             if (!tripleContains(triples, t)) triples.add(t);
@@ -763,16 +773,22 @@ public class FillTemplatePatternsWithResources {
     public List<Triple>getCountryTriples(){
         List<Triple>triples=new ArrayList<>();
         for(ResourceCandidate cand:entityCandidates){
-            if(((EntityCandidate)cand).getTypes().contains("http://dbpedia.org/ontology/Country"))
-                triples.add(new Triple("var","country_prop",cand.getUri()));
+            if(((EntityCandidate)cand).getTypes().contains("http://dbpedia.org/ontology/Country")) {
+                Triple triple = new Triple("var", "country_prop", cand.getUri());
+                triple.multiplyRating(cand.getLevenstheinScore() * cand.getRelatednessFactor());
+                triples.add(triple);
+            }
         }
         return triples;
     }
     public List<Triple>getCategoryTriples(){
         List<Triple>triples=new ArrayList<>();
         for(ResourceCandidate cand:entityCandidates){
-            if(((EntityCandidate)cand).getTypes().contains("http://www.w3.org/2004/02/skos/core#Concept"))
-                triples.add(new Triple("var","http://purl.org/dc/terms/subject",cand.getUri()));
+            if(((EntityCandidate)cand).getTypes().contains("http://www.w3.org/2004/02/skos/core#Concept")) {
+                Triple triple = new Triple("var", "http://purl.org/dc/terms/subject", cand.getUri());
+                triple.multiplyRating(cand.getLevenstheinScore() * cand.getRelatednessFactor());
+                triples.add(triple);
+            }
         }
         return triples;
     }
