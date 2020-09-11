@@ -1,8 +1,10 @@
 package de.uni.leipzig.tebaqa.helper;
 
 
+import de.uni.leipzig.tebaqa.controller.PipelineController;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelperGerman;
+import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.model.ResourceCandidate;
 import de.uni.leipzig.tebaqa.model.TripleTemplate;
 import de.uni.leipzig.tebaqa.spring.AnnotateQualD8;
@@ -14,9 +16,7 @@ import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class FillPatternTest {
@@ -50,13 +50,17 @@ public class FillPatternTest {
         String pattern="SELECT DISTINCT ?uri WHERE {res/2 res/3 ?uri .}";
         //String pattern="SELECT ?uri WHERE{ ?uri a <^var_0^> ; <^var_1^> <^var_2^> }";
         String query="Wie ist die Länge von Gleis 1 des Leipziger Hauptbahnhofs?";
+
+        query = "Welche Verkehrsbehinderungen gibt es in Rostock?";
+        pattern = "SELECT DISTINCT ?uri WHERE { ?uri res/0 res/1 ; res/2 res/3 }";
+
         SemanticAnalysisHelper h=new SemanticAnalysisHelperGerman();
         h.determineQueryType(query);
         FillTemplatePatternsWithResources l=new FillTemplatePatternsWithResources(h);
         l.extractEntities(query);
-        Utilities u=new Utilities();
-        List<String>quer=u.fillTemplates(pattern,l);
-        System.out.println();
+//        Utilities u=new Utilities();
+//        List<String>quer=u.fillTemplates(pattern,l);
+//        System.out.println();
         //u.fillPattern(pattern,l);
         //SPARQLUtilities.retrieveBinings(u.fillWithTuples(pattern,l));
     }
@@ -142,6 +146,42 @@ public class FillPatternTest {
     }
 
     public static void main(String[] args) {
+//        benchmark();
+        generateQueriesForAllTemplates(args);
+
+    }
+
+    public static void generateQueriesForAllTemplates(String[] args) {
+        String query = "Gib die Beschreibung der Carsharing Station in der Budapester Str. aus.";
+        query = "Welche Verkehrsbehinderungen gibt es in Rostock?";
+        query = "Welche Apotheke hat die Mailadresse rosen-apotheke-hro@t-online.de?";
+        query = "Welche Postanschrift hat die Ort Edling?";
+        PipelineController qaPipeline = PipelineProvider.getQAPipeline();
+        Map<String, QueryTemplateMapping> mappings = qaPipeline.getMappings();
+
+        SemanticAnalysisHelper h=new SemanticAnalysisHelperGerman();
+        h.determineQueryType(query);
+        FillTemplatePatternsWithResources l=new FillTemplatePatternsWithResources(h);
+        l.extractEntities(query);
+
+//        Set<String> allTemplates = new HashSet<>();
+//        mappings.values().forEach(queryTemplateMapping -> allTemplates.addAll(queryTemplateMapping.getAllAvailableTemples()));
+//
+//        System.out.println(allTemplates);
+//
+//        for(String template : allTemplates)
+//        {
+//            List<String> generatedQueries = Utilities.fillTemplates(template,l);
+//            System.out.println(generatedQueries);
+//        }
+
+//        Utilities.fillTemplates("SELECT (COUNT(?ft) AS ?count) WHERE { ?ft res/0 res/1 ; ?rel res/2 }", l);
+        System.out.println(Utilities.fillTemplates("SELECT DISTINCT ?uri WHERE { ?uri res/0 res/1 ; res/2 res/3 }", l));
+//        Utilities.fillTemplates("SELECT DISTINCT ?bf WHERE { ?bf res/0 res/1 . ?gl res/2 ?bf } GROUP BY ?bf ORDER BY DESC(COUNT(?gl)) LIMIT 1", l);
+//        SPARQLUtilities.retrieveBinings(u.fillWithTuples(pattern,l));
+    }
+
+    public static void benchmark() {
         List<IQuestion> questions = AnnotateQualD8.loadLimbo();
         int total = 0;
         int found = 0;
@@ -157,7 +197,12 @@ public class FillPatternTest {
 //            // Override
 //            questionString = "ist die";
 
-            Query query = QueryFactory.create(q.getSparqlQuery());
+            System.out.println("QUESTION: " + questionString);
+            String sparqlQuery = q.getSparqlQuery();
+            if(sparqlQuery == null)
+                continue;
+
+            Query query = QueryFactory.create(sparqlQuery);
             List<String> queryElements = Arrays.asList(query.getQueryPattern().toString().split("\\s{1,}"));
             queryElements = queryElements.stream()
                     .filter(element -> element.startsWith("<http"))
@@ -189,8 +234,8 @@ public class FillPatternTest {
                 retainList.sort(String::compareTo);
                 deleteList.sort(String::compareTo);
 
-                System.out.println("QUESTION: " + questionString);
-                System.out.println("QUERY: " + q.getSparqlQuery());
+
+                System.out.println("QUERY: " + sparqlQuery);
                 System.out.println("All in Query: " + queryElements);
                 System.out.println("All EL responses: " + allFound);
                 System.out.println(String.format("Found(%s/%s): %s", retainList.size(), queryElements.size(), retainList));
