@@ -370,7 +370,7 @@ public class ElasticSearchEntityIndex {
         connect.should(resource);
         booleanQueryBuilder.must(connect);
         QueryBuilder q = termQuery(TYPE, typeToFilter);
-        booleanQueryBuilder.mustNot(q);
+        booleanQueryBuilder.must(q);
         try {
             /*boolean stop=false;
             int i=0;
@@ -429,7 +429,7 @@ public class ElasticSearchEntityIndex {
 
         searchSourceBuilder.size(maxNumberOfResults);
         searchRequest.source(searchSourceBuilder);
-        searchRequest.indices("limboliterals");
+        searchRequest.indices("limboliteralsfin");
         //searchRequest.source().aggregation(AggregationBuilders.max("prominence").script(new Script("doc['"+CONNECTED_RESOURCE_SUBJECT+"'].values.length + doc['"+CONNECTED_RESOURCE_OBJECT+"'].values.length ")));
         SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
         //SearchHit[] hits = searchResponse.getHits().getHits();

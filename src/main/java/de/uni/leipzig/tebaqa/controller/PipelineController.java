@@ -356,12 +356,14 @@ public class PipelineController {
 //        watch.start("Classify Question");
         FillTemplatePatternsWithResources tripleGenerator=new FillTemplatePatternsWithResources(semanticAnalysisHelper);
         tripleGenerator.extractEntities(question);
+        tripleGenerator.printInfos();
         List<RatedQuery> ratedQueries = mappingFactory.generateQueries(mappings, null, tripleGenerator);
         List<String> queries=new ArrayList<>();
         queries = ratedQueries.stream().map(RatedQuery::getQuery).collect(Collectors.toList());
         //If the template from the predicted graph won't find suitable templates, try all other templates
         List<ResultsetBinding>queryResults=new ArrayList<>();
         for(int i=0;i<ratedQueries.size();i++){
+            System.out.println(queries.get(i));
             RatedQuery ratedQuery = ratedQueries.get(i);
             ResultsetBinding results = SPARQLUtilities.executeQuery(ratedQuery.getQuery());
             if(!results.getResult().isEmpty()) {

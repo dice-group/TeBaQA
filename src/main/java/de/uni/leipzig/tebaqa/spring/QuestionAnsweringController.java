@@ -38,7 +38,7 @@ public class QuestionAnsweringController {
             PipelineController qaPipeline = getQAPipeline();
             String result;
             try {
-                result = new ExtendedQALDAnswer(qaPipeline.answerQuestion(query)).getResult();
+                result = new ExtendedQALDAnswer(qaPipeline.answerLimboQuestion(query)).getResult();
             } catch (Exception e) {
                 result = new ExtendedQALDAnswer(new AnswerToQuestion(new ResultsetBinding(), new HashMap<>())).getResult();
                 log.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);

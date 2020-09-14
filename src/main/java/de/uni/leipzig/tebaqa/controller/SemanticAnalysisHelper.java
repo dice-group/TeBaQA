@@ -581,6 +581,8 @@ public class SemanticAnalysisHelper {
                     if (resultsetBinding.getAnswerType() != expectedAnswerType) {
                         rating *= 2;
                     }
+                    if(expectedAnswerType==SPARQLResultSet.NUMBER_ANSWER_TYPE&&results.size()==1)
+                        rating*=3;
                     if (resultsetBinding.getAnswerType() == SPARQLResultSet.BOOLEAN_ANSWER_TYPE && resultsetBinding.getResult().size() == 1 && resultsetBinding.getResult().stream().findFirst().get().equalsIgnoreCase("false")) {
                         rating *= (1 / 2);
                     }
@@ -588,6 +590,8 @@ public class SemanticAnalysisHelper {
                     if (resultsetBinding.getResult().size() >= 50) {
                         rating *= 3;
                     }
+                    if(expectedAnswerType==SPARQLResultSet.NUMBER_ANSWER_TYPE&&results.size()==1)
+                        rating*=1/3;
                     if (resultsetBinding.getAnswerType() != expectedAnswerType) {
                         rating *= (1 / 2);
                     }

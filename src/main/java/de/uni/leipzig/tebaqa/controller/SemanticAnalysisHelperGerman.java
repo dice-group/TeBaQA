@@ -36,6 +36,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
+import org.apache.lucene.search.spans.SpanQuery;
 import sun.awt.SunHints;
 import weka.classifiers.Classifier;
 import weka.core.Instance;
@@ -73,7 +74,7 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
         public int determineQueryType(String q) {
             //List<String> selectIndicatorsList = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which".split("\\|"));
             //List<String> askIndicatorsList = Arrays.asList("is|are|did|was|does|can".split("\\|"));
-            List<String> selectIndicatorsList = Arrays.asList("welche|liste|wie|wo|wann|warum|wessen|gib".split("\\|"));
+            List<String> selectIndicatorsList = Arrays.asList("welche|liste|wie|wo|wann|warum|wessen|gib|in".split("\\|"));
             List<String> askIndicatorsList = Arrays.asList("sind".split("\\|"));
             //log.debug("String question: " + q);
             String[] split = q.split("\\s+");
@@ -318,7 +319,7 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
             }
             //}
             if (question.toLowerCase().startsWith("wie lang") || question.toLowerCase().startsWith("wie viele")|| question.toLowerCase().startsWith("wie hoch")
-                    || question.toLowerCase().startsWith("wie schwer") || question.toLowerCase().startsWith("wie breit")) {
+                    || question.toLowerCase().startsWith("wie schwer") || question.toLowerCase().startsWith("wie breit")||question.toLowerCase().startsWith("wie ist")) {
                 return SPARQLResultSet.NUMBER_ANSWER_TYPE;
             }
             if (question.toLowerCase().startsWith("wie") && tokens.size() >= 2) {
@@ -337,8 +338,18 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
                 }
 
             }
+            if(question.toLowerCase().startsWith("in welchen"))
+                return SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
+            if(question.toLowerCase().startsWith("in welcher"))
+                return SPARQLResultSet.SINGLE_ANSWER;
             if (question.toLowerCase().startsWith("wann")) {
                 return SPARQLResultSet.DATE_ANSWER_TYPE;
+            }
+            if (question.toLowerCase().startsWith("welche")&&question.toLowerCase().contains("gibt es")) {
+                return SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
+            }
+            if (question.toLowerCase().startsWith("wann beginnen")) {
+                return SPARQLResultSet.SINGLE_ANSWER;
             }
 
             if (question.toLowerCase().startsWith("welche")||question.toLowerCase().startsWith("welcher")||
@@ -404,7 +415,7 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
 
             // If more than one answer of expected type, then ranking
             if(SPARQLResultSet.NUMBER_ANSWER_TYPE == expectedAnswerType) {
-                List<ResultsetBinding> nonZeroCounts = matchingResults.stream().filter(resultsetBinding -> resultsetBinding.getNumericalResultValue() != 0).collect(Collectors.toList());
+                List<ResultsetBinding> nonZeroCounts = matchingResults.stream().filter(resultsetBinding ->resultsetBinding.getResult().size()==1 && resultsetBinding.getNumericalResultValue() != 0).collect(Collectors.toList());
                 if(nonZeroCounts.size() == 0)
                     return matchingResults.get(0);
 

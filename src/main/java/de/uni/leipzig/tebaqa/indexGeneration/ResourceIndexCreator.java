@@ -49,7 +49,7 @@ public class ResourceIndexCreator {
         try {
             writeIndex = new WriteElasticSearchIndex();
             writeIndex.setResourceIndexes(index);
-            writeIndex.setLiteralIndexes("limboliterals");
+            writeIndex.setLiteralIndexes("limboliteralsfin");
             writeIndex.createBulkProcessor();
             for (File file : files) {
                 //String type = FileUtil.getFileExtension(file.getName());
@@ -310,6 +310,9 @@ public class ResourceIndexCreator {
             }
             if(predicate.equals("http://www.w3.org/2000/01/rdf-schema#label")||
                     predicate.equals("http://www.w3.org/2004/02/skos/core#prefLabel")||
+                    predicate.equals("http://schema.mobivoc.org/situationId")||
+                    predicate.equals("http://linkedgeodata.org/vocabulary#label")||
+                    predicate.equals("http://www.w3.org/2000/01/rdf-schema#altLabel")||
                     predicate.equals("https://portal.limbo-project.org/vocab/IndoorNavigationVocab/hasName")
             ){
                 //if(nameToLabels.size()%1000==0)System.out.println("Mapsize Labels"+nameToLabels.size());

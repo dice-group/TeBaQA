@@ -29,7 +29,14 @@ public class FillTemplatePatternsWithResources {
     SemanticGraph semanticGraph;
     private static double MIN_SCORE_NORMAL = 0.32;
     private static double MIN_SCORE_WITH_NUMBERS = 0.05;
-
+    public void printInfos(){
+        System.out.println("Entities");
+        entityCandidates.forEach(ent->System.out.println(ent.getCoOccurence()+"->("+ent.getUri()+";"+Arrays.asList(ent.getResourceString()).get(0)+")"));
+        System.out.println("Properties");
+        propertyCandidates.forEach(ent->System.out.println(ent.getCoOccurence()+"->("+ent.getUri()+";"+Arrays.asList(ent.getResourceString()).get(0)+")"));
+        System.out.println("Class");
+        classCandidates.forEach(ent->System.out.println(ent.getCoOccurence()+"->("+ent.getUri()+";"+Arrays.asList(ent.getResourceString()).get(0)+")"));
+    }
     public FillTemplatePatternsWithResources(List<TripleTemplate>templates,SemanticAnalysisHelper semanticAnalysisHelper){
         this.semanticAnalysisHelper=semanticAnalysisHelper;
         this.candidateTriples=new ArrayList<>();
@@ -191,14 +198,14 @@ public class FillTemplatePatternsWithResources {
 
     private Set<ResourceCandidate>disambiguateAmbiqueEntity(String coOccurence,Optional<String>type,List<ResourceCandidate>entityCandidates,List<ResourceCandidate>propertyCandidates){
         HashMap<String,ResourceCandidate> candidates=new HashMap<>();
-        if(!coOccurence.contains(" ")){
-            Set<ResourceCandidate> cs = index.searchEntityWithTypeFilter(coOccurence,"http://dbpedia.org/ontology/Person",100);
+        /*if(!coOccurence.contains(" ")&&type.isPresent()){
+            Set<ResourceCandidate> cs = index.searchEntityWithTypeFilter(coOccurence,type.get(),100);
             cs.forEach(c-> {if(!candidates.containsKey(c.getUri())) candidates.put(c.getUri(),c);});
         }
-        if(!coOccurence.contains(" ")){
-            Set<ResourceCandidate> cs = index.searchEntityWithTypeFilter(coOccurence,"http://dbpedia.org/ontology/Person",100);
+        if(!coOccurence.contains(" ")&&type.isPresent()){
+            Set<ResourceCandidate> cs = index.searchEntityWithTypeFilter(coOccurence,type.get(),100);
             cs.forEach(c-> {if(!candidates.containsKey(c.getUri())) candidates.put(c.getUri(),c);});
-        }
+        }*/
         if(candidates.size()>=100||candidates.size()==0) {
             candidates.clear();
             for (ResourceCandidate enitityCandidate : entityCandidates) {
@@ -207,11 +214,13 @@ public class FillTemplatePatternsWithResources {
                     if (!candidates.containsKey(c.getUri())) candidates.put(c.getUri(), c);
                 });
             }
-            for (ResourceCandidate propertyCandidate : propertyCandidates) {
-                Set<ResourceCandidate> cs = index.searchEntity(coOccurence, Optional.empty(), Optional.of(propertyCandidate.getUri()), Optional.empty());
-                cs.forEach(c -> {
-                    if (!candidates.containsKey(c.getUri())) candidates.put(c.getUri(), c);
-                });
+            if (candidates.size() == 0) {
+                for (ResourceCandidate propertyCandidate : propertyCandidates) {
+                    Set<ResourceCandidate> cs = index.searchEntity(coOccurence, Optional.empty(), Optional.of(propertyCandidate.getUri()), Optional.empty());
+                    cs.forEach(c -> {
+                        if (!candidates.containsKey(c.getUri())) candidates.put(c.getUri(), c);
+                    });
+                }
             }
         }
         Set<ResourceCandidate> bestResourcesByLevenstheinRatio=getbestResourcesByLevenstheinRatio(coOccurence, Sets.newHashSet(candidates.values()),"entity",false);

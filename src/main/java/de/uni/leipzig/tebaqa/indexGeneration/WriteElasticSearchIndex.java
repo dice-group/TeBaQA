@@ -327,7 +327,7 @@ public class WriteElasticSearchIndex {
         }
     }
         public void indexClass(String uri,List<String> label)throws IOException{
-            IndexRequest indexRequest = new IndexRequest("classlimbo", "_doc")
+            IndexRequest indexRequest = new IndexRequest("classlimbofin", "_doc")
                         .source(jsonBuilder()
                                 .startObject()
                                 .field("uri", uri)
@@ -337,7 +337,7 @@ public class WriteElasticSearchIndex {
             bulkProcessor.add(indexRequest);
         }
     public void indexProperty(String uri,List<String> label)throws IOException{
-        IndexRequest indexRequest = new IndexRequest("propertylimbo", "_doc")
+        IndexRequest indexRequest = new IndexRequest("propertylimbofin", "_doc")
                 .source(jsonBuilder()
                         .startObject()
                         .field("uri", uri)
@@ -349,7 +349,7 @@ public class WriteElasticSearchIndex {
         public void indexProperty(String uri,String label,List<String>synonyms)throws IOException{
             IndexRequest indexRequest;
             if(synonyms!=null) {
-                indexRequest = new IndexRequest("propertylimbo", "_doc")
+                indexRequest = new IndexRequest("propertylimbofin", "_doc")
                         .source(jsonBuilder()
                                 .startObject()
                                 .field("uri", uri)
@@ -359,7 +359,7 @@ public class WriteElasticSearchIndex {
                         );
             }
             else{
-                indexRequest = new IndexRequest("propertylimbo", "_doc")
+                indexRequest = new IndexRequest("propertylimbofin", "_doc")
                         .source(jsonBuilder()
                                 .startObject()
                                 .field("uri", uri)
