@@ -268,5 +268,17 @@
             <artifactId>components-core</artifactId>
             <version>${dllearner.version}</version>
         </dependency>
+
+        <!--        Modular dependencies start-->
+        <!-- Tebaqa commons dependency-->
+        <dependency>
+            <groupId>de.uni.leipzig.tebaqa</groupId>
+            <artifactId>tebaqa-commons</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!--        Modular dependencies end-->
+
     </dependencies>
 </project>

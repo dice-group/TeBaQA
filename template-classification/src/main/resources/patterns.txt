@@ -1,0 +1,11 @@
+SELECT (COUNT(?ft) AS ?count) WHERE { ?ft res/0 res/1 ; ?rel res/2 }
+SELECT ?c WHERE { res/0 res/1 ?c }
+SELECT DISTINCT ?uri WHERE { ?uri res/0 res/1 ; res/2 res/3 }
+SELECT DISTINCT ?bf WHERE { ?bf res/0 res/1 . ?gl res/2 ?bf } GROUP BY ?bf ORDER BY DESC(COUNT(?gl)) LIMIT 1
+SELECT DISTINCT ?l WHERE { res/0 ?rel res/1 ; res/2 ?l }
+SELECT (COUNT(?uri) AS ?count) WHERE { ?uri res/0 res/1 ; res/2 res/3 }
+SELECT DISTINCT ?tel WHERE { ?cs res/0 res/1 ; ?rel res/2 ; res/3 ?tel }
+SELECT ?b WHERE { ?ts res/0 res/1 ; res/2 ?b }
+SELECT DISTINCT ?tel WHERE { ?t res/0 res/1 ; res/2 res/3 ; res/4 ?tel }
+SELECT ?s WHERE { ?s res/0 res/1 ; ?rel res/2 }
+SELECT DISTINCT ?cm WHERE { ?cs ?rel res/0 . ?cs res/1 res/2. ?cs res/3 ?cm. }

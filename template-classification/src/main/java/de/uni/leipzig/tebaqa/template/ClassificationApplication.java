@@ -12,6 +12,8 @@ public class ClassificationApplication {
 
     public static void main(String[] args) {
         LOGGER.info("Template classification server started");
+
+
         SpringApplication.run(ClassificationApplication.class, args);
     }
 }
