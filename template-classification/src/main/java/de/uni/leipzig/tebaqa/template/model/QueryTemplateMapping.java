@@ -1,4 +1,4 @@
-package de.uni.leipzig.tebaqa.tebaqacommons.model;
+package de.uni.leipzig.tebaqa.template.model;
 
 
 import java.util.ArrayList;
