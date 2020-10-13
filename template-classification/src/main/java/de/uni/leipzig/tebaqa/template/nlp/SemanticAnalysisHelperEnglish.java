@@ -1,9 +1,9 @@
 package de.uni.leipzig.tebaqa.template.nlp;
 
-import de.uni.leipzig.tebaqa.tebaqacommons.util.SPARQLUtilities;
 import de.uni.leipzig.tebaqa.template.model.Cluster;
 import de.uni.leipzig.tebaqa.template.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.template.model.QueryTemplateMapping;
+import de.uni.leipzig.tebaqa.template.util.SPARQLUtilities;
 import de.uni.leipzig.tebaqa.template.util.Utilities;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -13,7 +13,6 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,15 +48,15 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
     /**
      * Extracts a map of possible query templates and their graph patterns.
      *
-     * @param questions The questions which contain a SPARQL query which will be used as template.
+     * @param queryClusters The questions which contain a SPARQL query which will be used as template.
      * @return A list which contains SPARQL query templates, divided by their number of entities and classes and by
      * their query type (ASK or SELECT).
      */
     @Override
-    public Map<String, QueryTemplateMapping> extractTemplates(List<Cluster> questions, HashMap<String, Set<String>>[] commonTuples) {
+    public Map<String, QueryTemplateMapping> mapGraphToTemplates(List<Cluster> queryClusters) {
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
         //Set<String> wellKnownPredicates = Sets.union(commonTuples[0].keySet(), commonTuples[1].keySet());
-        for (Cluster c : questions) {
+        for (Cluster c : queryClusters) {
             String graph = c.getGraph();
             QueryTemplateMapping mapping = new QueryTemplateMapping();
             // if (c.size() > 10){

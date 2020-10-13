@@ -2,7 +2,6 @@ package de.uni.leipzig.tebaqa.modular.utils;
 
 import org.apache.log4j.Logger;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -25,10 +24,11 @@ public class PropertyUtils {
     }
 
     private static Properties getAllProperties() {
+
         Properties prop = new Properties();
         InputStream input;
         try {
-            input = new FileInputStream("src/main/resources/application.properties");
+            input = ClassLoader.getSystemResourceAsStream("application.properties");
             prop.load(input);
         } catch (IOException e) {
             LOGGER.error(e.getMessage());

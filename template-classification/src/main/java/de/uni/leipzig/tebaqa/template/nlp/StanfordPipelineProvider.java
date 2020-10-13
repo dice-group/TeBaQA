@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Properties;
 
 public class StanfordPipelineProvider {
-    private static final Logger LOGGER = Logger.getLogger(de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider.class);
+    private static final Logger LOGGER = Logger.getLogger(StanfordPipelineProvider.class);
     private static final Map<Lang, StanfordCoreNLP> pipelineInstances = new HashMap<>(Lang.values().length);
 
     //do not instantiate
@@ -33,7 +33,7 @@ public class StanfordPipelineProvider {
         return instance;
     }
 
-    enum Lang {
+    public enum Lang {
         EN() {
             @Override
             public StanfordCoreNLP getPipeline() {

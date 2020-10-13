@@ -6,10 +6,9 @@ import de.uni.leipzig.tebaqa.template.model.QueryTemplateMapping;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public interface ISemanticAnalysisHelper {
     HashMap<String, String> getPosTags(String text);
 
-    Map<String, QueryTemplateMapping> extractTemplates(List<Cluster> customTrainQuestions, HashMap<String, Set<String>>[] commonPredicates);
+    Map<String, QueryTemplateMapping> mapGraphToTemplates(List<Cluster> queryClusters);
 }

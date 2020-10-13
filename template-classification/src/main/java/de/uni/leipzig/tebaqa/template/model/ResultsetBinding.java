@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.template.model;
 
-import de.uni.leipzig.tebaqa.tebaqacommons.util.SPARQLUtilities;
+
+import de.uni.leipzig.tebaqa.template.util.SPARQLUtilities;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

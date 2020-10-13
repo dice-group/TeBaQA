@@ -30,5 +30,4 @@ public class TemplateClassificationService {
 
         return ALL_PATTERNS;
     }
-
 }

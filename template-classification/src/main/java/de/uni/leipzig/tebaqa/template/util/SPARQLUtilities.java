@@ -1,8 +1,8 @@
 package de.uni.leipzig.tebaqa.template.util;
 
 import com.google.common.collect.Lists;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.ResultsetBinding;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.SPARQLResultSet;
+import de.uni.leipzig.tebaqa.template.model.ResultsetBinding;
+import de.uni.leipzig.tebaqa.template.model.SPARQLResultSet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.jena.graph.Node;

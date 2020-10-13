@@ -18,7 +18,10 @@ import org.apache.jena.sparql.syntax.ElementVisitorBase;
 import org.apache.jena.sparql.syntax.ElementWalker;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,7 +35,7 @@ public class QueryIsomorphism {
 
     private final List<Cluster> clusters;
 
-    public QueryIsomorphism(Map<String, String> queries, HashMap<String, Set<String>>[] commonPredicates) {
+    public QueryIsomorphism(Map<String, String> queries) {
         //HashMap<String,Set<String>>predicateToSubjectType=commonPredicates[0];
         //HashMap<String,Set<String>>predicateToObjectType=commonPredicates[1];
         LOGGER.debug("Generating SPARQL Query graphs...");
@@ -132,13 +135,13 @@ public class QueryIsomorphism {
             for (String s : list) {
                 CustomQuestion question = new CustomQuestion(inverseQueryMap.get(s), s, getSimpleModifiers(inverseQueryMap.get(s)), graph);
                 HashMap<String, String> languageToQuestion = new HashMap<>();
-                languageToQuestion.put("de", s);
+                languageToQuestion.put("en", s); //TODO
                 //question.setLanguageToQuestion(languageToQuestion);
                 //question.setSparqlQuery(inverseQueryMap.get(s));
                 cluster.addQuestion(question);
             }
-            //if(cluster.getQuestions().size()>=10)
-            clusters.add(cluster);
+            if (cluster.getQuestions().size() >= 10)
+                clusters.add(cluster);
         }
     }
 
