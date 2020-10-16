@@ -7,7 +7,6 @@ import edu.cmu.lti.jawjaw.pobj.POS;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.commons.datastructure.IQuestion;
-import org.aksw.qa.commons.datastructure.Question;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
 import org.aksw.qa.commons.load.json.EJQuestionFactory;
@@ -19,17 +18,11 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static de.uni.leipzig.tebaqa.helper.CommonTupels.getCommonTuples;
 import static de.uni.leipzig.tebaqa.helper.TextUtilities.NON_WORD_CHARACTERS_REGEX;
 import static de.uni.leipzig.tebaqa.spring.AnnotateQualD8.loadLimbo;
 import static de.uni.leipzig.tebaqa.spring.AnnotateQualD8.loadQuald9;
@@ -38,11 +31,11 @@ import static java.util.Collections.emptyList;
 
 public class PipelineController {
 
-    private static Logger log = Logger.getLogger(PipelineController.class.getName());
+    private static final Logger log = Logger.getLogger(PipelineController.class.getName());
 
     private static SemanticAnalysisHelper semanticAnalysisHelper;
-    private List<Dataset> trainDatasets = new ArrayList<>();
-    private List<Dataset> testDatasets = new ArrayList<>();
+    private final List<Dataset> trainDatasets = new ArrayList<>();
+    private final List<Dataset> testDatasets = new ArrayList<>();
     private Map<String, QueryTemplateMapping> mappings;
     private Boolean evaluateWekaAlgorithms = false;
     private Boolean recalculateWekaMaodel = false;
@@ -172,8 +165,8 @@ public class PipelineController {
         customTrainQuestions = queryBuilder.getQuestions();
 
         log.info("Extract query templates...");
-        mappings = semanticAnalysisHelper.extractTemplates(customTrainQuestions,commonPredicates);
-
+        mappings = semanticAnalysisHelper.extractTemplates(customTrainQuestions, commonPredicates);
+        printMappings(mappings);
         log.info("Mappings were created...");
         /*List<String> graphs = new ArrayList<>();
         customTrainQuestions.forEach(customQuestion -> graphs.add(customQuestion.getGraph()));
@@ -202,6 +195,13 @@ public class PipelineController {
         ClassifierProvider.init(graphs);*/
 //        testQuestions.parallelStream().forEach(q -> answerQuestion(graphs, q));
     }
+
+    private void printMappings(Map<String, QueryTemplateMapping> mappings2) {
+        for (String key : mappings2.keySet()) {
+            mappings2.get(key).getAllAvailableTemples().forEach(s -> System.out.println(key + " " + s));
+        }
+    }
+
     /*private void run() {
 
         List<HAWKQuestion> trainQuestions = new ArrayList<>();

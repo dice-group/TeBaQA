@@ -1,25 +1,24 @@
 package de.uni.leipzig.tebaqa.template.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class QueryTemplateMapping {
-    private final Set<String> askTemplates = new HashSet<>();
-    private final Set<String> selectTemplates = new HashSet<>();
-    private final Set<String> originalAskQueries = new HashSet<>();
-    private final Set<String> originalSelectQueries = new HashSet<>();
-
-    private final Set<String> selectSuperlativeAscTemplate = new HashSet<>();
-    private final Set<String> selectSuperlativeDescTemplate = new HashSet<>();
-    private final Set<String> originalSuperlativeAscQueries = new HashSet<>();
-    private final Set<String> originalSuperlativeDescQueries = new HashSet<>();
-
-    private final Set<String> originalCountQueries = new HashSet<>();
-    private final Set<String> selectCountTemplates = new HashSet<>();
-
+    private final Set<String> askQueries = new HashSet<>();
+    private final Set<String> selectQueries = new HashSet<>();
+    private final Set<String> superlativeAscQueries = new HashSet<>();
+    private final Set<String> superlativeDescQueries = new HashSet<>();
+    private final Set<String> countQueries = new HashSet<>();
+    private String askTemplate;
+    private String selectTemplate;
+    private String superlativeAscTemplate;
+    private String superlativeDescTemplate;
+    private String countTemplates;
 
     private final List<Integer> numberOfClasses;
     private final List<Integer> numberOfProperties;
@@ -36,127 +35,119 @@ public class QueryTemplateMapping {
         this.numberOfProperties = new ArrayList<>();
     }
 
-    public void addSelectTemplate(String template, String originalQuery) {
-
-        if (this.getSelectTemplates().isEmpty()) {
-            this.selectTemplates.add(template);
-            this.originalSelectQueries.add(originalQuery);
-        }
+    public String getAskTemplate() {
+        return askTemplate;
     }
 
-    public void addSelectSuperlativeAscTemplate(String template, String originalQuery) {
-        if (this.getSelectSuperlativeAscTemplate().isEmpty()) {
-            this.selectSuperlativeAscTemplate.add(template);
-            this.originalSuperlativeAscQueries.add(originalQuery);
-        }
+    public void setAskTemplate(String askTemplate) {
+        this.askTemplate = askTemplate;
     }
 
-    public void addCountTemplate(String template, String originalQuery) {
-
-        if (this.getSelectCountTemplates().isEmpty()) {
-            this.selectCountTemplates.add(template);
-            this.originalCountQueries.add(originalQuery);
-        }
+    public Set<String> getAskQueries() {
+        return askQueries;
     }
 
-    public void addSelectSuperlativeDescTemplate(String template, String originalQuery) {
-
-        if (this.selectSuperlativeDescTemplate.isEmpty()) {
-            this.selectSuperlativeDescTemplate.add(template);
-            this.originalSuperlativeDescQueries.add(originalQuery);
-        }
+    public void setAskQueries(Set<String> askQueries) {
+        this.askQueries.addAll(askQueries);
     }
 
-    public void addAskTemplate(String template, String originalQuery) {
-
-        if (this.askTemplates.isEmpty()) {
-            this.askTemplates.add(template);
-            this.originalAskQueries.add(originalQuery);
-        }
-    }
-    /*public void addSelectTemplate(String template, String originalQuery) {
-        final boolean[] templateIsIsomorph = {false};
-        originalSelectQueries.forEach(s -> {
-            if (QueryIsomorphism.areIsomorph(s, originalQuery)) {
-                templateIsIsomorph[0] = true;
-            }
-        });
-        if (!templateIsIsomorph[0]) {
-            this.selectTemplates.add(template);
-            this.originalSelectQueries.add(originalQuery);
-        }
+    public String getSelectTemplate() {
+        return selectTemplate;
     }
 
-    public void addSelectSuperlativeAscTemplate(String template, String originalQuery) {
-        final boolean[] templateIsIsomorph = {false};
-        originalSuperlativeAscQueries.forEach(s -> {
-            if (QueryIsomorphism.areIsomorph(s, originalQuery)) {
-                templateIsIsomorph[0] = true;
-            }
-        });
-        if (!templateIsIsomorph[0]) {
-            this.selectSuperlativeAscTemplate.add(template);
-            this.originalSuperlativeAscQueries.add(originalQuery);
-        }
+    public void setSelectTemplate(String selectTemplate) {
+        this.selectTemplate = selectTemplate;
     }
 
-    public void addCountTemplate(String template, String originalQuery) {
-        final boolean[] templateIsIsomorph = {false};
-        originalCountQueries.forEach(s -> {
-            if (QueryIsomorphism.areIsomorph(s, originalQuery)) {
-                templateIsIsomorph[0] = true;
-            }
-        });
-        if (!templateIsIsomorph[0]) {
-            this.selectCountTemplates.add(template);
-            this.originalCountQueries.add(originalQuery);
-        }
+    public Set<String> getSelectQueries() {
+        return selectQueries;
     }
 
-    public void addSelectSuperlativeDescTemplate(String template, String originalQuery) {
-        final boolean[] templateIsIsomorph = {false};
-        originalSuperlativeDescQueries.forEach(s -> {
-            if (QueryIsomorphism.areIsomorph(s, originalQuery)) {
-                templateIsIsomorph[0] = true;
-            }
-        });
-        if (!templateIsIsomorph[0]) {
-            this.selectSuperlativeDescTemplate.add(template);
-            this.originalSuperlativeDescQueries.add(originalQuery);
-        }
+    public void setSelectQueries(Set<String> selectQueries) {
+        this.selectQueries.addAll(selectQueries);
     }
 
-    public void addAskTemplate(String template, String originalQuery) {
-        final boolean[] templateIsIsomorph = {false};
-        originalAskQueries.forEach(s -> {
-            if (QueryIsomorphism.areIsomorph(s, originalQuery)) {
-                templateIsIsomorph[0] = true;
-            }
-        });
-        if (!templateIsIsomorph[0]) {
-            this.askTemplates.add(template);
-            this.originalAskQueries.add(originalQuery);
-        }
-    }*/
-
-    public Set<String> getAskTemplates() {
-        return askTemplates;
+    public String getSuperlativeAscTemplate() {
+        return superlativeAscTemplate;
     }
 
-    public Set<String> getSelectTemplates() {
-        return selectTemplates;
+    public void setSuperlativeAscTemplate(String superlativeAscTemplate) {
+        this.superlativeAscTemplate = superlativeAscTemplate;
     }
 
-    public Set<String> getSelectSuperlativeAscTemplate() {
-        return selectSuperlativeAscTemplate;
+    public Set<String> getSuperlativeAscQueries() {
+        return superlativeAscQueries;
     }
 
-    public Set<String> getSelectSuperlativeDescTemplate() {
-        return selectSuperlativeDescTemplate;
+    public void setSuperlativeAscQueries(Set<String> superlativeAscQueries) {
+        this.superlativeAscQueries.addAll(superlativeAscQueries);
     }
 
-    public Set<String> getSelectCountTemplates() {
-        return selectCountTemplates;
+    public String getSuperlativeDescTemplate() {
+        return superlativeDescTemplate;
+    }
+
+    public void setSuperlativeDescTemplate(String superlativeDescTemplate) {
+        this.superlativeDescTemplate = superlativeDescTemplate;
+    }
+
+    public Set<String> getSuperlativeDescQueries() {
+        return superlativeDescQueries;
+    }
+
+    public void setSuperlativeDescQueries(Set<String> superlativeDescQueries) {
+        this.superlativeDescQueries.addAll(superlativeDescQueries);
+    }
+
+    public String getCountTemplates() {
+        return countTemplates;
+    }
+
+    public void setCountTemplates(String countTemplates) {
+        this.countTemplates = countTemplates;
+    }
+
+    public Set<String> getCountQueries() {
+        return countQueries;
+    }
+
+    public void setCountQueries(Set<String> countQueries) {
+        this.countQueries.addAll(countQueries);
+    }
+
+    public void setSelectTemplate(String template, String originalQuery) {
+        if (this.selectTemplate == null)
+            this.selectTemplate = template;
+
+        this.selectQueries.add(originalQuery);
+    }
+
+    public void setSelectSuperlativeAscTemplate(String template, String originalQuery) {
+        if (this.superlativeAscTemplate == null)
+            this.superlativeAscTemplate = template;
+
+        this.superlativeAscQueries.add(originalQuery);
+    }
+
+    public void setCountTemplate(String template, String originalQuery) {
+        if (this.countTemplates == null)
+            this.countTemplates = template;
+
+        this.countQueries.add(originalQuery);
+    }
+
+    public void setSelectSuperlativeDescTemplate(String template, String originalQuery) {
+        if (this.superlativeDescTemplate == null)
+            this.superlativeDescTemplate = template;
+
+        this.superlativeDescQueries.add(originalQuery);
+    }
+
+    public void setAskTemplate(String template, String originalQuery) {
+        if (this.askTemplate == null)
+            this.askTemplate = template;
+
+        this.askQueries.add(originalQuery);
     }
 
     public List<Integer> getNumberOfClasses() {
@@ -167,13 +158,14 @@ public class QueryTemplateMapping {
         return numberOfProperties;
     }
 
-    public Set<String> getAllAvailableTemples() {
+    @JsonIgnore
+    public Set<String> getAllAvailableTemplates() {
         Set<String> allTemplates = new HashSet<>();
-        allTemplates.addAll(this.getAskTemplates());
-        allTemplates.addAll(this.getSelectTemplates());
-        allTemplates.addAll(this.getSelectCountTemplates());
-        allTemplates.addAll(this.getSelectSuperlativeAscTemplate());
-        allTemplates.addAll(this.getSelectSuperlativeDescTemplate());
+        if (askTemplate != null) allTemplates.add(askTemplate);
+        if (selectTemplate != null) allTemplates.add(selectTemplate);
+        if (superlativeAscTemplate != null) allTemplates.add(superlativeAscTemplate);
+        if (superlativeDescTemplate != null) allTemplates.add(superlativeDescTemplate);
+        if (countTemplates != null) allTemplates.add(countTemplates);
         return allTemplates;
     }
 }

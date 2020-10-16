@@ -4,6 +4,7 @@ package de.uni.leipzig.tebaqa.template.service;
 //import de.uni.leipzig.tebaqa.tebaqacommons.model.CustomQuestion;
 //import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryIsomorphism;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.uni.leipzig.tebaqa.template.model.Cluster;
 import de.uni.leipzig.tebaqa.template.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.template.model.QueryIsomorphism;
@@ -12,6 +13,8 @@ import de.uni.leipzig.tebaqa.template.nlp.ClassifierProvider;
 import de.uni.leipzig.tebaqa.template.nlp.ISemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.template.nlp.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.template.util.Constants;
+import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
+import de.uni.leipzig.tebaqa.template.util.Utilities;
 import org.aksw.hawk.datastructures.HAWKQuestion;
 import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.commons.datastructure.IQuestion;
@@ -22,9 +25,9 @@ import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.Classifier;
 import weka.core.Instance;
 
-import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,8 +42,8 @@ public class WekaClassifier {
     private static Map<String, QueryTemplateMapping> graphToQueryTemplateMappings;
     private static List<String> graphs;
     private static Classifier classifier;
-    private Boolean evaluateWekaAlgorithms = false;
-    private Boolean recalculateWekaModel = false;
+    private final Boolean evaluateWekaAlgorithms = false;
+    private final Boolean recalculateWekaModel = false;
 
     private WekaClassifier() {
     }
@@ -63,7 +66,7 @@ public class WekaClassifier {
 //        trainClassifier();
 //    }
 
-    public static WekaClassifier getDefaultClassifier() {
+    public static WekaClassifier getDefaultClassifier2() {
         LOGGER.info("Configuring controller");
 //        semanticAnalysisHelper = new SemanticAnalysisHelperEnglish();
 
@@ -93,6 +96,50 @@ public class WekaClassifier {
 //        ClassifierProvider.init()
         return instance;
     }
+
+    public static WekaClassifier getDefaultClassifier() {
+        LOGGER.info("Configuring controller");
+//        semanticAnalysisHelper = new SemanticAnalysisHelperEnglish();
+
+//        isTrainingRequired();
+
+//        List<String> graphs = loadGraphs();
+//        loadMappings();
+//        loadClassifier();
+
+        // Default name
+        String serializedClassifierFile = null;
+
+        // Check if filename present in properties file
+        try {
+            Properties p = new Properties();
+            p.load(new ClassPathResource(Constants.TEMPLATE_CLASSIFICATION_PROP_FILE).getInputStream());
+            if (p.containsKey(Constants.SERIALIZED_CLASSIFIER_FILE)) {
+                serializedClassifierFile = p.getProperty(Constants.SERIALIZED_CLASSIFIER_FILE);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Could not load properties from " + Constants.TEMPLATE_CLASSIFICATION_PROP_FILE);
+        }
+
+        if (serializedClassifierFile == null)
+            serializedClassifierFile = Constants.DEFAULT_SERIALIZED_CLASSIFIER_FILENAME;
+
+//        if(!Paths.get(serializedClassifierFile).toFile().exists()) {
+        trainDataset = Dataset.QALD8_Train_Multilingual; // TODO Externalize
+        LOGGER.info("Starting controller...");
+        trainClassifier();
+//        }
+//        ClassifierProvider.init()
+        return instance;
+    }
+
+    private static List<String> loadGraphs() {
+        return null;
+    }
+
+    // TODO Write file reading and writing logic in getDefaultClassifier method
+    // TODO break down smaller chunks into individual methods which return appropriate results
+    // TODO Method to get classifier for given dataset, call this from getDefaClassifier or from outside with another dataset
 
     private static List<Cluster> clusterQueries() {
         //Remove all trainQuestions without SPARQL query
@@ -135,7 +182,7 @@ public class WekaClassifier {
         saveGraphs(graphs);
 
         LOGGER.info("Extract query templates...");
-        graphToQueryTemplateMappings = semanticAnalysisHelper.mapGraphToTemplates(queryClusters);
+        graphToQueryTemplateMappings = Utilities.mapGraphToTemplates(queryClusters);
 
         saveMappings(graphToQueryTemplateMappings);
 
@@ -165,87 +212,55 @@ public class WekaClassifier {
     }
 
     private static void saveMappings(Map<String, QueryTemplateMapping> graphToQueryTemplateMappings) {
+//        new ObjectMapper().convertValue(JSONUtils.JSONStringToObject(new ObjectMapper().writeValueAsString(graphToQueryTemplateMappings), new HashMap<String, String>().getClass()).get(" {\"v4\" @\"r7\" \"r6\"; \"v1\" @\"r5\" \"v4\"; \"v1\" @\"r3\" \"r2\"}"), QueryTemplateMapping.class)
+        String mappingsFilePath = PropertyUtils.getMappingsFileAbsolutePath();
 
+        try {
+            File mappingsFile = new File(mappingsFilePath);
+
+            if (!mappingsFile.exists()) {
+                boolean newFileCreated = mappingsFile.createNewFile();
+                if (newFileCreated) LOGGER.info("New file created at " + mappingsFilePath);
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            String mappingsJson = mapper.writeValueAsString(graphToQueryTemplateMappings);
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(mappingsFile))) {
+                writer.append(mappingsJson);
+                writer.newLine();
+            } catch (IOException e) {
+                LOGGER.error("Cannot write mappings file to " + mappingsFilePath);
+            }
+
+        } catch (IOException e) {
+            LOGGER.error("Cannot open mappings file " + mappingsFilePath);
+        }
     }
 
     private static void saveGraphs(List<String> graphs) {
-        String graphsFileName = null;
+        String graphsFilePath = PropertyUtils.getGraphsFileAbsolutePath();
 
-        // Check if filename present in properties file
         try {
-            Properties p = new Properties();
-            p.load(new ClassPathResource(Constants.TEMPLATE_CLASSIFICATION_PROP_FILE).getInputStream());
-            if (p.containsKey(Constants.SERIALIZED_GRAPHS_FILE)) {
-                graphsFileName = p.getProperty(Constants.SERIALIZED_GRAPHS_FILE);
-            }
-        } catch (IOException e) {
-            LOGGER.error("Could not load properties from " + Constants.TEMPLATE_CLASSIFICATION_PROP_FILE);
-        }
+            File graphsFile = new File(graphsFilePath);
 
-        if (graphsFileName == null)
-            graphsFileName = Constants.DEFAULT_SERIALIZED_GRAPHS_FILENAME;
-
-        File graphsFile;
-        try {
-            ClassPathResource fileResource = new ClassPathResource(graphsFileName);
-            if (!fileResource.exists()) {
-                String fileResourcePath = fileResource.getPath();
-                graphsFile = new File(fileResourcePath);
-                graphsFile.createNewFile();
-            } else {
-                graphsFile = fileResource.getFile();
+            if (!graphsFile.exists()) {
+                boolean newFileCreated = graphsFile.createNewFile();
+                if (newFileCreated) LOGGER.info("New file created at " + graphsFilePath);
             }
 
-            try (BufferedReader writer = new BufferedReader(new FileReader(graphsFile))) {
-                String line = writer.readLine();
-                while (line != null) {
-                    System.out.println(line);
-                    line = writer.readLine();
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(graphsFile))) {
+                for (String graph : graphs) {
+                    writer.append(graph);
+                    writer.newLine();
                 }
             } catch (IOException e) {
-                LOGGER.error("Cannot write graphs file to " + graphsFileName);
+                LOGGER.error("Cannot write graphs file to " + graphsFilePath);
             }
 
-//            try (BufferedWriter writer = new BufferedWriter(new FileWriter(graphsFile))) {
-//                for (String graph : graphs) {
-//                    writer.append(graph);
-//                    writer.newLine();
-//                }
-//            } catch (IOException e) {
-//                LOGGER.error("Cannot write graphs file to " + graphsFileName);
-//            }
         } catch (IOException e) {
-            LOGGER.error("Cannot open graphs file " + graphsFileName);
+            LOGGER.error("Cannot open graphs file " + graphsFilePath);
         }
-
-    }
-
-    private static List<Cluster> transform(Map<String, String> trainQuestionsWithQuery, HashMap<String, Set<String>>[] commonPredicates) {
-
-        List<CustomQuestion> customTrainQuestions = new ArrayList<>();
-        QueryIsomorphism queryIsomorphism = new QueryIsomorphism(trainQuestionsWithQuery);
-
-        return queryIsomorphism.getClusters();
-    }
-
-    public static void main(String[] args) throws IOException {
-        WekaClassifier.saveGraphs(new ArrayList<>());
-//        WekaClassifier o = WekaClassifier.getDefaultClassifier();
-//        String absolutePath = new ClassPathResource("template-classification.properties").getFile().getAbsolutePath();
-//        BufferedReader bufferedReader = new BufferedReader(new FileReader(absolutePath));
-////        String line = bufferedReader.readLine()
-////        while(; line != null)
-//        Stream<String> lines = Files.lines(Paths.get(absolutePath));
-//        lines.forEach(System.out::println);
-//        FileInputStream stream = new FileInputStream(new ClassPathResource("question_classificationww.model").getFile());
-//        System.out.println(stream);
-
-
-//        Properties p = new Properties();
-//        p.load(new ClassPathResource(Constants.TEMPLATE_CLASSIFICATION_PROP_FILE).getInputStream());
-//        System.getProperties().putAll(p);
-//        System.getProperties().putAll(p);
-//        System.out.println(System.getProperties().getProperty("classifier.model.file"));
 
     }
 
@@ -271,4 +286,27 @@ public class WekaClassifier {
         }
         return predictedGraph;
     }
+
+    public static void main(String[] args) throws IOException {
+//        WekaClassifier.saveGraphs(Arrays.asList("abcd", "sdfsd"));
+        WekaClassifier o = WekaClassifier.getDefaultClassifier();
+//        String absolutePath = new ClassPathResource("template-classification.properties").getFile().getAbsolutePath();
+//        BufferedReader bufferedReader = new BufferedReader(new FileReader(absolutePath));
+////        String line = bufferedReader.readLine()
+////        while(; line != null)
+//        Stream<String> lines = Files.lines(Paths.get(absolutePath));
+//        lines.forEach(System.out::println);
+//        FileInputStream stream = new FileInputStream(new ClassPathResource("question_classificationww.model").getFile());
+//        System.out.println(stream);
+
+
+//        Properties p = new Properties();
+//        p.load(new ClassPathResource(Constants.TEMPLATE_CLASSIFICATION_PROP_FILE).getInputStream());
+//        System.getProperties().putAll(p);
+//        System.getProperties().putAll(p);
+//        System.out.println(System.getProperties().getProperty("classifier.model.file"));
+
+    }
+
+
 }

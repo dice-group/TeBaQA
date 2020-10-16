@@ -21,7 +21,7 @@
     <repositories>
         <repository>
             <id>aksw-internal</id>
-            <url>http://maven.aksw.org/repository/internal/</url>
+            <url>https://maven.aksw.org/repository/internal/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
