@@ -37,49 +37,48 @@ public class PropertyUtils {
         return prop;
     }
 
-    public static String getGraphsFileName() {
-        String graphsFileName = ALL_PROPERTIES.getProperty(Constants.SERIALIZED_GRAPHS_FILE);
-        if (graphsFileName == null) {
-            graphsFileName = Constants.DEFAULT_SERIALIZED_GRAPHS_FILENAME;
-            ALL_PROPERTIES.put(Constants.SERIALIZED_GRAPHS_FILE, graphsFileName);
+
+    private static String getFromProperties(String key, String defaultValue) {
+        String value = ALL_PROPERTIES.getProperty(key);
+        if (value == null) {
+            value = defaultValue;
+            ALL_PROPERTIES.put(key, value);
         }
-        return graphsFileName;
+        return value;
     }
 
-    public static String getGraphsFileAbsolutePath() {
-        String graphsFileName = getGraphsFileName();
-
+    private static String getAbsolutePathFromClassPathOrPWD(String filename) {
         // First, check on the classpath
-        URL resource = PropertyUtils.class.getClassLoader().getResource(graphsFileName);
+        URL resource = PropertyUtils.class.getClassLoader().getResource(filename);
         if (resource != null) {
             return resource.getPath();
         }
 
         // If file is not found on the classpath, then return current working directory
-        return System.getProperty("user.dir") + System.getProperty("file.separator") + graphsFileName;
+        return System.getProperty("user.dir") + System.getProperty("file.separator") + filename;
     }
 
-
-    public static String getMappingsFileAbsolutePath() {
-        String mappingsFileName = getMappingsFileName();
-
-        // First, check on the classpath
-        URL resource = PropertyUtils.class.getClassLoader().getResource(mappingsFileName);
-        if (resource != null) {
-            return resource.getPath();
-        }
-
-        // If file is not found on the classpath, then return current working directory
-        return System.getProperty("user.dir") + System.getProperty("file.separator") + mappingsFileName;
+    public static String getGraphsFileAbsolutePath(String datasetName) {
+        return getAbsolutePathFromClassPathOrPWD(String.format(
+                getFromProperties(Constants.SERIALIZED_GRAPHS_FILE, Constants.DEFAULT_SERIALIZED_GRAPHS_FILENAME),
+                datasetName));
     }
 
-    private static String getMappingsFileName() {
-        String mappingsFileName = ALL_PROPERTIES.getProperty(Constants.SERIALIZED_MAPPINGS_FILE);
-        if (mappingsFileName == null) {
-            mappingsFileName = Constants.DEFAULT_SERIALIZED_MAPPINGS_FILENAME;
-            ALL_PROPERTIES.put(Constants.SERIALIZED_MAPPINGS_FILE, mappingsFileName);
-        }
-        return mappingsFileName;
+    public static String getMappingsFileAbsolutePath(String datasetName) {
+        return getAbsolutePathFromClassPathOrPWD(String.format(
+                getFromProperties(Constants.SERIALIZED_MAPPINGS_FILE, Constants.DEFAULT_SERIALIZED_MAPPINGS_FILENAME),
+                datasetName));
     }
 
+    public static String getArffTrainFileAbsolutePath(String datasetName) {
+        return getAbsolutePathFromClassPathOrPWD(String.format(
+                getFromProperties(Constants.SERIALIZED_ARFF_TRAIN_FILE, Constants.DEFAULT_SERIALIZED_ARFF_TRAIN_FILENAME),
+                datasetName));
+    }
+
+    public static String getClassifierFileAbsolutePath(String datasetName) {
+        return getAbsolutePathFromClassPathOrPWD(String.format(
+                getFromProperties(Constants.SERIALIZED_CLASSIFIER_FILE, Constants.DEFAULT_SERIALIZED_CLASSIFIER_FILENAME),
+                datasetName));
+    }
 }

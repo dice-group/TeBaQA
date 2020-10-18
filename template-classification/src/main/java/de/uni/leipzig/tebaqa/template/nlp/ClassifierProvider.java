@@ -1,13 +1,14 @@
 package de.uni.leipzig.tebaqa.template.nlp;
 
 import de.uni.leipzig.tebaqa.template.nlp.analyzer.Analyzer;
+import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
 import org.apache.log4j.Logger;
-import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.Classifier;
 import weka.core.Attribute;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ public class ClassifierProvider {
      *
      * @return A shared instance of the Classifier.
      */
-    public static Classifier init(List<String> graphs) {
+    public static Classifier init(String datasetName, List<String> graphs) {
         log.info("Creating weka classifier...");
         ArrayList<Attribute> attributes = new ArrayList<>();
         classAttribute = new Attribute("class", new ArrayList<>(graphs));
@@ -44,7 +45,7 @@ public class ClassifierProvider {
         dataset.setClassIndex(dataset.numAttributes() - 1);
 
         try {
-            cls = (Classifier) SerializationHelper.read(new FileInputStream(new ClassPathResource("question_classification.model").getFile()));
+            cls = (Classifier) SerializationHelper.read(new FileInputStream(new File(PropertyUtils.getClassifierFileAbsolutePath(datasetName))));
         } catch (Exception e) {
             log.error("Unable to load weka model file: question_classification.model");
         }

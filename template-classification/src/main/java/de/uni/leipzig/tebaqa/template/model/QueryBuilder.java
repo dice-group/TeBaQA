@@ -42,7 +42,7 @@ public class QueryBuilder {
     }
 
     private Map<String, String> processQuestion(String question) {
-        //TODO detect entities, properties and classes from the question
+        //detect entities, properties and classes from the question TODO
         //SemanticGraph semanticGraph = analysis.extractDependencyGraph(question);
 
         //List<IndexedWord> sequence = analysis.getDependencySequence(semanticGraph);

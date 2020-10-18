@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import de.uni.leipzig.tebaqa.template.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.template.nlp.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.template.service.WekaWrapper;
+import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
 import org.apache.log4j.Logger;
 import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.AbstractClassifier;
@@ -31,6 +32,50 @@ import java.util.List;
 
 public class ArffGenerator {
     private static Logger log = Logger.getLogger(ArffGenerator.class);
+
+    public ArffGenerator(String datasetName, List<String> graphs, List<CustomQuestion> trainQuestions) {
+        log.info("Calculate the features per question and cluster");
+        List<Attribute> attributes = new ArrayList<>();
+
+        // Add all occurring graphs(=class attribute) as possible attribute values
+        //Set<String> graphs = trainQuestions.parallelStream().map(CustomQuestion::getGraph).collect(Collectors.toSet());
+        Attribute classAttribute = new Attribute("class", Lists.newArrayList(graphs));
+        attributes.add(classAttribute);
+        Analyzer analyzer = new Analyzer(attributes);
+        ArrayList<Attribute> fvfinal = analyzer.fvWekaAttributes;
+
+        Instances trainingSet = new Instances("training_classifier: -C 4", fvfinal, trainQuestions.size());
+//        Instances testSet = new Instances("test_classifier: -C 4", fvfinal, trainQuestions.size());
+        log.debug("Start collection of training data for each class");
+        //Create instance and set the class attribute missing for testing
+        //Create instance with the class attribute for training
+        trainQuestions.forEach(question -> {
+            //Create instance with the class attribute for training
+            Instance trainInstance = analyzer.analyze(question.getQuestionText());
+            trainInstance.setValue(classAttribute, question.getGraph());
+            trainingSet.add(trainInstance);
+        });
+
+        String arffTrainFileAbsolutePath = PropertyUtils.getArffTrainFileAbsolutePath(datasetName);
+        try {
+            File file = new File(arffTrainFileAbsolutePath);
+            file.createNewFile();
+            writeSetToArffFile(trainingSet, file.getPath());
+        } catch (IOException e) {
+            log.error(String.format("Unable to write %s to file!", arffTrainFileAbsolutePath), e);
+        }
+
+        //AbstractClassifier classifier = new MultilayerPerceptron();
+        AbstractClassifier classifier = new RandomizableFilteredClassifier();
+
+        try {
+            trainingSet.setClassIndex(trainingSet.numAttributes() - 1);
+            classifier.buildClassifier(trainingSet);
+            SerializationHelper.write(PropertyUtils.getClassifierFileAbsolutePath(datasetName), classifier);
+        } catch (Exception e) {
+            log.error("Unable to generate weka model!", e);
+        }
+    }
 
     public ArffGenerator(List<String> graphs, List<CustomQuestion> trainQuestions, List<CustomQuestion> testQuestions, Boolean evaluateWekaAlgorithms) {
         log.info("Calculate the features per question and cluster");

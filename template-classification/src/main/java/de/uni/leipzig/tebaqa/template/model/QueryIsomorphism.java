@@ -135,7 +135,7 @@ public class QueryIsomorphism {
             for (String s : list) {
                 CustomQuestion question = new CustomQuestion(inverseQueryMap.get(s), s, getSimpleModifiers(inverseQueryMap.get(s)), graph);
                 HashMap<String, String> languageToQuestion = new HashMap<>();
-                languageToQuestion.put("en", s); //TODO
+                languageToQuestion.put("en", s); //TODO which attributes are important?
                 //question.setLanguageToQuestion(languageToQuestion);
                 //question.setSparqlQuery(inverseQueryMap.get(s));
                 cluster.addQuestion(question);
