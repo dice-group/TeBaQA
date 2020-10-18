@@ -287,6 +287,10 @@ public class WekaClassifier {
         return predictedGraph;
     }
 
+    public QueryTemplateMapping getQueryTemplatesFor(String graph) {
+        return this.graphToQueryTemplateMappings.get(graph);
+    }
+
     public static void main(String[] args) throws IOException {
 //        WekaClassifier.saveGraphs(Arrays.asList("abcd", "sdfsd"));
         StanfordPipelineProvider.getSingletonPipelineInstance(StanfordPipelineProvider.Lang.EN);
