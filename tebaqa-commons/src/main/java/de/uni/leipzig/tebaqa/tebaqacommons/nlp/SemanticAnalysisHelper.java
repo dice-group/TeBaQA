@@ -1,4 +1,4 @@
-package de.uni.leipzig.tebaqa.template.nlp;
+package de.uni.leipzig.tebaqa.tebaqacommons.nlp;
 
 public abstract class SemanticAnalysisHelper implements ISemanticAnalysisHelper {
 }

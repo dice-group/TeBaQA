@@ -1,4 +1,4 @@
-package de.uni.leipzig.tebaqa.template.nlp;
+package de.uni.leipzig.tebaqa.tebaqacommons.nlp;
 
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;

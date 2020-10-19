@@ -34,7 +34,7 @@ public class ClassifierProvider {
      * @return A shared instance of the Classifier.
      */
     public static Classifier init(String datasetName, List<String> graphs) {
-        log.info("Creating weka classifier...");
+        log.info("Init classifier...");
         ArrayList<Attribute> attributes = new ArrayList<>();
         classAttribute = new Attribute("class", new ArrayList<>(graphs));
         attributes.add(classAttribute);

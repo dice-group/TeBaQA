@@ -26,7 +26,7 @@ public class TemplateClassificationController {
     public String testGet(HttpServletResponse response) {
         return ResponseEntity.status(HttpStatus.OK).body("GET for /test-tc success").toString();
     }
-//
+
 
     @RequestMapping(method = RequestMethod.POST, path = "/classify-template")
     public QueryTemplateResponseBean classifyTemplate(@RequestParam String question,
@@ -44,7 +44,7 @@ public class TemplateClassificationController {
         templateResponseBean.setLang(lang);
 
         String graph = classifier.classifyInstance(question);
-        System.out.printf("%s -> %s", question, graph);
+        LOGGER.info(String.format("%s -> %s", question, graph));
         QueryTemplateMapping templates = classifier.getQueryTemplatesFor(graph);
         templateResponseBean.setTemplates(new ArrayList<>(templates.getAllAvailableTemplates()));
 
