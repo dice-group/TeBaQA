@@ -5,6 +5,9 @@ package de.uni.leipzig.tebaqa.template.service;
 //import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryIsomorphism;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.ISemanticAnalysisHelper;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelperEnglish;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
 import de.uni.leipzig.tebaqa.template.model.Cluster;
 import de.uni.leipzig.tebaqa.template.model.CustomQuestion;

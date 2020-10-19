@@ -1,6 +1,6 @@
 package de.uni.leipzig.tebaqa.template.nlp.analyzer;
 
-import de.uni.leipzig.tebaqa.template.nlp.StanfordPipelineProvider;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;

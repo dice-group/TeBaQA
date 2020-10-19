@@ -35,4 +35,16 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
 
         return posTags;
     }
+
+    @Override
+    public String removeQuestionWords(String question) {
+        String[] questionWords = "how many|how much|give me|list|give|show me|show|who|whom|when|were|what|why|whose|how|where|which|is|are|did|was|does".split("\\|");
+
+        for (String questionWord : questionWords) {
+            if (question.toLowerCase().startsWith(questionWord)) {
+                return question.substring(questionWord.length()).trim();
+            }
+        }
+        return question;
+    }
 }

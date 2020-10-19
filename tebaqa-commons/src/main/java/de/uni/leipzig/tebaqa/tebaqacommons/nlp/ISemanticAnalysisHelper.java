@@ -4,4 +4,5 @@ import java.util.HashMap;
 
 public interface ISemanticAnalysisHelper {
     HashMap<String, String> getPosTags(String text);
+    String removeQuestionWords(String question);
 }

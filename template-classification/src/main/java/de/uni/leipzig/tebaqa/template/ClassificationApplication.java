@@ -1,6 +1,6 @@
 package de.uni.leipzig.tebaqa.template;
 
-import de.uni.leipzig.tebaqa.template.nlp.StanfordPipelineProvider;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import de.uni.leipzig.tebaqa.template.service.WekaClassifier;
 import org.apache.log4j.Logger;
 import org.springframework.boot.SpringApplication;

@@ -1,6 +1,6 @@
 package de.uni.leipzig.tebaqa.template.model;
 
-import de.uni.leipzig.tebaqa.template.nlp.ISemanticAnalysisHelper;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.ISemanticAnalysisHelper;
 
 import java.util.List;
 import java.util.Map;
