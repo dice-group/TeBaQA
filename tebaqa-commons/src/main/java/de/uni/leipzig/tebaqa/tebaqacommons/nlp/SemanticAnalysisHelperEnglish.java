@@ -4,14 +4,19 @@ import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.semgraph.SemanticGraph;
+import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
+import edu.stanford.nlp.util.CoreMap;
+import org.apache.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
 
 public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
 
-    private final StanfordCoreNLP pipeline;
+    private static final Logger LOGGER = Logger.getLogger(SemanticAnalysisHelperEnglish.class);
 
+    private final StanfordCoreNLP pipeline;
 
     public SemanticAnalysisHelperEnglish() {
         this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(StanfordPipelineProvider.Lang.EN);
@@ -46,5 +51,30 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
             }
         }
         return question;
+    }
+
+    /**
+     * Extracts the dependency graph out of a sentence. Note: Only the dependency graph of the first sentence is
+     * recognized. Every following sentence will be ignored!
+     *
+     * @param text The string which contains the question.
+     * @return The dependency graph.
+     */
+    @Override
+    public SemanticGraph extractDependencyGraph(String text) {
+        Annotation annotation = new Annotation(text);
+        pipeline.annotate(annotation);
+
+        List<CoreMap> sentences = annotation.get(CoreAnnotations.SentencesAnnotation.class);
+        if (sentences.size() > 1) {
+            LOGGER.error("There is more than one sentence to analyze: " + text);
+        }
+        CoreMap sentence = sentences.get(0);
+        SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
+        if (dependencyGraph == null) {
+            return sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
+        } else {
+            return dependencyGraph;
+        }
     }
 }
