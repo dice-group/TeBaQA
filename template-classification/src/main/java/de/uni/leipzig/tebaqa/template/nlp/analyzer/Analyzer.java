@@ -17,12 +17,12 @@ public class Analyzer {
 
     public Analyzer(List<Attribute> attributes) {
         // TODO some analyzers commented because of memory issue, discuss and use which are important
-
+        // Evalulate
         analyzers = new ArrayList<>();
         analyzers.add(new QuestionWord());
         analyzers.add(new EntityPerson());
         analyzers.add(new NumberOfToken());
-        //analyzers.add(new QueryResourceTypeAnalyzer());
+//        analyzers.add(new QueryResourceTypeAnalyzer());
         analyzers.add(new Noun());
         analyzers.add(new Number());
         analyzers.add(new Verb());

@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.template;
 
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import de.uni.leipzig.tebaqa.template.service.WekaClassifier;
 import org.apache.log4j.Logger;
@@ -26,7 +27,7 @@ public class ClassificationApplication {
         System.getProperties().putAll(p);
 
         // Load Stanford NLP pipeline at start up
-        StanfordPipelineProvider.getSingletonPipelineInstance(StanfordPipelineProvider.Lang.EN);
+        StanfordPipelineProvider.getSingletonPipelineInstance(Lang.EN);
 
         // Prepare Weka classifier model at start up
         WekaClassifier.getDefaultClassifier();
