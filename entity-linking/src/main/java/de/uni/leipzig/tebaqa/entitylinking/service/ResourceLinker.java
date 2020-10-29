@@ -20,7 +20,7 @@ public class ResourceLinker {
     private String question;
     private final Lang language;
 
-    private Set<Object> propertyUris;
+    private Set<String> propertyUris;
     private Set<EntityCandidate> entityCandidates;
     private Set<PropertyCandidate> propertyCandidates;
     private Set<ClassCandidate> classCandidates;
@@ -42,6 +42,17 @@ public class ResourceLinker {
         this.disambiguationService = new DisambiguationService(this.searchService);
     }
 
+    public String getQuestion() {
+        return question;
+    }
+
+    public Lang getLanguage() {
+        return language;
+    }
+
+    public Set<String> getPropertyUris() {
+        return propertyUris;
+    }
 
     public Set<EntityCandidate> getEntityCandidates() {
         return entityCandidates;

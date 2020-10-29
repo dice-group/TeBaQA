@@ -11,7 +11,7 @@ public class EntityLinkingService {
         ResourceLinker resourceLinker = new ResourceLinker(question, lang);
         resourceLinker.linkEntities();
         return new EntityLinkingResponseBean(resourceLinker.getClassCandidates(),
-                resourceLinker.getPropertyCandidates(), resourceLinker.getEntityCandidates());
+                resourceLinker.getPropertyCandidates(), resourceLinker.getEntityCandidates(), resourceLinker.getPropertyUris());
     }
 
 }
