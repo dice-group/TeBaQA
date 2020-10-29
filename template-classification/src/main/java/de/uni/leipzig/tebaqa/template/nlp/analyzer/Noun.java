@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.template.nlp.analyzer;
 
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -16,7 +17,7 @@ public class Noun implements IAnalyzer {
     private StanfordCoreNLP pipeline;
 
     public Noun() {
-        pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(StanfordPipelineProvider.Lang.EN);
+        pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(Lang.EN);
         attribute = new Attribute("NumberOfNouns");
     }
 

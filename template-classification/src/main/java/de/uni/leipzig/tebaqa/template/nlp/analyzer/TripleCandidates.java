@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.template.nlp.analyzer;
 
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import edu.stanford.nlp.ie.AbstractSequenceClassifier;
 import edu.stanford.nlp.ie.crf.CRFClassifier;
@@ -39,7 +40,7 @@ public class TripleCandidates implements IAnalyzer {
 
     //TODO used in analyzer but commented due to memory issues
     public TripleCandidates() throws IOException, ClassNotFoundException {
-        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(StanfordPipelineProvider.Lang.EN);
+        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(Lang.EN);
         attribute = new Attribute("TripleCandidatesCount");
     }
 

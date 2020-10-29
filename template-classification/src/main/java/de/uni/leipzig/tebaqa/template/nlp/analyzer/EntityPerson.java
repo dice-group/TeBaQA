@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.template.nlp.analyzer;
 
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -21,7 +22,7 @@ public class EntityPerson implements IAnalyzer {
     private StanfordCoreNLP pipeline;
 
     public EntityPerson() {
-        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(StanfordPipelineProvider.Lang.EN);
+        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(Lang.EN);
         FastVector fvWekaPerson = new FastVector(2);
         fvWekaPerson.addElement("Person");
         fvWekaPerson.addElement("NoPerson");

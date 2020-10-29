@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.template.nlp.analyzer;
 
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -25,7 +26,7 @@ public class Comperative implements IAnalyzer {
         //props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner");
         //props.setProperty("ner.useSUTime", "false");
         //this.pipeline = new StanfordCoreNLP(props);
-        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(StanfordPipelineProvider.Lang.EN);
+        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(Lang.EN);
         FastVector fvWekaComperative = new FastVector(2);
         fvWekaComperative.addElement("Comperative");
         fvWekaComperative.addElement("NoComperative");

@@ -6,6 +6,7 @@ package de.uni.leipzig.tebaqa.template.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.ISemanticAnalysisHelper;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelperEnglish;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
@@ -296,7 +297,7 @@ public class WekaClassifier {
 
     public static void main(String[] args) throws IOException {
 //        WekaClassifier.saveGraphs(Arrays.asList("abcd", "sdfsd"));
-        StanfordPipelineProvider.getSingletonPipelineInstance(StanfordPipelineProvider.Lang.EN);
+        StanfordPipelineProvider.getSingletonPipelineInstance(Lang.EN);
         WekaClassifier o = WekaClassifier.getDefaultClassifier();
 //        String absolutePath = new ClassPathResource("template-classification.properties").getFile().getAbsolutePath();
 //        BufferedReader bufferedReader = new BufferedReader(new FileReader(absolutePath));
