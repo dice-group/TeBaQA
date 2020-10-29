@@ -9,8 +9,10 @@ import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
 import edu.stanford.nlp.util.CoreMap;
 import org.apache.log4j.Logger;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
 
@@ -19,12 +21,8 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
     private final StanfordCoreNLP pipeline;
 
     public SemanticAnalysisHelperEnglish() {
-        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(StanfordPipelineProvider.Lang.EN);
+        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(Lang.EN);
     }
-
-//    public SemanticAnalysisHelperEnglish(StanfordCoreNLP pipeline) {
-//        this.pipeline = pipeline;
-//    }
 
     @Override
     public HashMap<String, String> getPosTags(String text) {
@@ -76,5 +74,10 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
         } else {
             return dependencyGraph;
         }
+    }
+
+    @Override
+    public Map<String, String> getLemmas(String text) {
+        return Collections.emptyMap(); // TODO ? this is not implemented in the old code
     }
 }

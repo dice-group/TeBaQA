@@ -1,51 +1,58 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.model;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 public class EntityLinkingResponseBean {
 
-    private List<ClassCandidate> classCandidates;
-    private List<PropertyCandidate> propertyCandidates;
-    private List<EntityCandidate> entityCandidates;
-    private List<EntityCandidate> literalCandidates;
+    private Set<ClassCandidate> classCandidates;
+    private Set<PropertyCandidate> propertyCandidates;
+    private Set<EntityCandidate> entityCandidates;
+    private Set<EntityCandidate> literalCandidates;
 
     public EntityLinkingResponseBean() {
-        this.classCandidates = Collections.emptyList();
-        this.propertyCandidates = Collections.emptyList();
-        this.entityCandidates = Collections.emptyList();
-        this.literalCandidates = Collections.emptyList();
+        this.classCandidates = Collections.emptySet();
+        this.propertyCandidates = Collections.emptySet();
+        this.entityCandidates = Collections.emptySet();
+        this.literalCandidates = Collections.emptySet();
     }
 
-    public List<ClassCandidate> getClassCandidates() {
+    public EntityLinkingResponseBean(Set<ClassCandidate> classCandidates, Set<PropertyCandidate> propertyCandidates, Set<EntityCandidate> entityCandidates) {
+        this.classCandidates = classCandidates;
+        this.propertyCandidates = propertyCandidates;
+        this.entityCandidates = entityCandidates;
+        this.literalCandidates = Collections.emptySet();
+    }
+
+    public Set<ClassCandidate> getClassCandidates() {
         return classCandidates;
     }
 
-    public void setClassCandidates(List<ClassCandidate> classCandidates) {
+    public void setClassCandidates(Set<ClassCandidate> classCandidates) {
         this.classCandidates = classCandidates;
     }
 
-    public List<PropertyCandidate> getPropertyCandidates() {
+    public Set<PropertyCandidate> getPropertyCandidates() {
         return propertyCandidates;
     }
 
-    public void setPropertyCandidates(List<PropertyCandidate> propertyCandidates) {
+    public void setPropertyCandidates(Set<PropertyCandidate> propertyCandidates) {
         this.propertyCandidates = propertyCandidates;
     }
 
-    public List<EntityCandidate> getEntityCandidates() {
+    public Set<EntityCandidate> getEntityCandidates() {
         return entityCandidates;
     }
 
-    public void setEntityCandidates(List<EntityCandidate> entityCandidates) {
+    public void setEntityCandidates(Set<EntityCandidate> entityCandidates) {
         this.entityCandidates = entityCandidates;
     }
 
-    public List<EntityCandidate> getLiteralCandidates() {
+    public Set<EntityCandidate> getLiteralCandidates() {
         return literalCandidates;
     }
 
-    public void setLiteralCandidates(List<EntityCandidate> literalCandidates) {
+    public void setLiteralCandidates(Set<EntityCandidate> literalCandidates) {
         this.literalCandidates = literalCandidates;
     }
 }
