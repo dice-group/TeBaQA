@@ -1,9 +1,10 @@
-package de.uni.leipzig.tebaqa.template.model;
+package de.uni.leipzig.tebaqa.queryranking.model;
 
 import java.util.Objects;
 
 public class TripleTemplate {
-    private static final String RESOURCE_PREFIX_IDENTIFIER = "res";
+    public static final String RESOURCE_PREFIX_IDENTIFIER = "res";
+    public static final String VARIABLE_PLACEHOLDER = "var";
     private final String subject;
     private final String predicate;
     private final String object;
@@ -68,14 +69,7 @@ public class TripleTemplate {
     }
 
     public Pattern getPattern() {
-        switch (this.getPatternString()) {
-            case "v_v_r":
-                return Pattern.V_V_R;
-            case "v_r_v":
-                return Pattern.V_R_V;
-            default:
-                return null;
-        }
+        return Pattern.getFor(this.getPatternString());
     }
 
     @Override
@@ -99,7 +93,10 @@ public class TripleTemplate {
     }
 
     public enum Pattern {
-
+        // 2R
+        R_R_V("r_r_v"),
+        V_R_R("v_r_r"),
+        // 1R
         V_V_R("v_v_r"),
         V_R_V("v_r_v");
 
@@ -111,6 +108,14 @@ public class TripleTemplate {
 
         public boolean sameAs(String anotherPattern) {
             return this.patternString.equalsIgnoreCase(anotherPattern);
+        }
+
+        public static Pattern getFor(String patternString) {
+            for (Pattern p : Pattern.values()) {
+                if (p.patternString.equalsIgnoreCase(patternString))
+                    return p;
+            }
+            return null;
         }
     }
 }
