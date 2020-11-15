@@ -2,11 +2,9 @@ package de.uni.leipzig.tebaqa.template.model;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryType;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class QueryTemplateMapping {
     private final Set<String> askQueries = new HashSet<>();
@@ -167,5 +165,16 @@ public class QueryTemplateMapping {
         if (superlativeDescTemplate != null) allTemplates.add(superlativeDescTemplate);
         if (countTemplates != null) allTemplates.add(countTemplates);
         return allTemplates;
+    }
+
+    public Set<String> getTemplatesFor(QueryType queryType) {
+        if (QueryType.ASK_QUERY.equals(queryType)) return Collections.singleton(askTemplate);
+        else if (QueryType.SELECT_QUERY.equals(queryType)) return Collections.singleton(selectTemplate);
+        else if (QueryType.SELECT_SUPERLATIVE_ASC_QUERY.equals(queryType))
+            return Collections.singleton(superlativeAscTemplate);
+        else if (QueryType.SELECT_SUPERLATIVE_DESC_QUERY.equals(queryType))
+            return Collections.singleton(superlativeDescTemplate);
+        else if (QueryType.SELECT_COUNT_QUERY.equals(queryType)) return Collections.singleton(countTemplates);
+        else return getAllAvailableTemplates();
     }
 }

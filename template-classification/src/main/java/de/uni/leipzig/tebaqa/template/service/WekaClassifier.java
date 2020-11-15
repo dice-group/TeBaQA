@@ -1,20 +1,15 @@
 package de.uni.leipzig.tebaqa.template.service;
 
-//import de.uni.leipzig.tebaqa.tebaqacommons.model.Cluster;
-//import de.uni.leipzig.tebaqa.tebaqacommons.model.CustomQuestion;
-//import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryIsomorphism;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.ISemanticAnalysisHelper;
-import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelperEnglish;
-import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
 import de.uni.leipzig.tebaqa.template.model.Cluster;
 import de.uni.leipzig.tebaqa.template.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.template.model.QueryIsomorphism;
 import de.uni.leipzig.tebaqa.template.model.QueryTemplateMapping;
-import de.uni.leipzig.tebaqa.template.nlp.*;
+import de.uni.leipzig.tebaqa.template.nlp.ArffGenerator;
+import de.uni.leipzig.tebaqa.template.nlp.ClassifierProvider;
 import de.uni.leipzig.tebaqa.template.nlp.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
 import de.uni.leipzig.tebaqa.template.util.Utilities;
@@ -28,10 +23,7 @@ import weka.classifiers.Classifier;
 import weka.core.Instance;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class WekaClassifier {
@@ -295,27 +287,7 @@ public class WekaClassifier {
         return this.graphToQueryTemplateMappings.get(graph);
     }
 
-    public static void main(String[] args) throws IOException {
-//        WekaClassifier.saveGraphs(Arrays.asList("abcd", "sdfsd"));
-        StanfordPipelineProvider.getSingletonPipelineInstance(Lang.EN);
-        WekaClassifier o = WekaClassifier.getDefaultClassifier();
-//        String absolutePath = new ClassPathResource("template-classification.properties").getFile().getAbsolutePath();
-//        BufferedReader bufferedReader = new BufferedReader(new FileReader(absolutePath));
-////        String line = bufferedReader.readLine()
-////        while(; line != null)
-//        Stream<String> lines = Files.lines(Paths.get(absolutePath));
-//        lines.forEach(System.out::println);
-//        FileInputStream stream = new FileInputStream(new ClassPathResource("question_classificationww.model").getFile());
-//        System.out.println(stream);
-
-
-//        Properties p = new Properties();
-//        p.load(new ClassPathResource(Constants.TEMPLATE_CLASSIFICATION_PROP_FILE).getInputStream());
-//        System.getProperties().putAll(p);
-//        System.getProperties().putAll(p);
-//        System.out.println(System.getProperties().getProperty("classifier.model.file"));
-
+    public Collection<QueryTemplateMapping> getAllQueryTemplates() {
+        return this.graphToQueryTemplateMappings.values();
     }
-
-
 }
