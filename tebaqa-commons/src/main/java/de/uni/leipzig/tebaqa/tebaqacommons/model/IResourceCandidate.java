@@ -7,6 +7,8 @@ public interface IResourceCandidate {
 
     void setCoOccurrence(String coOccurrence);
 
+    void setCoOccurrenceAndScore(String coOccurrence);
+
     Set<String> getResourceLabels();
 
     void setResourceLabels(Set<String> resourceLabels);
@@ -14,6 +16,8 @@ public interface IResourceCandidate {
     String getUri();
 
     void setUri(String uri);
+
+    Double getLevenshteinSimilarityScore();
 
     Double getLevenshteinDistanceScore();
 
@@ -30,4 +34,8 @@ public interface IResourceCandidate {
     Double getRelatednessFactor();
 
     void setRelatednessFactor(Double relatednessFactor);
+
+    String getBestLabelFor(String coOccurrence);
+
+    double getLevensteinScoreFor(String coOccurrence);
 }

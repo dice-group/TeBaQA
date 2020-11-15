@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Set;
 
 public class EntityLinkingResponseBean {
-
+    private Set<String> coOccurrences;
     private Set<ClassCandidate> classCandidates;
     private Set<PropertyCandidate> propertyCandidates;
     private Set<EntityCandidate> entityCandidates;
@@ -12,6 +12,7 @@ public class EntityLinkingResponseBean {
     private Set<String> propertyUris;
 
     public EntityLinkingResponseBean() {
+        this.coOccurrences = Collections.emptySet();
         this.classCandidates = Collections.emptySet();
         this.propertyCandidates = Collections.emptySet();
         this.entityCandidates = Collections.emptySet();
@@ -19,7 +20,8 @@ public class EntityLinkingResponseBean {
         this.propertyUris = Collections.emptySet();
     }
 
-    public EntityLinkingResponseBean(Set<ClassCandidate> classCandidates, Set<PropertyCandidate> propertyCandidates, Set<EntityCandidate> entityCandidates, Set<String> propertyUris) {
+    public EntityLinkingResponseBean(Set<String> coOccurrences, Set<ClassCandidate> classCandidates, Set<PropertyCandidate> propertyCandidates, Set<EntityCandidate> entityCandidates, Set<String> propertyUris) {
+        this.coOccurrences = coOccurrences;
         this.classCandidates = classCandidates;
         this.propertyCandidates = propertyCandidates;
         this.entityCandidates = entityCandidates;
@@ -65,5 +67,13 @@ public class EntityLinkingResponseBean {
 
     public void setPropertyUris(Set<String> propertyUris) {
         this.propertyUris = propertyUris;
+    }
+
+    public Set<String> getCoOccurrences() {
+        return coOccurrences;
+    }
+
+    public void setCoOccurrences(Set<String> coOccurrences) {
+        this.coOccurrences = coOccurrences;
     }
 }

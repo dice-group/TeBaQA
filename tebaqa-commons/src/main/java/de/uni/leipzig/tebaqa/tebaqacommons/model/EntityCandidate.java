@@ -9,6 +9,9 @@ public class EntityCandidate extends ResourceCandidate {
     private Set<String> connectedResourcesObject;
     private Set<String> types;
 
+    private EntityCandidate() {
+    }
+
     public EntityCandidate(String uri, Set<String> resourceString, Set<String> connectedPropertiesSubject, Set<String> connectedPropertiesObject,
                            Set<String> connectedResourcesSubject, Set<String> connectedResourcesObject, Set<String> types) {
         this.uri = uri;

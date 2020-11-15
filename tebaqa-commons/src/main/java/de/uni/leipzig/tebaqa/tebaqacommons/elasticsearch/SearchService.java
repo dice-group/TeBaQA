@@ -1,17 +1,12 @@
-package de.uni.leipzig.tebaqa.entitylinking.service;
+package de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch;
 
-import de.uni.leipzig.tebaqa.tebaqacommons.model.ClassCandidate;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.ResourceCandidate;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class SearchService {
 
@@ -20,41 +15,41 @@ public class SearchService {
     // TODO Externalize?
     private static final double MIN_SCORE_NORMAL = 0.32;
     private static final double MIN_SCORE_WITH_NUMBERS = 0.05;
-    private final ElasticSearchEntityIndex index;
+    private final ElasticSearchClient index;
 
     // TODO implement caching here
 
-    public SearchService() throws IOException {
-        this.index = new ElasticSearchEntityIndex();
+    public SearchService(ESConnectionProperties props) throws IOException {
+        this.index = new ElasticSearchClient(props);
     }
 
-    public SearchService(ElasticSearchEntityIndex index) {
+    public SearchService(ElasticSearchClient index) {
         this.index = index;
     }
 
 
     public Set<EntityCandidate> searchEntities(String coOccurrence) {
-        return this.searchEntities(coOccurrence, Optional.empty(), Optional.empty(), Optional.empty());
+        return this.searchEntities(Optional.of(coOccurrence), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     public Set<EntityCandidate> searchEntitiesOfType(String coOccurrence, String typeFilter) {
-        return this.searchEntities(coOccurrence, Optional.of(typeFilter), Optional.empty(), Optional.empty());
+        return this.searchEntities(Optional.of(coOccurrence), Optional.of(typeFilter), Optional.empty(), Optional.empty());
     }
 
     public Set<EntityCandidate> searchEntitiesWithConnectedEntity(String coOccurrence, String connectedEntity) {
-        return this.searchEntities(coOccurrence, Optional.empty(), Optional.of(connectedEntity), Optional.empty());
+        return this.searchEntities(Optional.of(coOccurrence), Optional.empty(), Optional.of(connectedEntity), Optional.empty());
     }
 
     public Set<EntityCandidate> searchEntitiesWithConnectedProperty(String coOccurrence, String connectedProperty) {
-        return this.searchEntities(coOccurrence, Optional.empty(), Optional.empty(), Optional.of(connectedProperty));
+        return this.searchEntities(Optional.of(coOccurrence), Optional.empty(), Optional.empty(), Optional.of(connectedProperty));
     }
 
-    private Set<EntityCandidate> searchEntities(String coOccurrence, Optional<String> typeFilter, Optional<String> connectedEntity, Optional<String> connectedProperty) {
+    public Set<EntityCandidate> searchEntities(Optional<String> coOccurrence, Optional<String> typeFilter, Optional<String> connectedEntity, Optional<String> connectedProperty) {
         Set<EntityCandidate> foundEntities;
 
         try {
             foundEntities = index.searchEntity(coOccurrence, connectedEntity, connectedProperty, typeFilter);
-            foundEntities = getBestCandidates(coOccurrence, foundEntities);
+            if (coOccurrence.isPresent()) foundEntities = getBestCandidates(coOccurrence.get(), foundEntities);
 
         } catch (IOException e) {
             LOGGER.info("Searching entities for co-occurrence: " + coOccurrence);
@@ -62,6 +57,30 @@ public class SearchService {
             foundEntities = Collections.emptySet();
         }
         return foundEntities;
+    }
+
+    public Set<EntityCandidate> searchEntitiesByIds(@Nonnull Collection<String> entityUris) {
+        Set<EntityCandidate> foundEntities;
+        try {
+            foundEntities = index.searchEntitiesByIds(entityUris);
+        } catch (IOException e) {
+            LOGGER.info("Searching entities by ID for " + entityUris.size() + " URIs");
+            LOGGER.error("Failed to search entities: " + e.getMessage());
+            foundEntities = Collections.emptySet();
+        }
+        return foundEntities;
+    }
+
+    public Set<PropertyCandidate> searchPropertiesByIds(@Nonnull Collection<String> propertyUris) {
+        Set<PropertyCandidate> foundProperties;
+        try {
+            foundProperties = index.searchPropertiesByIds(propertyUris);
+        } catch (IOException e) {
+            LOGGER.info("Searching properties by ID for " + propertyUris.size() + " URIs");
+            LOGGER.error("Failed to search properties: " + e.getMessage());
+            foundProperties = Collections.emptySet();
+        }
+        return foundProperties;
     }
 
 
@@ -125,13 +144,19 @@ public class SearchService {
 //    }
 
     public <T> Set<T> getBestCandidates(String coOccurrence, Set<? extends ResourceCandidate> foundResources) {
+        return this.getBestCandidates(coOccurrence, foundResources, null);
+    }
+
+    public <T> Set<T> getBestCandidates(String coOccurrence, Set<? extends ResourceCandidate> foundResources, Double thresholdOverride) {
         Set<ResourceCandidate> bestCandidates = new HashSet<>();
         for (ResourceCandidate resource : foundResources) {
-            String bestMatchedLabel = resource.getBestLabel();
-            double ratio = resource.getLevenshteinDistanceScore();
+            boolean coOccurrenceNull = resource.getCoOccurrence() == null;
+            String bestMatchedLabel = coOccurrenceNull ? resource.getBestLabelFor(coOccurrence) : resource.getBestLabel();
+            double ratio = coOccurrenceNull ? resource.getLevensteinScoreFor(coOccurrence) : resource.getLevenshteinDistanceScore();
 
             // Add found entity to final result if it's levenstein score is below threshold (i.e. a good match)
-            if (ratio <= getLevensteinThreshold(coOccurrence, bestMatchedLabel)) {
+            double matchingThreshold = thresholdOverride != null ? thresholdOverride : getLevensteinThreshold(coOccurrence, bestMatchedLabel);
+            if (ratio <= matchingThreshold) {
                 double numberOfWords = (TextUtilities.countWords(coOccurrence));
                 double relFactor = (numberOfWords - (2 * ratio * numberOfWords));
                 resource.setRelatednessFactor(relFactor);

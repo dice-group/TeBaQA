@@ -1,6 +1,7 @@
-package de.uni.leipzig.tebaqa.entitylinking.service;
+package de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.ClassCandidate;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.ESConnectionProperties;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
 import org.apache.http.HttpHost;
@@ -17,16 +18,15 @@ import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHitsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
-public class ElasticSearchEntityIndex {
+public class ElasticSearchClient {
 
     private static final int DEFAULT_MAX_RESULT_SIZE = 100;
+    private static final String DOC_ID = "_id";
     private static final String TYPE = "type";
     private static final String LABEL = "label";
     private static final String URI = "uri";
@@ -41,84 +41,98 @@ public class ElasticSearchEntityIndex {
 
     private RestHighLevelClient client;
 
-    public ElasticSearchEntityIndex() throws IOException {
+    public ElasticSearchClient(ESConnectionProperties prop) throws IOException {
 
-        Properties prop = new Properties();
-        InputStream input = null;
-        input = new FileInputStream("src/main/resources/entityLinking.properties");
-        prop.load(input);
+//        Properties prop = new Properties();
+//        InputStream input = null;
+//        input = new FileInputStream("src/main/resources/entityLinking.properties");
+//        prop.load(input);
         String envHost = System.getenv("Elasticsearch_host");
-        String elhost = envHost != null ? envHost : prop.getProperty("el_hostname");
+        String elhost = envHost != null ? envHost : prop.getHostname();
         String envPort = System.getenv("Elasticsearch_host");
-        int elport = Integer.valueOf(envPort != null ? envPort : prop.getProperty("el_port"));
+        int elport = Integer.parseInt(envPort != null ? envPort : prop.getPort());
         String envScheme = System.getenv("Elasticsearch_host");
-        String scheme = envScheme != null ? envScheme : prop.getProperty("scheme");
+        String scheme = envScheme != null ? envScheme : prop.getScheme();
         client = new RestHighLevelClient(
                 RestClient.builder(
                         new HttpHost(elhost, elport, scheme)));
         String envDefaultIndex = System.getenv("Elasticsearch_host");
-        this.entityIndex = envDefaultIndex != null ? envDefaultIndex : prop.getProperty("resource_index");
-        this.propertyIndex = envDefaultIndex != null ? envDefaultIndex : prop.getProperty("property_index");
-        this.classIndex = envDefaultIndex != null ? envDefaultIndex : prop.getProperty("class_index");
+        this.entityIndex = envDefaultIndex != null ? envDefaultIndex : prop.getEntityIndex();
+        this.propertyIndex = envDefaultIndex != null ? envDefaultIndex : prop.getPropertyIndex();
+        this.classIndex = envDefaultIndex != null ? envDefaultIndex : prop.getClassIndex();
     }
 
-    public Set<EntityCandidate> searchEntity(String coOccurrence, Optional<String> connectedEntity, Optional<String> connectedProperty, Optional<String> type) throws IOException {
+    public Set<EntityCandidate> searchEntity(Optional<String> coOccurrence, Optional<String> connectedEntity, Optional<String> connectedProperty, Optional<String> type) throws IOException {
         return searchEntity(coOccurrence, connectedEntity, connectedProperty, type, DEFAULT_MAX_RESULT_SIZE);
     }
 
-    public Set<EntityCandidate> searchEntity(String coOccurrence, Optional<String> connectedEntity, Optional<String> connectedProperty, Optional<String> type, int maxNumberOfResults) throws IOException {
-        BoolQueryBuilder booleanQueryBuilder = new BoolQueryBuilder();
-        Set<EntityCandidate> candidates = new HashSet<>();
-        QueryBuilder queryBuilderMatchFuzzy = new MatchQueryBuilder(LABEL + ".full", coOccurrence).operator(Operator.AND).fuzziness(2).prefixLength(0).maxExpansions(50).fuzzyTranspositions(true);
-        //queryBuilder = new MatchQueryBuilder(LABEL, coOccurrence).operator(Operator.AND);
-        //NativeSearchQueryBuilder nativeSearchQueryBuilder = new NativeSearchQueryBuilder();
-        //}
-        //else {
-        //if(coOccurrence.length()<4)
-        QueryBuilder queryBuilderMatchTerm = new MatchQueryBuilder(LABEL + ".raw", coOccurrence).operator(Operator.AND);
-        QueryBuilder queryBuilderTermFuzzy = QueryBuilders.fuzzyQuery(LABEL + ".raw", coOccurrence).fuzziness(Fuzziness.TWO).prefixLength(0).maxExpansions(50);
-        //}
-        BoolQueryBuilder combQueries = new BoolQueryBuilder();
-        if (coOccurrence.contains(" ")) combQueries.should(queryBuilderMatchFuzzy.boost(1));
-        combQueries.should(queryBuilderTermFuzzy.boost(2));
-        combQueries.should(queryBuilderMatchTerm.boost(3));
-        booleanQueryBuilder.must(combQueries);
-        ExistsQueryBuilder property = new ExistsQueryBuilder(CONNECTED_PROPERTY_SUBJECT);
-        ExistsQueryBuilder resource = new ExistsQueryBuilder(CONNECTED_PROPERTY_OBJECT);
+    public Set<EntityCandidate> searchEntity(Optional<String> coOccurrence, Optional<String> connectedEntity, Optional<String> connectedProperty, Optional<String> type, int maxNumberOfResults) throws IOException {
+        Set<EntityCandidate> candidates;
+        BoolQueryBuilder rootQueryBuilder = new BoolQueryBuilder();
 
-        BoolQueryBuilder connect = new BoolQueryBuilder();
-        connect.should(property);
-        connect.should(resource);
-        booleanQueryBuilder.must(connect);
+        // 1. Co-occurrence
+        coOccurrence.ifPresent(coOccurrenceVal -> {
+            QueryBuilder coOccurrenceMatchFuzzy = new MatchQueryBuilder(LABEL + ".full", coOccurrenceVal).operator(Operator.AND).fuzziness(2).prefixLength(0).maxExpansions(50).fuzzyTranspositions(true);
+            QueryBuilder coOccurrenceMatchTerm = new MatchQueryBuilder(LABEL + ".raw", coOccurrenceVal).operator(Operator.AND);
+            QueryBuilder coOccurrenceTermFuzzy = QueryBuilders.fuzzyQuery(LABEL + ".raw", coOccurrenceVal).fuzziness(Fuzziness.TWO).prefixLength(0).maxExpansions(50);
+
+            BoolQueryBuilder coOccurrenceCombinedQueries = new BoolQueryBuilder();
+            if (coOccurrenceVal.contains(" ")) coOccurrenceCombinedQueries.should(coOccurrenceMatchFuzzy.boost(1));
+            coOccurrenceCombinedQueries.should(coOccurrenceTermFuzzy.boost(2));
+            coOccurrenceCombinedQueries.should(coOccurrenceMatchTerm.boost(3));
+            rootQueryBuilder.must(coOccurrenceCombinedQueries);
+        });
+
+        // 2. Do not find isolated entities i.e. entities not connected with any other entities through properties
+        ExistsQueryBuilder subjectPropertyExists = new ExistsQueryBuilder(CONNECTED_PROPERTY_SUBJECT);
+        ExistsQueryBuilder objectPropertyExists = new ExistsQueryBuilder(CONNECTED_PROPERTY_OBJECT);
+
+        BoolQueryBuilder propertyExistsCombined = new BoolQueryBuilder();
+        propertyExistsCombined.should(subjectPropertyExists);
+        propertyExistsCombined.should(objectPropertyExists);
+        rootQueryBuilder.must(propertyExistsCombined);
+
+        // 3. Connected property filter
         connectedProperty.ifPresent(prop -> {
             BoolQueryBuilder propertyBoolQuery = new BoolQueryBuilder();
             QueryBuilder q1 = termQuery(CONNECTED_PROPERTY_SUBJECT, prop);
             QueryBuilder q2 = termQuery(CONNECTED_PROPERTY_OBJECT, prop);
             propertyBoolQuery.should(q1);
             propertyBoolQuery.should(q2);
-            booleanQueryBuilder.must(propertyBoolQuery);
+            rootQueryBuilder.must(propertyBoolQuery);
         });
+
+        // 4. Connected entity filter
         connectedEntity.ifPresent(res -> {
             BoolQueryBuilder resourceBoolQuery = new BoolQueryBuilder();
             QueryBuilder q1 = termQuery(CONNECTED_RESOURCE_SUBJECT, res);
             QueryBuilder q2 = termQuery(CONNECTED_RESOURCE_OBJECT, res);
             resourceBoolQuery.should(q1);
             resourceBoolQuery.should(q2);
-            booleanQueryBuilder.must(resourceBoolQuery);
-        });
-        /*linkedResourceObject.ifPresent(res->{
-            QueryBuilder q = termQuery(CONNECTED_RESOURCE_OBJECT, res);
-            booleanQueryBuilder.must(q);
-        });*/
-        type.ifPresent(tp -> {
-            QueryBuilder q = termQuery(TYPE, tp);
-            booleanQueryBuilder.must(q);
+            rootQueryBuilder.must(resourceBoolQuery);
         });
 
-        candidates = queryEntityIndex(booleanQueryBuilder, maxNumberOfResults);
-        candidates.forEach(entityCandidate -> entityCandidate.setCoOccurrence(coOccurrence));
+        // 5. Type filter
+        type.ifPresent(tp -> {
+            QueryBuilder q = termQuery(TYPE, tp);
+            rootQueryBuilder.must(q);
+        });
+
+        candidates = queryEntityIndex(rootQueryBuilder, maxNumberOfResults);
+        coOccurrence.ifPresent(s -> candidates.forEach(entityCandidate -> entityCandidate.setCoOccurrenceAndScore(s)));
         return candidates;
     }
+
+    public Set<EntityCandidate> searchEntitiesByIds(Collection<String> entityUris) throws IOException {
+        BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
+        for (String uri : entityUris) {
+            TermQueryBuilder termQueryBuilder = new TermQueryBuilder(DOC_ID, uri);
+            queryBuilder.should(termQueryBuilder);
+        }
+
+        return queryEntityIndex(queryBuilder, DEFAULT_MAX_RESULT_SIZE);
+    }
+
 
     private Set<EntityCandidate> queryEntityIndex(QueryBuilder queryBuilder, int maxNumberOfResults) throws IOException {
         SearchResponse searchResponse = this.queryIndex(queryBuilder, maxNumberOfResults, entityIndex);
@@ -201,8 +215,18 @@ public class ElasticSearchEntityIndex {
             queryBuilder = m1;
 
         Set<PropertyCandidate> propertyCandidates = queryPropertyIndex(queryBuilder, maxNumberOfResults, searchSynonyms);
-        propertyCandidates.forEach(propertyCandidate -> propertyCandidate.setCoOccurrence(coOccurrence));
+        propertyCandidates.forEach(propertyCandidate -> propertyCandidate.setCoOccurrenceAndScore(coOccurrence));
         return propertyCandidates;
+    }
+
+    public Set<PropertyCandidate> searchPropertiesByIds(Collection<String> propertyUris) throws IOException {
+        BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
+        for (String uri : propertyUris) {
+            TermQueryBuilder termQueryBuilder = new TermQueryBuilder(URI, uri);
+            queryBuilder.should(termQueryBuilder);
+        }
+
+        return queryPropertyIndex(queryBuilder, DEFAULT_MAX_RESULT_SIZE, true);
     }
 
     private Set<PropertyCandidate> queryPropertyIndex(QueryBuilder queryBuilder, int maxNumberOfResults, boolean searchSynonyms) throws IOException {
@@ -232,7 +256,7 @@ public class ElasticSearchEntityIndex {
     public Set<ClassCandidate> searchClass(String coOccurrence, int maxNumberOfResults) throws IOException {
         QueryBuilder queryBuilder = new MatchQueryBuilder(LABEL, coOccurrence).operator(Operator.AND).fuzziness(Fuzziness.AUTO).prefixLength(0).maxExpansions(2).fuzzyTranspositions(true);
         Set<ClassCandidate> classCandidates = this.queryClassIndex(queryBuilder, maxNumberOfResults);
-        classCandidates.forEach(classCandidate -> classCandidate.setCoOccurrence(coOccurrence));
+        classCandidates.forEach(classCandidate -> classCandidate.setCoOccurrenceAndScore(coOccurrence));
         return classCandidates;
     }
 
@@ -320,35 +344,4 @@ public class ElasticSearchEntityIndex {
         client.close();
     }
 
-    public static void main(String[] args) {
-        try {
-//            WordsGenerator w=new WordsGenerator();
-            ElasticSearchEntityIndex en = new ElasticSearchEntityIndex();
-//            List<String>a=new ArrayList<>();
-//            a.add("http://dbpedia.org/resource/BlaBlaCar");
-//            //Set<ResourceCandidate>uris=en.searchEntitiesById(a);
-//            //Set<ResourceCandidate>uris=en.searchEntity("Länge",Optional.empty(),Optional.empty(),Optional.empty(),100);
-//            Set<ResourceCandidate>uris;
-//
-//            FillTemplatePatternsWithResources template = new FillTemplatePatternsWithResources()
-//            getbestResourcesByLevenstheinRatio();
-
-//            uris=en.searchEntity("LSA 460", Optional.empty(),Optional.empty(), Optional.empty());
-//            for(ResourceCandidate res:uris)
-//                System.out.println(res.getUri());
-
-//            uris=en.searchResource("EMail Adresse","property",true);
-//            for(ResourceCandidate res:uris)
-//                System.out.println(res.getUri());
-//
-////            uris=en.searchResource("Marken","class",false);
-////            for(ResourceCandidate res:uris)
-////                System.out.println(res.getUri());
-            Set<EntityCandidate> set = en.searchEntity("Sioux Falls", Optional.empty(), Optional.empty(), Optional.empty(), 100);
-
-            en.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 }

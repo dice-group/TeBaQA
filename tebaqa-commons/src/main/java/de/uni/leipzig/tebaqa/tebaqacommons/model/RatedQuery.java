@@ -3,9 +3,30 @@ package de.uni.leipzig.tebaqa.tebaqacommons.model;
 import java.util.Collection;
 
 public class RatedQuery {
+
+    private String queryTemplate;
     private String query;
-    private double score;
-    private Collection<ResourceCandidate> usedCandidates;
+    private double rating;
+
+    public RatedQuery(String query, double... ratingValues) {
+        this.query = query;
+        for (double value : ratingValues) {
+            if (value > 0) {
+                if (this.rating == 0) {
+                    this.rating = 1;
+                }
+                this.rating = this.rating * value;
+            }
+        }
+    }
+
+    public String getQueryTemplate() {
+        return queryTemplate;
+    }
+
+    public void setQueryTemplate(String queryTemplate) {
+        this.queryTemplate = queryTemplate;
+    }
 
     public String getQuery() {
         return query;
@@ -15,19 +36,20 @@ public class RatedQuery {
         this.query = query;
     }
 
-    public double getScore() {
-        return score;
+    public double getRating() {
+        return rating;
     }
 
-    public void setScore(double score) {
-        this.score = score;
+    public void setRating(double rating) {
+        this.rating = rating;
     }
 
-    public Collection<ResourceCandidate> getUsedCandidates() {
-        return usedCandidates;
-    }
-
-    public void setUsedCandidates(Collection<ResourceCandidate> usedCandidates) {
-        this.usedCandidates = usedCandidates;
+    @Override
+    public String toString() {
+//        return "RatedQuery{" +
+//                "query='" + query + '\'' +
+//                ", rating=" + rating +
+//                '}';
+        return String.format("%s --> %s", rating, query);
     }
 }

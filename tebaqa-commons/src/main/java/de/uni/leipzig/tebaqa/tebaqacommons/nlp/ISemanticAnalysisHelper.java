@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.nlp;
 
+import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryType;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 
 import java.util.HashMap;
@@ -13,4 +14,6 @@ public interface ISemanticAnalysisHelper {
     SemanticGraph extractDependencyGraph(String text);
 
     Map<String, String> getLemmas(String text);
+
+    QueryType mapQuestionToQueryType(String question);
 }

@@ -17,7 +17,7 @@ public class PropertyUtils {
         Properties prop = new Properties();
         InputStream input;
         try {
-            input = ClassLoader.getSystemResourceAsStream(propertyFilePath);
+            input = PropertyUtils.class.getClassLoader().getResourceAsStream(propertyFilePath);
             prop.load(input);
         } catch (IOException e) {
             LOGGER.error(e.getMessage());

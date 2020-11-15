@@ -5,6 +5,10 @@ import java.util.Collection;
 public class QueryRankingResponseBean {
     private Collection<RatedQuery> generatedQueries;
 
+    public QueryRankingResponseBean(Collection<RatedQuery> generatedQueries) {
+        this.generatedQueries = generatedQueries;
+    }
+
     public Collection<RatedQuery> getGeneratedQueries() {
         return generatedQueries;
     }

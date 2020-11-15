@@ -23,6 +23,11 @@ public abstract class ResourceCandidate implements IResourceCandidate {
     @Override
     public void setCoOccurrence(String coOccurrence) {
         this.coOccurrence = coOccurrence;
+    }
+
+    @Override
+    public void setCoOccurrenceAndScore(String coOccurrence) {
+        this.coOccurrence = coOccurrence;
         double bestScore = 1;
         String bestScoreLabel = null;
         for (String label : this.getResourceLabels()) {
@@ -54,6 +59,14 @@ public abstract class ResourceCandidate implements IResourceCandidate {
     @Override
     public void setUri(String uri) {
         this.uri = uri;
+    }
+
+    @Override
+    public Double getLevenshteinSimilarityScore() {
+        if (this.levenshteinDistanceScore != null)
+            return 1 - this.levenshteinDistanceScore;
+        else
+            return null;
     }
 
     @Override
@@ -96,4 +109,31 @@ public abstract class ResourceCandidate implements IResourceCandidate {
         this.relatednessFactor = relatednessFactor;
     }
 
+    @Override
+    public double getLevensteinScoreFor(String coOccurrence) {
+        double bestScore = 1;
+        String bestScoreLabel = null;
+        for (String label : this.getResourceLabels()) {
+            double levensteinScore = TextUtilities.getLevenshteinRatio(coOccurrence, label);
+            if (levensteinScore < bestScore) {
+                bestScore = levensteinScore;
+                bestScoreLabel = label;
+            }
+        }
+        return bestScore;
+    }
+
+    @Override
+    public String getBestLabelFor(String coOccurrence) {
+        double bestScore = 1;
+        String bestScoreLabel = null;
+        for (String label : this.getResourceLabels()) {
+            double levensteinScore = TextUtilities.getLevenshteinRatio(coOccurrence, label);
+            if (levensteinScore < bestScore) {
+                bestScore = levensteinScore;
+                bestScoreLabel = label;
+            }
+        }
+        return bestScoreLabel;
+    }
 }
