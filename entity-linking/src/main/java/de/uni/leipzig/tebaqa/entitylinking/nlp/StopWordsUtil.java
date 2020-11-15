@@ -1,23 +1,26 @@
 package de.uni.leipzig.tebaqa.entitylinking.nlp;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
+import org.apache.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class StopWordsUtil {
 
+    private static final Logger LOGGER = Logger.getLogger(StopWordsUtil.class);
     private static final Map<String, Set<String>> STOP_WORD_MAP = new HashMap<>();
 
     static {
         Properties prop = new Properties();
         try {
-            prop.load(ClassLoader.getSystemResource("stopwords.properties").openStream());
+            prop.load(StopWordsUtil.class.getClassLoader().getResourceAsStream("stopwords.properties"));
             for (String lang : prop.stringPropertyNames()) {
-                loadStopwords(prop.getProperty(lang)).ifPresent(set -> STOP_WORD_MAP.put(lang, (Set) set));
+                loadStopwords(prop.getProperty(lang)).ifPresent(set -> STOP_WORD_MAP.put(lang, set));
             }
 
         } catch (IOException ex) {
@@ -26,23 +29,20 @@ public class StopWordsUtil {
     }
 
     private static Optional<Set<String>> loadStopwords(String filename) {
-        FileReader fileReader;
-        try {
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(StopWordsUtil.class.getClassLoader().getResourceAsStream(filename)), StandardCharsets.UTF_8))) {
             Set<String> stopwords = new HashSet<>();
-            fileReader = new FileReader(ClassLoader.getSystemResource(filename).getPath());
-            BufferedReader bufferedReader = new BufferedReader(fileReader);
             String element;
             while ((element = bufferedReader.readLine()) != null)
                 stopwords.add(element);
-            bufferedReader.close();
             return Optional.of(stopwords);
         } catch (FileNotFoundException e) {
-            System.out.println("File not found: " + filename);
+            LOGGER.error("File not found: " + filename);
+            LOGGER.error(e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Error reading stopwords file: " + filename);
+            LOGGER.error(e.getMessage());
         }
         return Optional.empty();
-
     }
 
     public static boolean containsOnlyStopwords(String coOccurrence, Lang lang) {
@@ -70,4 +70,7 @@ public class StopWordsUtil {
         return keywords;
     }
 
+    public static void main(String[] args) {
+        System.out.println(StopWordsUtil.containsOnlyStopwords("the", Lang.EN));
+    }
 }

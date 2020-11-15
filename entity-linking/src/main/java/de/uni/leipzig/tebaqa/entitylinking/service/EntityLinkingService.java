@@ -10,7 +10,7 @@ public class EntityLinkingService {
     public EntityLinkingResponseBean findEntitiesFrom(String question, Lang lang) throws IOException {
         ResourceLinker resourceLinker = new ResourceLinker(question, lang);
         resourceLinker.linkEntities();
-        return new EntityLinkingResponseBean(resourceLinker.getClassCandidates(),
+        return new EntityLinkingResponseBean(resourceLinker.getCoOccurrences(), resourceLinker.getClassCandidates(),
                 resourceLinker.getPropertyCandidates(), resourceLinker.getEntityCandidates(), resourceLinker.getPropertyUris());
     }
 

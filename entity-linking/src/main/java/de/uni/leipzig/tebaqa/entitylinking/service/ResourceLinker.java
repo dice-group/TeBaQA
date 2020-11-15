@@ -1,6 +1,8 @@
 package de.uni.leipzig.tebaqa.entitylinking.service;
 
 import de.uni.leipzig.tebaqa.entitylinking.nlp.StopWordsUtil;
+import de.uni.leipzig.tebaqa.entitylinking.util.PropertyUtil;
+import de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch.SearchService;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.ClassCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
@@ -20,6 +22,7 @@ public class ResourceLinker {
     private String question;
     private final Lang language;
 
+    private Set<String> coOccurrences;
     private Set<String> propertyUris;
     private Set<EntityCandidate> entityCandidates;
     private Set<PropertyCandidate> propertyCandidates;
@@ -33,12 +36,13 @@ public class ResourceLinker {
     public ResourceLinker(String question, Lang language) throws IOException {
         this.question = question;
         this.language = language;
+        this.coOccurrences = new HashSet<>();
         this.propertyUris = new HashSet<>();
         this.entityCandidates = new HashSet<>();
         this.propertyCandidates = new HashSet<>();
         this.classCandidates = new HashSet<>();
         this.semanticAnalysisHelper = language.getSemanticAnalysisHelper();
-        this.searchService = new SearchService();
+        this.searchService = new SearchService(PropertyUtil.getElasticSearchConnectionProperties());
         this.disambiguationService = new DisambiguationService(this.searchService);
     }
 
@@ -48,6 +52,14 @@ public class ResourceLinker {
 
     public Lang getLanguage() {
         return language;
+    }
+
+    public Set<String> getCoOccurrences() {
+        return coOccurrences;
+    }
+
+    public void setCoOccurrences(Set<String> coOccurrences) {
+        this.coOccurrences = coOccurrences;
     }
 
     public Set<String> getPropertyUris() {
@@ -78,21 +90,22 @@ public class ResourceLinker {
         String[] wordsFromQuestion = question.replaceAll("[\\-.?¿!,;]", "").split("\\s+");
 
         // Prepare co-occurences
-        List<String> coOccurrences = TextUtilities.getNeighborCoOccurrencePermutations(Arrays.asList(wordsFromQuestion));
-        coOccurrences.sort((s1, s2) -> -(s1.length() - s2.length())); // sort ascending based on length
+        List<String> coOccurrenceList = TextUtilities.getNeighborCoOccurrencePermutations(Arrays.asList(wordsFromQuestion));
+        coOccurrenceList.sort((s1, s2) -> -(s1.length() - s2.length())); // sort ascending based on length
 
         List<String> dependentCoOccurrences = new ArrayList<>();
         if (semanticGraph != null) {
-            for (String coOccurrence : coOccurrences) {
+            for (String coOccurrence : coOccurrenceList) {
                 if (!StopWordsUtil.containsOnlyStopwords(coOccurrence, Lang.EN) && TextUtilities.isDependent(coOccurrence, semanticGraph))
                     dependentCoOccurrences.add(coOccurrence);
             }
-            coOccurrences = dependentCoOccurrences;
+            coOccurrenceList = dependentCoOccurrences;
         }
-        coOccurrences.sort((s1, s2) -> -(s1.length() - s2.length()));
+        coOccurrenceList.sort((s1, s2) -> -(s1.length() - s2.length()));
+        this.coOccurrences.addAll(coOccurrenceList);
 
         HashMap<String, Set<EntityCandidate>> ambiguousEntityCandidates = new HashMap<>();
-        for (String coOccurrence : coOccurrences) {
+        for (String coOccurrence : coOccurrenceList) {
 
             // 1. Link entities
             Set<EntityCandidate> matchedEntities = searchService.searchEntities(coOccurrence);

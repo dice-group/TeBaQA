@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.entitylinking.service;
 
 import com.google.common.collect.Sets;
+import de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch.SearchService;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
 
