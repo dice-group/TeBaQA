@@ -17,11 +17,11 @@ public interface IResourceCandidate {
 
     void setUri(String uri);
 
-    Double getLevenshteinSimilarityScore();
+    Double getSimilarityScore();
 
-    Double getLevenshteinDistanceScore();
+    Double getDistanceScore();
 
-    void setLevenshteinDistanceScore(Double levenshteinDistanceScore);
+    void setDistanceScore(Double distanceScore);
 
     String getBestLabel();
 
@@ -37,5 +37,5 @@ public interface IResourceCandidate {
 
     String getBestLabelFor(String coOccurrence);
 
-    double getLevensteinScoreFor(String coOccurrence);
+    double getDistanceScoreFor(String coOccurrence);
 }

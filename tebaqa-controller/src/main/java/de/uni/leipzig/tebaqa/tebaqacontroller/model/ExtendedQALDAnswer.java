@@ -1,7 +1,4 @@
-package de.uni.leipzig.tebaqa.modular.model;
-
-import de.uni.leipzig.tebaqa.model.AnswerToQuestion;
-import org.jetbrains.annotations.NotNull;
+package de.uni.leipzig.tebaqa.tebaqacontroller.model;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
@@ -64,7 +61,6 @@ public class ExtendedQALDAnswer {
         //this.result = questions.build().toString();
     }
 
-    @NotNull
     public static String extractAnswerString(String a) {
         if (!a.isEmpty() && a.startsWith("'") && a.contains("'@")) {
             a = a.substring(0, a.lastIndexOf("'@") + 1);

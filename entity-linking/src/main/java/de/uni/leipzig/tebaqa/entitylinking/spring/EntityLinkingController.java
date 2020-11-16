@@ -35,12 +35,25 @@ public class EntityLinkingController {
         EntityLinkingResponseBean linkedEntities;
         try {
             linkedEntities = linkingService.findEntitiesFrom(question, language);
+            printInfos(linkedEntities);
             return linkedEntities;
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to perform entity linking!");
         }
 
+    }
+
+    private static void printInfos(EntityLinkingResponseBean linkedResources) {
+        LOGGER.info("Entity linking finished");
+        LOGGER.info("Classes found: " + linkedResources.getClassCandidates().size());
+        linkedResources.getClassCandidates().forEach(s -> LOGGER.debug(s.getCoOccurrence() + " --> " + s.getUri()));
+
+        LOGGER.info("Properties found: " + linkedResources.getPropertyCandidates().size());
+        linkedResources.getPropertyCandidates().forEach(s -> LOGGER.debug(s.getCoOccurrence() + " --> " + s.getUri()));
+
+        LOGGER.info("Entities found: " + linkedResources.getEntityCandidates().size());
+        linkedResources.getEntityCandidates().forEach(s -> LOGGER.debug(s.getCoOccurrence() + " --> " + s.getUri()));
     }
 
 

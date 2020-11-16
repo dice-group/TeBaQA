@@ -5,6 +5,8 @@ import java.util.Collection;
 public class QueryRankingResponseBean {
     private Collection<RatedQuery> generatedQueries;
 
+    private QueryRankingResponseBean() {}
+
     public QueryRankingResponseBean(Collection<RatedQuery> generatedQueries) {
         this.generatedQueries = generatedQueries;
     }

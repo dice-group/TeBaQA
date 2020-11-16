@@ -1,4 +1,4 @@
-package de.uni.leipzig.tebaqa.modular.service;
+package de.uni.leipzig.tebaqa.tebaqacontroller.service;
 
 import org.apache.log4j.Logger;
 import org.springframework.http.HttpEntity;

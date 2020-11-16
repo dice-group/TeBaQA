@@ -12,7 +12,7 @@ public class QueryRankingApplication {
     public static Logger LOGGER = Logger.getRootLogger();
 
     public static void main(String[] args) {
-        LOGGER.info("Entity linking server started");
+        LOGGER.info("Query ranking linking server started");
         SpringApplication.run(QueryRankingApplication.class, args);
     }
 

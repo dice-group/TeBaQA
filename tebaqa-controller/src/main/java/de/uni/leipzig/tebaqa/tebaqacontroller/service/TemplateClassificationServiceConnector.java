@@ -1,7 +1,7 @@
-package de.uni.leipzig.tebaqa.modular.service;
+package de.uni.leipzig.tebaqa.tebaqacontroller.service;
 
 
-import de.uni.leipzig.tebaqa.modular.utils.PropertyUtils;
+import de.uni.leipzig.tebaqa.tebaqacontroller.utils.ControllerPropertyUtils;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryTemplateResponseBean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
@@ -11,7 +11,7 @@ public class TemplateClassificationServiceConnector extends AbstractServiceConne
 
     public QueryTemplateResponseBean getMatchingQueryTemplates(String question, String language) {
 
-        String serviceUrl = PropertyUtils.getClassificationServiceUrl();
+        String serviceUrl = ControllerPropertyUtils.getClassificationServiceUrl();
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("question", question);

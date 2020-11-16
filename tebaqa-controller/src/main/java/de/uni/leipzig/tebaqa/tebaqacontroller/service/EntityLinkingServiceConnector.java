@@ -1,6 +1,6 @@
-package de.uni.leipzig.tebaqa.modular.service;
+package de.uni.leipzig.tebaqa.tebaqacontroller.service;
 
-import de.uni.leipzig.tebaqa.modular.utils.PropertyUtils;
+import de.uni.leipzig.tebaqa.tebaqacontroller.utils.ControllerPropertyUtils;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityLinkingResponseBean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
@@ -9,7 +9,7 @@ import org.springframework.util.MultiValueMap;
 public class EntityLinkingServiceConnector extends AbstractServiceConnector {
 
     public EntityLinkingResponseBean extractEntities(String question, String language) {
-        String serviceUrl = PropertyUtils.getEntityLinkingServiceUrl();
+        String serviceUrl = ControllerPropertyUtils.getEntityLinkingServiceUrl();
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("question", question);

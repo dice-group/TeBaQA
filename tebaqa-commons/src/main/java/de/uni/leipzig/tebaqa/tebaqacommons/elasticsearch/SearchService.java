@@ -152,7 +152,7 @@ public class SearchService {
         for (ResourceCandidate resource : foundResources) {
             boolean coOccurrenceNull = resource.getCoOccurrence() == null;
             String bestMatchedLabel = coOccurrenceNull ? resource.getBestLabelFor(coOccurrence) : resource.getBestLabel();
-            double ratio = coOccurrenceNull ? resource.getLevensteinScoreFor(coOccurrence) : resource.getLevenshteinDistanceScore();
+            double ratio = coOccurrenceNull ? resource.getDistanceScoreFor(coOccurrence) : resource.getDistanceScore();
 
             // Add found entity to final result if it's levenstein score is below threshold (i.e. a good match)
             double matchingThreshold = thresholdOverride != null ? thresholdOverride : getLevensteinThreshold(coOccurrence, bestMatchedLabel);

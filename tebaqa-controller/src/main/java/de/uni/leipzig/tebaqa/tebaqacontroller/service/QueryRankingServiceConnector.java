@@ -1,18 +1,19 @@
-package de.uni.leipzig.tebaqa.modular.service;
+package de.uni.leipzig.tebaqa.tebaqacontroller.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import de.uni.leipzig.tebaqa.modular.utils.PropertyUtils;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityLinkingResponseBean;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryRankingResponseBean;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryTemplateResponseBean;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
+import de.uni.leipzig.tebaqa.tebaqacontroller.utils.ControllerPropertyUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.yaml.snakeyaml.introspector.PropertyUtils;
 
 public class QueryRankingServiceConnector extends AbstractServiceConnector {
     public QueryRankingResponseBean generateQueries(String question, String language, QueryTemplateResponseBean queryTemplates, EntityLinkingResponseBean linkedResources) throws JsonProcessingException {
-        String serviceUrl = PropertyUtils.getQueryRankingServiceUrl();
+        String serviceUrl = ControllerPropertyUtils.getQueryRankingServiceUrl();
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("question", question);

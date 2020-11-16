@@ -9,7 +9,7 @@ public abstract class ResourceCandidate implements IResourceCandidate {
     protected String uri;
     protected String coOccurrence;
     protected Set<String> resourceLabels;
-    protected Double levenshteinDistanceScore;
+    protected Double distanceScore;
     protected Double linkingScore;
     protected Double relatednessFactor;
     protected String bestLabel;
@@ -37,7 +37,7 @@ public abstract class ResourceCandidate implements IResourceCandidate {
                 bestScoreLabel = label;
             }
         }
-        this.levenshteinDistanceScore = bestScore;
+        this.distanceScore = bestScore;
         this.bestLabel = bestScoreLabel;
     }
 
@@ -62,21 +62,21 @@ public abstract class ResourceCandidate implements IResourceCandidate {
     }
 
     @Override
-    public Double getLevenshteinSimilarityScore() {
-        if (this.levenshteinDistanceScore != null)
-            return 1 - this.levenshteinDistanceScore;
+    public Double getSimilarityScore() {
+        if (this.distanceScore != null)
+            return 1 - this.distanceScore;
         else
             return null;
     }
 
     @Override
-    public Double getLevenshteinDistanceScore() {
-        return levenshteinDistanceScore;
+    public Double getDistanceScore() {
+        return distanceScore;
     }
 
     @Override
-    public void setLevenshteinDistanceScore(Double levenshteinDistanceScore) {
-        this.levenshteinDistanceScore = levenshteinDistanceScore;
+    public void setDistanceScore(Double distanceScore) {
+        this.distanceScore = distanceScore;
     }
 
     @Override
@@ -110,14 +110,12 @@ public abstract class ResourceCandidate implements IResourceCandidate {
     }
 
     @Override
-    public double getLevensteinScoreFor(String coOccurrence) {
+    public double getDistanceScoreFor(String coOccurrence) {
         double bestScore = 1;
-        String bestScoreLabel = null;
         for (String label : this.getResourceLabels()) {
             double levensteinScore = TextUtilities.getLevenshteinRatio(coOccurrence, label);
             if (levensteinScore < bestScore) {
                 bestScore = levensteinScore;
-                bestScoreLabel = label;
             }
         }
         return bestScore;

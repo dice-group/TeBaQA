@@ -1,4 +1,4 @@
-package de.uni.leipzig.tebaqa.modular.utils;
+package de.uni.leipzig.tebaqa.tebaqacontroller.utils;
 
 import org.apache.log4j.Logger;
 
@@ -7,9 +7,9 @@ import java.io.InputStream;
 import java.util.Properties;
 
 
-public class PropertyUtils {
+public class ControllerPropertyUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(PropertyUtils.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ControllerPropertyUtils.class.getName());
     private static Properties ALL_PROPERTIES;
     private static String CLASSIFICATION_SERVICE_URL = null;
     private static String LINKING_SERVICE_URL = null;
@@ -19,7 +19,7 @@ public class PropertyUtils {
         ALL_PROPERTIES = getAllProperties();
     }
 
-    public PropertyUtils() {
+    public ControllerPropertyUtils() {
         ALL_PROPERTIES = getAllProperties();
     }
 

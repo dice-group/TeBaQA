@@ -40,7 +40,14 @@ public class QueryRankingController {
         EntityLinkingResponseBean linkedResourcesBean = JSONUtils.JSONStringToObject(linkedResourcesJson, EntityLinkingResponseBean.class);
         EntityLinkingResult linkedEntities = new EntityLinkingResult(linkedResourcesBean);
         QueryGenerator queryGenerator = new QueryGenerator(linkedEntities, queryTemplates);
-        return queryGenerator.generateQueries();
+        QueryRankingResponseBean generatedQueries = queryGenerator.generateQueries();
+        printInfos(generatedQueries);
+        return generatedQueries;
+    }
+
+    private static void printInfos(QueryRankingResponseBean generatedQueries) {
+        LOGGER.info("Query generation finished");
+        generatedQueries.getGeneratedQueries().forEach(LOGGER::info);
     }
 
 

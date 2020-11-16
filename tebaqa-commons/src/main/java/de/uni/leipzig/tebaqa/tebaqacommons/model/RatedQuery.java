@@ -1,12 +1,12 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.model;
 
-import java.util.Collection;
-
 public class RatedQuery {
 
     private String queryTemplate;
     private String query;
     private double rating;
+
+    private RatedQuery() {}
 
     public RatedQuery(String query, double... ratingValues) {
         this.query = query;

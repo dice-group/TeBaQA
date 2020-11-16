@@ -54,17 +54,17 @@ public class Triple {
     private static double calculateRating(ResourceCandidate subjectCandidate, ResourceCandidate predicateCandidate, ResourceCandidate objectCandidate) {
         int totalResources = 0;
         double totalLevensteinSim = 0;
-        if (subjectCandidate != null && subjectCandidate.getLevenshteinDistanceScore() != null) {
+        if (subjectCandidate != null && subjectCandidate.getDistanceScore() != null) {
             totalResources++;
-            totalLevensteinSim += (1 - subjectCandidate.getLevenshteinDistanceScore());
+            totalLevensteinSim += (1 - subjectCandidate.getDistanceScore());
         }
-        if (predicateCandidate != null && predicateCandidate.getLevenshteinDistanceScore() != null) {
+        if (predicateCandidate != null && predicateCandidate.getDistanceScore() != null) {
             totalResources++;
-            totalLevensteinSim += (1 - predicateCandidate.getLevenshteinDistanceScore());
+            totalLevensteinSim += (1 - predicateCandidate.getDistanceScore());
         }
-        if (objectCandidate != null && objectCandidate.getLevenshteinDistanceScore() != null) {
+        if (objectCandidate != null && objectCandidate.getDistanceScore() != null) {
             totalResources++;
-            totalLevensteinSim += (1 - objectCandidate.getLevenshteinDistanceScore());
+            totalLevensteinSim += (1 - objectCandidate.getDistanceScore());
         }
 
         return totalResources > 0 ? (totalLevensteinSim / totalResources) : 0;
