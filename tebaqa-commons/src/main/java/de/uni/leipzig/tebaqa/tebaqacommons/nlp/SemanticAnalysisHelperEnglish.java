@@ -1,9 +1,11 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.nlp;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryType;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.QuestionAnswerType;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.semgraph.SemanticGraph;
@@ -12,6 +14,8 @@ import edu.stanford.nlp.util.CoreMap;
 import org.apache.log4j.Logger;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
 
@@ -23,6 +27,8 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
     private static final String[] ASC_INDICATORS = new String[]{"first", "oldest", "smallest", "lowest", "shortest", "least"};
     private static final String[] DESC_INDICATORS = new String[]{"largest", "last", "highest", "most", "biggest", "youngest", "longest", "tallest"};
 
+    private static final String LEMMA_EXCLUSION = "have|do|be|many|much|give|call|list";
+    private static final String POS_EXCLUSION = "DT|IN|WDT|W.*|\\.";
 
     private final StanfordCoreNLP pipeline;
 
@@ -81,6 +87,39 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
         }
     }
 
+    public List<IndexedWord> getDependencySequence(SemanticGraph semanticGraph) {
+        IndexedWord firstRoot = semanticGraph.getFirstRoot();
+        return getDependenciesFromEdge(firstRoot, semanticGraph);
+    }
+
+    private List<IndexedWord> getDependenciesFromEdge(IndexedWord root, SemanticGraph semanticGraph) {
+
+        List<IndexedWord> sequence = new ArrayList<>();
+        String rootPos = root.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+        String rootLemma = root.get(CoreAnnotations.LemmaAnnotation.class);
+        if (!rootPos.matches(POS_EXCLUSION) && !rootLemma.matches(LEMMA_EXCLUSION)) {
+            sequence.add(root);
+        }
+        Set<IndexedWord> childrenFromRoot = semanticGraph.getChildren(root);
+
+        for (IndexedWord word : childrenFromRoot) {
+            String wordPos = word.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+            String wordLemma = word.get(CoreAnnotations.LemmaAnnotation.class);
+            if (!wordPos.matches(POS_EXCLUSION) && !wordLemma.matches(LEMMA_EXCLUSION)) {
+                sequence.add(word);
+            }
+            List<IndexedWord> children = semanticGraph.getChildList(word);
+            //In some cases a leaf has itself as children which results in endless recursion.
+            if (children.contains(root)) {
+                children.remove(root);
+            }
+            for (IndexedWord child : children) {
+                sequence.addAll(getDependenciesFromEdge(child, semanticGraph));
+            }
+        }
+        return sequence;
+    }
+
     @Override
     public Map<String, String> getLemmas(String text) {
         return Collections.emptyMap(); // TODO ? this is not implemented in the old code
@@ -106,6 +145,44 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
             return QueryType.QUERY_TYPE_UNKNOWN;
         }
 
+    }
+
+    @Override
+    public QuestionAnswerType detectQuestionAnswerType(String question) {
+        SemanticGraph semanticGraph = this.extractDependencyGraph(question);
+        List<IndexedWord> sequence = this.getDependencySequence(semanticGraph);
+        Pattern pattern = Pattern.compile("\\w+");
+        Matcher m = pattern.matcher(question);
+        if (m.find()) {
+            Optional<String> first = getLemmas(m.group()).values().stream().findFirst();
+            if (first.isPresent()) {
+                if (first.get().toLowerCase().matches("be|do|have"))
+                    return QuestionAnswerType.BOOLEAN_ANSWER_TYPE;
+            }
+        }
+        if (question.toLowerCase().startsWith("how many") || question.toLowerCase().startsWith("how much")
+                || question.toLowerCase().startsWith("how big") || question.toLowerCase().startsWith("how large")) {
+            return QuestionAnswerType.NUMBER_ANSWER_TYPE;
+        }
+        if (question.toLowerCase().startsWith("how") && sequence.size() >= 2) {
+            String posOfSecondWord = sequence.get(1).get(CoreAnnotations.PartOfSpeechAnnotation.class);
+            //For cases like how big, how small, ...
+            if (posOfSecondWord.startsWith("JJ")) {
+                return QuestionAnswerType.NUMBER_ANSWER_TYPE;
+            }
+        }
+        if (question.toLowerCase().startsWith("when")) {
+            return QuestionAnswerType.DATE_ANSWER_TYPE;
+        }
+        for (IndexedWord word : sequence) {
+            String posTag = word.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+            if (posTag.equalsIgnoreCase("NNS") || posTag.equalsIgnoreCase("NNPS")) {
+                return QuestionAnswerType.LIST_OF_RESOURCES_ANSWER_TYPE;
+            } else if (posTag.equalsIgnoreCase("NN") || posTag.equalsIgnoreCase("NNP")) {
+                return QuestionAnswerType.SINGLE_ANSWER;
+            }
+        }
+        return QuestionAnswerType.UNKNOWN_ANSWER_TYPE;
     }
 
     // TODO this can be improved by using POS tags?

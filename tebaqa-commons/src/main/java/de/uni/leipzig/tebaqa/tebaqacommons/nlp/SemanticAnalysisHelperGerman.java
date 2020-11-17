@@ -1,12 +1,18 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.nlp;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryType;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.QuestionAnswerType;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import org.apache.log4j.Logger;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // TODO partial implementation. finish complete implementation helper for Deutsch.
 public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
@@ -103,5 +109,82 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
 
     private boolean hasCountAggregation(String sentence) {
         return sentence.toLowerCase().trim().startsWith("wie viele");
+    }
+
+    private List<CoreLabel> getTokens(String text) {
+        Annotation annotation = new Annotation(text);
+        pipeline.annotate(annotation);
+        return annotation.get(CoreAnnotations.TokensAnnotation.class);
+    }
+
+    @Override
+    public QuestionAnswerType detectQuestionAnswerType(String question) {
+        Pattern pattern = Pattern.compile("\\w+");
+        List<CoreLabel> tokens = this.getTokens(question);
+        Matcher m = pattern.matcher(question);
+        if (m.find()) {
+            String first = m.group();
+            //if (first.isPresent()) {
+            if (first.toLowerCase().matches("ist|hat|haben"))
+                //if (first.get().toLowerCase().matches("be|do|have"))
+                return QuestionAnswerType.BOOLEAN_ANSWER_TYPE;
+        }
+        //}
+        if (question.toLowerCase().startsWith("wie lang") || question.toLowerCase().startsWith("wie viele") || question.toLowerCase().startsWith("wie hoch")
+                || question.toLowerCase().startsWith("wie schwer") || question.toLowerCase().startsWith("wie breit") || question.toLowerCase().startsWith("wie ist")) {
+            return QuestionAnswerType.NUMBER_ANSWER_TYPE;
+        }
+        if (question.toLowerCase().startsWith("wie") && tokens.size() >= 2) {
+            CoreLabel token = tokens.get(1);
+            //For cases like how big, how small, ...
+            if (token.getString(CoreAnnotations.PartOfSpeechAnnotation.class).startsWith("AD")) {
+                return QuestionAnswerType.NUMBER_ANSWER_TYPE;
+            }
+
+            if (question.toLowerCase().startsWith("wie lauten")) {
+                return QuestionAnswerType.LIST_OF_RESOURCES_ANSWER_TYPE;
+            }
+
+            if (question.toLowerCase().startsWith("wie lautet")) {
+                return QuestionAnswerType.SINGLE_ANSWER;
+            }
+
+        }
+        if (question.toLowerCase().startsWith("in welchen"))
+            return QuestionAnswerType.LIST_OF_RESOURCES_ANSWER_TYPE;
+        if (question.toLowerCase().startsWith("in welcher"))
+            return QuestionAnswerType.SINGLE_ANSWER;
+        if (question.toLowerCase().startsWith("wann")) {
+            return QuestionAnswerType.DATE_ANSWER_TYPE;
+        }
+        if (question.toLowerCase().startsWith("welche") && question.toLowerCase().contains("gibt es")) {
+            return QuestionAnswerType.LIST_OF_RESOURCES_ANSWER_TYPE;
+        }
+        if (question.toLowerCase().startsWith("wann beginnen")) {
+            return QuestionAnswerType.SINGLE_ANSWER;
+        }
+
+        if (question.toLowerCase().startsWith("welche") || question.toLowerCase().startsWith("welcher") ||
+                question.toLowerCase().startsWith("gib")) {
+            boolean hasPluralNoun = false;
+            for (CoreLabel token : tokens) {
+                String posTag = token.getString(CoreAnnotations.PartOfSpeechAnnotation.class);
+                if (posTag.equalsIgnoreCase("NN")) {
+                    String nounText = token.getString(CoreAnnotations.OriginalTextAnnotation.class);
+                    if (nounText.endsWith("en")) {
+                        hasPluralNoun = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hasPluralNoun) {
+                return QuestionAnswerType.LIST_OF_RESOURCES_ANSWER_TYPE;
+            } else {
+                return QuestionAnswerType.SINGLE_ANSWER;
+            }
+        }
+
+        return QuestionAnswerType.UNKNOWN_ANSWER_TYPE;
     }
 }

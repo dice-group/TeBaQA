@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.tebaqacontroller.utils;
 
 import com.google.common.collect.Lists;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.QuestionAnswerType;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.SPARQLResultSet;
@@ -79,8 +80,8 @@ public class SPARQLUtilities {
                 log.error("QueryParseException: Unable to parse query: " + qs, e);
                 return results;
             }
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
-//            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+//            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
+            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
             qe.setTimeout(10000, 10000);
             boolean isAskType = query.isAskType();
             boolean isSelectType = query.isSelectType();
@@ -223,17 +224,17 @@ public class SPARQLUtilities {
         return query.toString();
 
     }
-    public static ResultsetBinding executeQuery(String queryString){
+    public static ResultsetBinding executeQuery(String queryString) {
         Query query = QueryFactory.create(queryString);
-        QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
-//        QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
-        ResultsetBinding b=new ResultsetBinding();
-        if (query.isSelectType()){
+//        QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
+        QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+        ResultsetBinding b = new ResultsetBinding();
+        if (query.isSelectType()) {
 
-            ResultSet rs=qe.execSelect();
-            while(rs.hasNext()){
-                RDFNode v=rs.nextSolution().get(query.getResultVars().get(0));
-                if(v.isLiteral())
+            ResultSet rs = qe.execSelect();
+            while (rs.hasNext()) {
+                RDFNode v = rs.nextSolution().get(query.getResultVars().get(0));
+                if (v.isLiteral())
                     b.addResult(v.asLiteral().getLexicalForm());
                 else b.addResult(v.toString());
             }
@@ -263,14 +264,14 @@ public class SPARQLUtilities {
             } catch (QueryParseException e) {
                 log.error("QueryParseException: Unable to parse query: " + qs, e);
             }
-            Optional<String>orderVar=Optional.empty();
-            if(query.getOrderBy()!=null)
-                orderVar=Optional.of(query.getOrderBy().get(0).expression.getExprVar().asVar().getVarName());
-                isAskType = QueryFactory.create(queryWithValues).isAskType();
+            Optional<String> orderVar = Optional.empty();
+            if (query.getOrderBy() != null)
+                orderVar = Optional.of(query.getOrderBy().get(0).expression.getExprVar().asVar().getVarName());
+            isAskType = QueryFactory.create(queryWithValues).isAskType();
             boolean isCountQuery = isCountQuery(queryWithValues);
-            boolean isLiteralResult=false;
-//            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
+            boolean isLiteralResult = false;
+            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+//            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
             qe.setTimeout(10000, 10000);
             if (query.isSelectType()) {
                 ResultSet rs = null;
@@ -378,30 +379,30 @@ public class SPARQLUtilities {
         return s.replaceFirst("SELECT ", "SELECT ?uri ");
     }
 
-    static int determineAnswerType(ResultsetBinding rs) {
+    static QuestionAnswerType determineAnswerType(ResultsetBinding rs) {
         Set<String> result = rs.getResult();
 
-        if(result.isEmpty())
-            return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
+        if (result.isEmpty())
+            return QuestionAnswerType.UNKNOWN_ANSWER_TYPE;
 
         //Check for scientific numbers like 3.40841e+10
         if (result.stream().allMatch(SPARQLUtilities::isNumericOrScientific)) {
-            return SPARQLResultSet.NUMBER_ANSWER_TYPE;
+            return QuestionAnswerType.NUMBER_ANSWER_TYPE;
         } else if (result.stream().allMatch(SPARQLUtilities::isNumberFromXMLScheme)) {
-            return SPARQLResultSet.NUMBER_ANSWER_TYPE;
+            return QuestionAnswerType.NUMBER_ANSWER_TYPE;
         } else if (result.stream().allMatch(SPARQLUtilities::isDateFromXMLScheme)) {
-            return SPARQLResultSet.DATE_ANSWER_TYPE;
+            return QuestionAnswerType.DATE_ANSWER_TYPE;
         } else if (result.size() == 1) {
             final String s = result.stream().findFirst().get();
             if (s.equalsIgnoreCase("true") || s.equalsIgnoreCase("false")) {
-                return SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
+                return QuestionAnswerType.BOOLEAN_ANSWER_TYPE;
             } else {
-                return SPARQLResultSet.SINGLE_ANSWER;
+                return QuestionAnswerType.SINGLE_ANSWER;
             }
         } else if (result.size() > 1 && (result.stream().allMatch(SPARQLUtilities::isResource) || result.stream().noneMatch(SPARQLUtilities::isResource))) {
-            return SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
+            return QuestionAnswerType.LIST_OF_RESOURCES_ANSWER_TYPE;
         } else {
-            return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
+            return QuestionAnswerType.UNKNOWN_ANSWER_TYPE;
         }
     }
 

@@ -14,6 +14,23 @@ public class AnswerToQuestion {
     private String answerType;
     private String sparqlQuery;
 
+    public AnswerToQuestion(ResultsetBinding answer) {
+        this.answer = new HashSet<>();
+        this.answer.addAll(answer.getResult());
+        this.sparqlQuery = answer.getQuery();
+
+        if (!this.answer.isEmpty() && this.answer.parallelStream().allMatch(SPARQLUtilities::isResource)) {
+            this.answerType = "uri";
+        } else {
+            //NO uri but date, string or number
+            if (this.answer.parallelStream().allMatch(StringUtils::isNumeric)) {
+                this.answerType = "number";
+            } else {
+                this.answerType = "literal";
+            }
+        }
+    }
+
     public AnswerToQuestion(ResultsetBinding answer, Map<String, String> entitiyToQuestionMapping) {
         this.answer = new HashSet<>();
         this.answer.addAll(answer.getResult());

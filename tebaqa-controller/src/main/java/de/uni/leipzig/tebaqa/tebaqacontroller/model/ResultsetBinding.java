@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.tebaqacontroller.model;
 
+import de.uni.leipzig.tebaqa.tebaqacommons.model.QuestionAnswerType;
 import de.uni.leipzig.tebaqa.tebaqacontroller.utils.SPARQLUtilities;
 
 import java.time.LocalDate;
@@ -16,7 +17,7 @@ public class ResultsetBinding {
     private Set<String> result;
     private String query;
     private Double rating;
-    private int answerType;
+    private QuestionAnswerType answerType;
 
     private static DateTimeFormatter dateTimeFormatterLong = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static DateTimeFormatter dateTimeFormatterShortMonth = DateTimeFormatter.ofPattern("yyyy-M-dd");
@@ -27,7 +28,7 @@ public class ResultsetBinding {
         this.result = new HashSet<>();
         this.query = "";
         this.rating = 1.0;
-        this.answerType = SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
+        this.answerType = QuestionAnswerType.UNKNOWN_ANSWER_TYPE;
     }
     public boolean isSameBinding(Map<String,String>binding){
         for(String key:this.bindings.keySet()){
@@ -131,11 +132,11 @@ public class ResultsetBinding {
         this.rating = rating;
     }
 
-    public int getAnswerType() {
+    public QuestionAnswerType getAnswerType() {
         return answerType;
     }
 
-    public void setAnswerType(int answerType) {
+    public void setAnswerType(QuestionAnswerType answerType) {
         this.answerType = answerType;
     }
 
@@ -162,7 +163,7 @@ public class ResultsetBinding {
     }
 
     public double getNumericalResultValue(){
-        if(this.answerType != SPARQLResultSet.NUMBER_ANSWER_TYPE)
+        if (!this.answerType.equals(QuestionAnswerType.NUMBER_ANSWER_TYPE))
             throw new UnsupportedOperationException("Cannot get numerical result value for non-numerical result");
 
         return new Double(this.getResult().stream().findFirst().orElse("0"));
@@ -175,7 +176,7 @@ public class ResultsetBinding {
                 ", result=" + result +
                 ", query='" + query + '\'' +
                 ", rating=" + rating +
-                ", answerType=" + answerType +
+                ", answerType=" + answerType.name() +
                 '}';
     }
 }
