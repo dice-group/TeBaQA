@@ -24,7 +24,7 @@
 
     </appender>
 
-    <logger name="de.uni.leipzig.tebaqa" level="debug" additivity="false">
+    <logger name="de.uni.leipzig.tebaqa" level="info" additivity="false">
         <appender-ref ref="FILE-AUDIT"/>
     </logger>
 

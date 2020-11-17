@@ -192,7 +192,7 @@ public class OrchestrationService {
 
     private static void printClassificationInfos(QueryTemplateResponseBean matchingQueryTemplates) {
         LOGGER.info("Templates found: " + matchingQueryTemplates.getTemplates().size());
-        matchingQueryTemplates.getTemplates().forEach(LOGGER::debug);
+        matchingQueryTemplates.getTemplates().forEach(LOGGER::info);
     }
 
     private static void printLinkingInfos(EntityLinkingResponseBean linkingResponseBean) throws JsonProcessingException {
@@ -205,8 +205,8 @@ public class OrchestrationService {
         LOGGER.info("Entities found: " + linkingResponseBean.getEntityCandidates().size());
         linkingResponseBean.getEntityCandidates().forEach(s -> LOGGER.debug(s.getCoOccurrence() + " --> " + s.getUri()));
 
-        LOGGER.info("RAW JSON: ");
-        LOGGER.info(JSONUtils.convertToJSONString(linkingResponseBean));
+        LOGGER.debug("RAW JSON: ");
+        LOGGER.debug(JSONUtils.convertToJSONString(linkingResponseBean));
 
     }
 }

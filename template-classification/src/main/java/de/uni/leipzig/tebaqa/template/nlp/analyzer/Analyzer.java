@@ -7,6 +7,7 @@ import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,18 +23,18 @@ public class Analyzer {
         analyzers.add(new QuestionWord());
         analyzers.add(new EntityPerson());
         analyzers.add(new NumberOfToken());
-//        analyzers.add(new QueryResourceTypeAnalyzer());
+        analyzers.add(new QueryResourceTypeAnalyzer());
         analyzers.add(new Noun());
         analyzers.add(new Number());
         analyzers.add(new Verb());
         analyzers.add(new Adjective());
         analyzers.add(new Comperative());
-        //analyzers.add(new NamedEntities());
-//        try {
-//            analyzers.add(new TripleCandidates());
-//        } catch (IOException | ClassNotFoundException e) {
-//            log.error("Unable to load Classifier class", e);
-//        }
+        analyzers.add(new NamedEntities());
+        try {
+            analyzers.add(new TripleCandidates());
+        } catch (IOException | ClassNotFoundException e) {
+            log.error("Unable to load Classifier class", e);
+        }
 
         // Declare the feature vector, register their attributes
         for (IAnalyzer analyzer : analyzers) {

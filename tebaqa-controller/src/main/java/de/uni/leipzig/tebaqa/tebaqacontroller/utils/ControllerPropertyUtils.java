@@ -28,7 +28,7 @@ public class ControllerPropertyUtils {
         Properties prop = new Properties();
         InputStream input;
         try {
-            input = ClassLoader.getSystemResourceAsStream("application.properties");
+            input = ControllerPropertyUtils.class.getClassLoader().getResourceAsStream("application.properties");
             prop.load(input);
         } catch (IOException e) {
             LOGGER.error(e.getMessage());
