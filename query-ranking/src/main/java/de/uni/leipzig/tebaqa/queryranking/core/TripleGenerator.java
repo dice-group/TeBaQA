@@ -25,6 +25,8 @@ import static de.uni.leipzig.tebaqa.queryranking.util.QueryRankingUtils.hasOverl
 
 public class TripleGenerator {
 
+    public static final String COUNTRY_PROP = "country_prop";
+
     private final Set<String> coOccurrences;
     private final Collection<EntityCandidate> entityCandidates;
     private final Collection<ClassCandidate> classCandidates;
@@ -47,7 +49,7 @@ public class TripleGenerator {
         Set<Triple> triples = new HashSet<>();
         for (EntityCandidate candidate : entityCandidates) {
             if (candidate.getTypes().contains(Constants.DBO_COUNTRY)) {
-                Triple triple = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, "country_prop", candidate.getUri());
+                Triple triple = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, COUNTRY_PROP, candidate.getUri());
                 //TODO verify
                 triple.multiplyRating(candidate.getSimilarityScore());
                 triples.add(triple);
