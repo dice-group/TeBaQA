@@ -68,7 +68,7 @@ public class QueryGenerator {
                 String query = "" + queryTemplate;
                 for (String key : mapping.keySet()) {
                     String val = mapping.get(key);
-                    if (val.equals("country_prop")) query = query.replace(key, "?county_var");
+                    if (val.equals(TripleGenerator.COUNTRY_PROP)) query = query.replace(key, "?county_var");
 
                     if (val.equals("a"))
                         query = query.replace(key, val);
@@ -154,7 +154,8 @@ public class QueryGenerator {
 
             // Handle pattern with two resources
             String predicateValue = tripleWith2Res.getPredicate();
-            if (!predicateValue.equals("a")) predicateValue = "<" + predicateValue + ">";
+            if (!predicateValue.equals("a") && !predicateValue.equals(TripleGenerator.COUNTRY_PROP))
+                predicateValue = "<" + predicateValue + ">";
             mapping.put(templateWith2Res.getPredicate(), predicateValue);
 
             if (templateWith2Res.isSubjectAResource())
@@ -171,7 +172,8 @@ public class QueryGenerator {
             // Handle pattern with one resource
             if (TripleTemplate.Pattern.V_R_V.equals(templateWith1Res.getPattern())) {
                 predicateValue = tripleWith1Res.getPredicate();
-                if (!predicateValue.equals("a")) predicateValue = "<" + predicateValue + ">";
+                if (!predicateValue.equals("a") && !predicateValue.equals(TripleGenerator.COUNTRY_PROP))
+                    predicateValue = "<" + predicateValue + ">";
                 mapping.put(templateWith1Res.getPredicate(), predicateValue);
             } else if (TripleTemplate.Pattern.V_V_R.equals(templateWith1Res.getPattern())) {
                 String objectValue = tripleWith1Res.getObject();
@@ -205,7 +207,8 @@ public class QueryGenerator {
             }
 
             String predValue = trip.getPredicate();
-            if (!predValue.equals("a")) predValue = "<" + predValue + ">";
+            if (!predValue.equals("a") && !predValue.equals(TripleGenerator.COUNTRY_PROP))
+                predValue = "<" + predValue + ">";
             mapping.put(pattern.getPredicate(), predValue);
             mappings.add(mapping);
         });

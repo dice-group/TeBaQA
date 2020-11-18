@@ -227,6 +227,8 @@ public class TripleGenerator {
     }
 
     private Set<Triple> twoVariablesVVR(Triple alreadyKnownTriple, TripleTemplate template) {
+        // TODO discuss, VVR pattern was to connect those triples where a subject maybe common?
+        // TODO Does it make sense to enable this only when property is a rdf:type?
         Set<Triple> triplesFound = new HashSet<>();
 
 //        if(alreadyKnownTriple.isPredicateRDFTypeProperty()){
@@ -255,10 +257,10 @@ public class TripleGenerator {
         Set<String> relevantResourceCandidates = new HashSet<>();
 
         //for(Triple triple:alreadyKnownTriples){
-        if (alreadyKnownTriple.getSubject().startsWith("http")) {
+        if (alreadyKnownTriple.getSubject().startsWith("http") && !alreadyKnownTriple.getPredicate().equals(COUNTRY_PROP)) {
             Optional<EntityCandidate> ent = entityCandidates.stream().filter(ec -> ec.getUri().equalsIgnoreCase(alreadyKnownTriple.getSubject())).findFirst();
             ent.ifPresent(cand -> relevantResourceCandidates.addAll(cand.getConnectedResourcesSubject()));
-        } else if (alreadyKnownTriple.getObject().startsWith("http")) {
+        } else if (alreadyKnownTriple.getObject().startsWith("http") && !alreadyKnownTriple.getPredicate().equals(COUNTRY_PROP)) {
             Optional<EntityCandidate> ent = entityCandidates.stream().filter(ec -> ec.getUri().equalsIgnoreCase(alreadyKnownTriple.getObject())).findFirst();
             ent.ifPresent(cand -> relevantResourceCandidates.addAll(cand.getConnectedResourcesObject()));
         }
