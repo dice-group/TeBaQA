@@ -5,11 +5,11 @@ import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelperEnglish;
-import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.tebaqacontroller.utils.SPARQLUtilities;
 import org.apache.log4j.Logger;
+import org.springframework.boot.configurationprocessor.json.JSONException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,7 +30,7 @@ public class OrchestrationService {
         this.semanticAnalysisHelper = new SemanticAnalysisHelperEnglish();
     }
 
-    public AnswerToQuestion answerQuestion(String question, Lang lang) throws JsonProcessingException {
+    public AnswerToQuestion answerQuestion(String question, Lang lang) throws JsonProcessingException, JSONException {
         // 1. Template classification
         QueryTemplateResponseBean matchingQueryTemplates = templateClassificationService.getMatchingQueryTemplates(question, lang);
         printClassificationInfos(matchingQueryTemplates);
@@ -206,7 +206,7 @@ public class OrchestrationService {
         linkingResponseBean.getEntityCandidates().forEach(s -> LOGGER.debug(s.getCoOccurrence() + " --> " + s.getUri()));
 
         LOGGER.debug("RAW JSON: ");
-        LOGGER.debug(JSONUtils.convertToJSONString(linkingResponseBean));
+//        LOGGER.debug(JSONUtils.convertToJSONString(linkingResponseBean));
 
     }
 }

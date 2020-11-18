@@ -28,4 +28,19 @@ public class AbstractServiceConnector {
             throw e;
         }
     }
+
+    public <T> ResponseEntity<T> connectPostJson(String serviceUrl, Object requestBody, Class<T> clazz) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Object> request = new HttpEntity<>(requestBody, headers);
+
+        try {
+            return restTemplate.postForEntity(serviceUrl, request, clazz);
+        } catch (RestClientException e) {
+            LOGGER.error(e.getMessage());
+            throw e;
+        }
+    }
 }
