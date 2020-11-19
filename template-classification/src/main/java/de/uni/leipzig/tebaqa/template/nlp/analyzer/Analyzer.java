@@ -23,13 +23,13 @@ public class Analyzer {
         analyzers.add(new QuestionWord());
         analyzers.add(new EntityPerson());
         analyzers.add(new NumberOfToken());
-        analyzers.add(new QueryResourceTypeAnalyzer());
+//        analyzers.add(new QueryResourceTypeAnalyzer());
         analyzers.add(new Noun());
         analyzers.add(new Number());
         analyzers.add(new Verb());
         analyzers.add(new Adjective());
         analyzers.add(new Comperative());
-        analyzers.add(new NamedEntities());
+//        analyzers.add(new NamedEntities());
         try {
             analyzers.add(new TripleCandidates());
         } catch (IOException | ClassNotFoundException e) {
