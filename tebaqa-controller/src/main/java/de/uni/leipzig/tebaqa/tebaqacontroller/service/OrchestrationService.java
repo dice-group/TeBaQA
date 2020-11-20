@@ -45,7 +45,11 @@ public class OrchestrationService {
 
         Collection<RatedQuery> ratedQueries = queryRankingResponse.getGeneratedQueries();
 
-        //If the template from the predicted graph won't find suitable templates, try all other templates
+        ResultsetBinding resultsetBinding = this.evaluateAndSelectBestQuery(question, ratedQueries);
+        return new AnswerToQuestion(resultsetBinding);
+    }
+
+    public ResultsetBinding evaluateAndSelectBestQuery(String question, Collection<RatedQuery> ratedQueries) {
         List<ResultsetBinding> queryResults = new ArrayList<>();
         for (RatedQuery ratedQuery : ratedQueries) {
             ResultsetBinding results = SPARQLUtilities.executeQuery(ratedQuery.getQuery());
@@ -57,16 +61,25 @@ public class OrchestrationService {
 
         final QuestionAnswerType expectedAnswerType = semanticAnalysisHelper.detectQuestionAnswerType(question);
         ResultsetBinding rsBinding = this.getBestAnswer(queryResults, expectedAnswerType, false);
+        if(rsBinding.getResult().isEmpty()) rsBinding = this.getBestAnswer(queryResults, expectedAnswerType, true);
 
         rsBinding.retrieveRedirects();
-        return new AnswerToQuestion(rsBinding);
+        return rsBinding;
     }
 
     public ResultsetBinding getBestAnswer(List<ResultsetBinding> results, QuestionAnswerType expectedAnswerType, boolean forceResult) {
-        long answersWithExpectedTypeCount = results.stream().filter(resultsetBinding -> resultsetBinding.getAnswerType() == expectedAnswerType).count();
+        Set<QuestionAnswerType> compatibleAnswerTypes = new HashSet<>();
+        compatibleAnswerTypes.add(expectedAnswerType);
+        if(forceResult){
+            if(expectedAnswerType == QuestionAnswerType.LIST_OF_RESOURCES_ANSWER_TYPE) {
+                compatibleAnswerTypes.add(QuestionAnswerType.SINGLE_ANSWER);
+            }
+        }
+
+        long answersWithExpectedTypeCount = results.stream().filter(resultsetBinding -> compatibleAnswerTypes.contains(resultsetBinding.getAnswerType())).count();
 
         if (answersWithExpectedTypeCount > 0) {
-            List<ResultsetBinding> matchingResults = results.stream().filter(resultsetBinding -> resultsetBinding.getAnswerType() == expectedAnswerType).collect(Collectors.toList());
+            List<ResultsetBinding> matchingResults = results.stream().filter(resultsetBinding -> compatibleAnswerTypes.contains(resultsetBinding.getAnswerType())).collect(Collectors.toList());
 
             // If only one answer of expected type, then return it
             if (answersWithExpectedTypeCount == 1) {
@@ -74,7 +87,7 @@ public class OrchestrationService {
             }
 
             // If more than one answer of expected type, then ranking
-            if (QuestionAnswerType.NUMBER_ANSWER_TYPE == expectedAnswerType) {
+            if (compatibleAnswerTypes.contains(QuestionAnswerType.NUMBER_ANSWER_TYPE)) {
                 List<ResultsetBinding> nonZeroCounts = matchingResults.stream().filter(resultsetBinding -> resultsetBinding.getResult().size() == 1 && resultsetBinding.getNumericalResultValue() != 0).collect(Collectors.toList());
                 if (nonZeroCounts.size() == 0)
                     return matchingResults.get(0);
@@ -98,7 +111,7 @@ public class OrchestrationService {
                     return nonZeroCounts.stream().filter(resultsetBinding -> resultsetBinding.getNumericalResultValue() == finalValueWithMaxFrequency).findFirst().get();
                 }
 
-            } else if (QuestionAnswerType.LIST_OF_RESOURCES_ANSWER_TYPE.equals(expectedAnswerType)) {
+            } else if (compatibleAnswerTypes.contains(QuestionAnswerType.LIST_OF_RESOURCES_ANSWER_TYPE)) {
                 // Ranking criteria: More number of results mean less significant query
                 matchingResults.forEach(resultsetBinding -> {
                     resultsetBinding.setRating(resultsetBinding.getRating() / resultsetBinding.getResult().size());
