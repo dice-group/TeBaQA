@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
+import org.apache.jena.ext.com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -27,6 +28,13 @@ public class SearchService {
         this.index = index;
     }
 
+    public void shutdown() {
+        try {
+            this.index.close();
+        } catch (Exception e) {
+            // pass
+        }
+    }
 
     public Set<EntityCandidate> searchEntities(String coOccurrence) {
         return this.searchEntities(Optional.of(coOccurrence), Optional.empty(), Optional.empty(), Optional.empty());
@@ -59,6 +67,15 @@ public class SearchService {
         return foundEntities;
     }
 
+    public EntityCandidate searchEntityById(@Nonnull String entityUri) {
+        EntityCandidate searchResult = null;
+        Set<EntityCandidate> foundEntities = this.searchEntitiesByIds(Lists.newArrayList(entityUri));
+        if(foundEntities.size() == 1)
+            searchResult = foundEntities.stream().findFirst().get();
+
+        return searchResult;
+    }
+
     public Set<EntityCandidate> searchEntitiesByIds(@Nonnull Collection<String> entityUris) {
         Set<EntityCandidate> foundEntities;
         try {
@@ -71,6 +88,15 @@ public class SearchService {
         return foundEntities;
     }
 
+    public PropertyCandidate searchPropertyById(@Nonnull String propertyUri) {
+        PropertyCandidate searchResult = null;
+        Set<PropertyCandidate> foundProperties = this.searchPropertiesByIds(Lists.newArrayList(propertyUri));
+        if(foundProperties.size() == 1)
+            searchResult = foundProperties.stream().findFirst().get();
+
+        return searchResult;
+    }
+    
     public Set<PropertyCandidate> searchPropertiesByIds(@Nonnull Collection<String> propertyUris) {
         Set<PropertyCandidate> foundProperties;
         try {
@@ -82,8 +108,7 @@ public class SearchService {
         }
         return foundProperties;
     }
-
-
+    
     public Set<PropertyCandidate> searchProperties(String coOccurrence, boolean searchSynonyms) {
         Set<PropertyCandidate> propertyCandidates;
 
@@ -102,6 +127,28 @@ public class SearchService {
     public Set<PropertyCandidate> searchProperties(String coOccurrence) {
         return this.searchProperties(coOccurrence, true);
     }
+
+    public ClassCandidate searchClassById(@Nonnull String classUri) {
+        ClassCandidate searchResult = null;
+        Set<ClassCandidate> foundClasses = this.searchClassesByIds(Lists.newArrayList(classUri));
+        if(foundClasses.size() == 1)
+            searchResult = foundClasses.stream().findFirst().get();
+
+        return searchResult;
+    }
+
+    public Set<ClassCandidate> searchClassesByIds(@Nonnull Collection<String> classUris) {
+        Set<ClassCandidate> foundClasses;
+        try {
+            foundClasses = index.searchClassesByIds(classUris);
+        } catch (IOException e) {
+            LOGGER.info("Searching classes by ID for " + classUris.size() + " URIs");
+            LOGGER.error("Failed to search classes: " + e.getMessage());
+            foundClasses = Collections.emptySet();
+        }
+        return foundClasses;
+    }
+
 
     public Set<ClassCandidate> searchClasses(String coOccurrence) {
         Set<ClassCandidate> classCandidates;

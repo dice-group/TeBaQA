@@ -229,6 +229,16 @@ public class ElasticSearchClient {
         return queryPropertyIndex(queryBuilder, DEFAULT_MAX_RESULT_SIZE, true);
     }
 
+    public Set<ClassCandidate> searchClassesByIds(Collection<String> classUris) throws IOException {
+        BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
+        for (String uri : classUris) {
+            TermQueryBuilder termQueryBuilder = new TermQueryBuilder(URI, uri);
+            queryBuilder.should(termQueryBuilder);
+        }
+
+        return queryClassIndex(queryBuilder, DEFAULT_MAX_RESULT_SIZE);
+    }
+
     private Set<PropertyCandidate> queryPropertyIndex(QueryBuilder queryBuilder, int maxNumberOfResults, boolean searchSynonyms) throws IOException {
         SearchResponse searchResponse = this.queryIndex(queryBuilder, maxNumberOfResults, propertyIndex);
 

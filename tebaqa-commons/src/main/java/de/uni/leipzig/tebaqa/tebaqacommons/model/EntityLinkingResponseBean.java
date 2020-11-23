@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.model;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 public class EntityLinkingResponseBean {
@@ -12,12 +13,12 @@ public class EntityLinkingResponseBean {
     private Set<String> propertyUris;
 
     public EntityLinkingResponseBean() {
-        this.coOccurrences = Collections.emptySet();
-        this.classCandidates = Collections.emptySet();
-        this.propertyCandidates = Collections.emptySet();
-        this.entityCandidates = Collections.emptySet();
-        this.literalCandidates = Collections.emptySet();
-        this.propertyUris = Collections.emptySet();
+        this.coOccurrences = new HashSet<>();
+        this.classCandidates = new HashSet<>();
+        this.propertyCandidates = new HashSet<>();
+        this.entityCandidates = new HashSet<>();
+        this.literalCandidates = new HashSet<>();
+        this.propertyUris = new HashSet<>();
     }
 
     public EntityLinkingResponseBean(Set<String> coOccurrences, Set<ClassCandidate> classCandidates, Set<PropertyCandidate> propertyCandidates, Set<EntityCandidate> entityCandidates, Set<String> propertyUris) {
@@ -26,7 +27,7 @@ public class EntityLinkingResponseBean {
         this.propertyCandidates = propertyCandidates;
         this.entityCandidates = entityCandidates;
         this.propertyUris = propertyUris;
-        this.literalCandidates = Collections.emptySet();
+        this.literalCandidates = new HashSet<>();
     }
 
     public Set<ClassCandidate> getClassCandidates() {
