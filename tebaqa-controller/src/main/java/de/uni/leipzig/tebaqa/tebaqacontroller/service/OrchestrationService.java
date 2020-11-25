@@ -4,13 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
-import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelperEnglish;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.tebaqacontroller.utils.SPARQLUtilities;
 import org.apache.log4j.Logger;
 import org.springframework.boot.configurationprocessor.json.JSONException;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,11 +23,11 @@ public class OrchestrationService {
     private final QueryRankingServiceConnector queryRankingService;
     private final SemanticAnalysisHelper semanticAnalysisHelper;
 
-    public OrchestrationService() {
+    public OrchestrationService() throws IOException {
         this.templateClassificationService = new TemplateClassificationServiceConnector();
         this.entityLinkingService = new EntityLinkingServiceConnector();
         this.queryRankingService = new QueryRankingServiceConnector();
-        this.semanticAnalysisHelper = new SemanticAnalysisHelperEnglish();
+        this.semanticAnalysisHelper = new SemanticAnalysisHelper(Lang.EN);
     }
 
     public AnswerToQuestion answerQuestion(String question, Lang lang) throws JsonProcessingException, JSONException {

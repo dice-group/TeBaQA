@@ -1,9 +1,6 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.model;
 
-public class ESConnectionProperties {
-    private String scheme;
-    private String hostname;
-    private String port;
+public class ESConnectionProperties extends RestServiceConfiguration {
     private String entityIndex;
     private String classIndex;
     private String propertyIndex;
@@ -17,30 +14,6 @@ public class ESConnectionProperties {
         this.classIndex = classIndex;
         this.propertyIndex = propertyIndex;
         this.literalIndex = literalIndex;
-    }
-
-    public String getScheme() {
-        return scheme;
-    }
-
-    public void setScheme(String scheme) {
-        this.scheme = scheme;
-    }
-
-    public String getHostname() {
-        return hostname;
-    }
-
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-    }
-
-    public String getPort() {
-        return port;
-    }
-
-    public void setPort(String port) {
-        this.port = port;
     }
 
     public String getEntityIndex() {

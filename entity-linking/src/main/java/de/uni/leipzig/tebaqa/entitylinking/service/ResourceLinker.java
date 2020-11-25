@@ -6,8 +6,8 @@ import de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch.SearchService;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.ClassCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
-import de.uni.leipzig.tebaqa.tebaqacommons.nlp.ISemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import org.apache.log4j.Logger;
@@ -29,7 +29,7 @@ public class ResourceLinker {
     private Set<ClassCandidate> classCandidates;
     private Set<EntityCandidate> literalCandidates;
 
-    private final ISemanticAnalysisHelper semanticAnalysisHelper;
+    private final SemanticAnalysisHelper semanticAnalysisHelper;
     private final SearchService searchService;
     private final DisambiguationService disambiguationService;
 

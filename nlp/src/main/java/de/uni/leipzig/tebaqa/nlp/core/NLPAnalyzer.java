@@ -1,13 +1,16 @@
-package de.uni.leipzig.tebaqa.tebaqacommons.nlp;
+package de.uni.leipzig.tebaqa.nlp.core;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryType;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QuestionAnswerType;
+import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public interface ISemanticAnalysisHelper {
+public interface NLPAnalyzer {
+    Annotation annotate(String text);
+
     HashMap<String, String> getPosTags(String text);
 
     String removeQuestionWords(String question);

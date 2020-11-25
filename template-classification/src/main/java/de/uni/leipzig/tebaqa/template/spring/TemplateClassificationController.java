@@ -3,8 +3,8 @@ package de.uni.leipzig.tebaqa.template.spring;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryTemplateResponseBean;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryType;
-import de.uni.leipzig.tebaqa.tebaqacommons.nlp.ISemanticAnalysisHelper;
-import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelperEnglish;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.template.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.template.service.WekaClassifier;
 import org.apache.log4j.Logger;
@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,8 +26,28 @@ import java.util.stream.Collectors;
 public class TemplateClassificationController {
 
     private static final Logger LOGGER = Logger.getLogger(TemplateClassificationController.class.getName());
-    private static final WekaClassifier classifier = WekaClassifier.getDefaultClassifier();
-    private static final ISemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelperEnglish();
+    private static final WekaClassifier classifier;
+    private static final SemanticAnalysisHelper semanticAnalysisHelper;
+
+    static {
+        SemanticAnalysisHelper helper;
+        WekaClassifier weka;
+        try {
+            helper = Lang.EN.getSemanticAnalysisHelper();
+        } catch (IOException e) {
+            e.printStackTrace();
+            helper = null;
+        }
+        semanticAnalysisHelper = helper;
+
+        try {
+            weka = WekaClassifier.getDefaultClassifier();
+        } catch (IOException e) {
+            e.printStackTrace();
+            weka = null;
+        }
+        classifier = weka;
+    }
 
     @RequestMapping(method = RequestMethod.GET, path = "/test-tc")
     public String testGet(HttpServletResponse response) {

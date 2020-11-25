@@ -16,13 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.HashMap;
 
 @RestController
 public class TeBaQAController {
 
     private static final Logger LOGGER = Logger.getLogger(TeBaQAController.class.getName());
-    private static final OrchestrationService qaService = new OrchestrationService();
+    private static OrchestrationService qaService;
+
+    public TeBaQAController() throws IOException {
+        qaService = new OrchestrationService();
+    }
 
     @RequestMapping(method = RequestMethod.POST, path = "/qa-simple")
     public String answerQuestionSimple(@RequestParam String query,

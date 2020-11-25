@@ -1,12 +1,12 @@
 package de.uni.leipzig.tebaqa.template.model;
 
-import de.uni.leipzig.tebaqa.tebaqacommons.nlp.ISemanticAnalysisHelper;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 
 import java.util.List;
 import java.util.Map;
 
 public class QueryBuilder {
-    private final ISemanticAnalysisHelper semanticAnalysisHelper;
+    private final SemanticAnalysisHelper semanticAnalysisHelper;
     private List<Cluster> questions;
     //private List<CustomQuestion> questions;
 
@@ -20,7 +20,7 @@ public class QueryBuilder {
         }
         this.questions = questions;
     }*/
-    public QueryBuilder(List<Cluster> clusters, ISemanticAnalysisHelper semanticAnalysisHelper) {
+    public QueryBuilder(List<Cluster> clusters, SemanticAnalysisHelper semanticAnalysisHelper) {
         this.semanticAnalysisHelper = semanticAnalysisHelper;
         for (Cluster c : clusters) {
             for (CustomQuestion question : c.getQuestions()) {

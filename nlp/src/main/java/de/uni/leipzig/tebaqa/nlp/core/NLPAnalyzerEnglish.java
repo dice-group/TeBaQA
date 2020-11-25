@@ -1,4 +1,4 @@
-package de.uni.leipzig.tebaqa.tebaqacommons.nlp;
+package de.uni.leipzig.tebaqa.nlp.core;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryType;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QuestionAnswerType;
@@ -10,6 +10,7 @@ import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
+import edu.stanford.nlp.simple.Sentence;
 import edu.stanford.nlp.util.CoreMap;
 import org.apache.log4j.Logger;
 
@@ -17,9 +18,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
+public class NLPAnalyzerEnglish extends NLPAnalyzerBase {
 
-    private static final Logger LOGGER = Logger.getLogger(SemanticAnalysisHelperEnglish.class);
+    private static final Logger LOGGER = Logger.getLogger(NLPAnalyzerEnglish.class);
 
     private static final String[] QUESTION_WORDS = "how many|how much|give me|list|give|show me|show|who|whom|when|were|what|why|whose|how|where|which|is|are|did|was|does".split("\\|");
     private static final List<String> SELECT_QUERY_INDICATORS = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which".split("\\|"));
@@ -32,8 +33,15 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
 
     private final StanfordCoreNLP pipeline;
 
-    public SemanticAnalysisHelperEnglish() {
-        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(Lang.EN);
+    public NLPAnalyzerEnglish() {
+        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(NLPLang.EN);
+    }
+
+    @Override
+    public Annotation annotate(String text) {
+        Annotation annotation = new Annotation(text);
+        pipeline.annotate(annotation);
+        return annotation;
     }
 
     @Override
@@ -122,7 +130,18 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
 
     @Override
     public Map<String, String> getLemmas(String text) {
-        return Collections.emptyMap(); // TODO ? this is not implemented in the old code
+        Sentence sentence = new Sentence(text);
+        int wordCount = sentence.words().size();
+        if (wordCount == sentence.lemmas().size()) {
+            Map<String, String> lemmas = new LinkedHashMap<>(wordCount);
+            for (int i = 0; i < wordCount; i++) {
+                lemmas.put(sentence.word(i), sentence.lemma(i));
+            }
+            return lemmas;
+        } else {
+            LOGGER.error("Length of words and generated lemmas do not match: " + sentence.words() + " <-> " + sentence.lemmas());
+            return Collections.emptyMap();
+        }
     }
 
     @Override
@@ -211,5 +230,12 @@ public class SemanticAnalysisHelperEnglish extends SemanticAnalysisHelper {
 
     private boolean hasCountAggregation(String sentence) {
         return sentence.toLowerCase().trim().startsWith("how many");
+    }
+
+    public static void main(String[] args) {
+        Sentence sentence = new Sentence("Marie was born in Paris.");
+        System.out.println(sentence.words());
+        System.out.println(sentence.lemmas());
+
     }
 }

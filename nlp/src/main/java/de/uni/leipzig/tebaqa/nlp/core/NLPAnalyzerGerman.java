@@ -1,4 +1,4 @@
-package de.uni.leipzig.tebaqa.tebaqacommons.nlp;
+package de.uni.leipzig.tebaqa.nlp.core;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryType;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QuestionAnswerType;
@@ -15,9 +15,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 // TODO partial implementation. finish complete implementation helper for Deutsch.
-public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
+public class NLPAnalyzerGerman extends NLPAnalyzerBase {
 
-    private static final Logger LOGGER = Logger.getLogger(SemanticAnalysisHelperGerman.class);
+    private static final Logger LOGGER = Logger.getLogger(NLPAnalyzerGerman.class);
 
     private static final List<String> QUESTION_WORDS = Arrays.asList("liste|gib|zeig mir|wer|wo|wann|was|warum|wessen|wie|welche|welches|welcher|ist|sind|hat|war".split("\\|"));
     private static final List<String> SELECT_INDICATORS = Arrays.asList("welche|liste|wie|wo|wann|warum|wessen|gib|in".split("\\|"));
@@ -27,10 +27,17 @@ public class SemanticAnalysisHelperGerman extends SemanticAnalysisHelper {
 
     private final StanfordCoreNLP pipeline;
 
-    public SemanticAnalysisHelperGerman() {
+    public NLPAnalyzerGerman() {
 //        this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance(Lang.DE);
         this.pipeline = null; // remove when implementation is done
         QUESTION_WORDS.sort(Comparator.reverseOrder()); // for e.g. welche and welcher, try to match welcher first.
+    }
+
+    @Override
+    public Annotation annotate(String text) {
+        Annotation annotation = new Annotation(text);
+        pipeline.annotate(annotation);
+        return annotation;
     }
 
     @Override

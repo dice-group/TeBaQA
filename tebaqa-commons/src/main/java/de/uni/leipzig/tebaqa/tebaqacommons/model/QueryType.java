@@ -14,4 +14,16 @@ public enum QueryType {
     QueryType(String code) {
         this.code = code;
     }
+
+    public String getCode() {
+        return code;
+    }
+
+    public static QueryType forCode(String code) {
+        for (QueryType qt : QueryType.values()) {
+            if (qt.getCode().equalsIgnoreCase(code))
+                return qt;
+        }
+        return null;
+    }
 }

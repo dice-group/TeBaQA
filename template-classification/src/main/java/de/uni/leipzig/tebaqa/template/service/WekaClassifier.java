@@ -1,8 +1,8 @@
 package de.uni.leipzig.tebaqa.template.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.uni.leipzig.tebaqa.tebaqacommons.nlp.ISemanticAnalysisHelper;
-import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelperEnglish;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
+import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
 import de.uni.leipzig.tebaqa.template.model.Cluster;
 import de.uni.leipzig.tebaqa.template.model.CustomQuestion;
@@ -33,7 +33,7 @@ public class WekaClassifier {
 
     private static final Map<Dataset, WekaClassifier> classifierInstances = new HashMap<>(1);
     private final Dataset trainDataset;
-    private ISemanticAnalysisHelper semanticAnalysisHelper;
+    private SemanticAnalysisHelper semanticAnalysisHelper;
     private Map<String, QueryTemplateMapping> graphToQueryTemplateMappings;
     private List<String> graphs;
 //    private Dataset testDataset;
@@ -45,11 +45,11 @@ public class WekaClassifier {
         this.trainDataset = dataset;
     }
 
-    public static WekaClassifier getDefaultClassifier() {
+    public static WekaClassifier getDefaultClassifier() throws IOException {
         return getClassifierFor(DEFAULT_TRAINING_DATASET);
     }
 
-    public static WekaClassifier getClassifierFor(Dataset dataset) {
+    public static WekaClassifier getClassifierFor(Dataset dataset) throws IOException {
         WekaClassifier classifierInstance = classifierInstances.get(dataset);
         if (classifierInstance == null) {
             classifierInstance = new WekaClassifier(dataset);
@@ -60,9 +60,9 @@ public class WekaClassifier {
     }
 
     // Perform basic steps to ensure classifier instance is ready
-    private void initClassifier() {
+    private void initClassifier() throws IOException {
         LOGGER.info("Initializing Weka classifier");
-        this.semanticAnalysisHelper = new SemanticAnalysisHelperEnglish();
+        this.semanticAnalysisHelper = new SemanticAnalysisHelper(Lang.EN);
 
         this.loadGraphs();
         this.loadMappings();
