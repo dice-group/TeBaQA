@@ -168,13 +168,17 @@ public class QueryTemplateMapping {
     }
 
     public Set<String> getTemplatesFor(QueryType queryType) {
-        if (QueryType.ASK_QUERY.equals(queryType)) return Collections.singleton(askTemplate);
-        else if (QueryType.SELECT_QUERY.equals(queryType)) return Collections.singleton(selectTemplate);
+        if (QueryType.ASK_QUERY.equals(queryType)) return getSingletonSetIfNotNull(askTemplate);
+        else if (QueryType.SELECT_QUERY.equals(queryType)) return getSingletonSetIfNotNull(selectTemplate);
         else if (QueryType.SELECT_SUPERLATIVE_ASC_QUERY.equals(queryType))
-            return Collections.singleton(superlativeAscTemplate);
+            return getSingletonSetIfNotNull(superlativeAscTemplate);
         else if (QueryType.SELECT_SUPERLATIVE_DESC_QUERY.equals(queryType))
-            return Collections.singleton(superlativeDescTemplate);
-        else if (QueryType.SELECT_COUNT_QUERY.equals(queryType)) return Collections.singleton(countTemplates);
+            return getSingletonSetIfNotNull(superlativeDescTemplate);
+        else if (QueryType.SELECT_COUNT_QUERY.equals(queryType)) return getSingletonSetIfNotNull(countTemplates);
         else return getAllAvailableTemplates();
+    }
+    
+    private Set<String> getSingletonSetIfNotNull(String template) {
+        return template == null ? new HashSet<>(0) : Collections.singleton(template);
     }
 }

@@ -75,6 +75,7 @@ public class TemplateClassificationController {
 
         QueryType queryType = semanticAnalysisHelper.mapQuestionToQueryType(question);
         QueryTemplateMapping templateMapping = classifier.getQueryTemplatesFor(graph);
+        LOGGER.info(String.format("Query Type: %s", queryType.name()));
 
         Set<String> templates;
         if (templateMapping == null)
