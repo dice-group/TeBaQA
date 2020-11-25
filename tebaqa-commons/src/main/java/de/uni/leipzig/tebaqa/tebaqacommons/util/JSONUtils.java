@@ -3,11 +3,8 @@ package de.uni.leipzig.tebaqa.tebaqacommons.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
 
 public class JSONUtils {
 
