@@ -14,8 +14,10 @@ import de.uni.leipzig.tebaqa.tebaqacommons.model.ClassCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.ResourceCandidate;
+import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
 import org.apache.jena.vocabulary.RDF;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -265,64 +267,84 @@ public class TripleGenerator {
             ent.ifPresent(cand -> relevantResourceCandidates.addAll(cand.getConnectedResourcesObject()));
         }
         //}
-        List<String> uris = Lists.newArrayList(relevantResourceCandidates);
-        List<EntityCandidate> cands = new ArrayList<>();
-        int max = uris.size();
-
-        int current = 0;
-        while (max > current + 10 && current < 1000) {
-            cands.addAll(searchService.searchEntitiesByIds(uris.subList(current, current + 10)));
-            current += 10;
-        }
-        if (max < 1000)
-            cands.addAll(searchService.searchEntitiesByIds(uris.subList(current, max)));
 
         Set<Triple> triples = new HashSet<>();
-        Set<String> relevantPropertiesCandidate = new HashSet<>();
-        if (template.getSubject().equals(alreadyKnownTriple.getSubject()) ||
-                template.getSubject().equals(alreadyKnownTriple.getObject())) {
-            cands.forEach(cand -> relevantPropertiesCandidate.addAll(cand.getConnectedPropertiesSubject()));
-            Set<PropertyCandidate> properties = findProperties(relevantPropertiesCandidate, coOccurrences);
-            properties.forEach(prop -> {
-                Triple triple = new Triple(template.getSubject(), prop.getUri(), TripleTemplate.VARIABLE_PLACEHOLDER);
-                triple.multiplyRating(prop.getSimilarityScore());
-                triples.add(triple);
-            });
-        } else {
-            cands.forEach(cand -> relevantPropertiesCandidate.addAll(cand.getConnectedPropertiesObject()));
-            Set<PropertyCandidate> properties = findProperties(relevantPropertiesCandidate, coOccurrences);
-            properties.forEach(prop -> {
-                Triple triple = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, prop.getUri(), template.getObject());
-                triple.multiplyRating(prop.getSimilarityScore());
-                triples.add(triple);
-            });
+        List<String> uris = Lists.newArrayList(relevantResourceCandidates);
+
+        if (uris.size() > 0) {
+            List<EntityCandidate> cands = new ArrayList<>();
+            int max = uris.size();
+            int current = 0;
+            while (max > current + 10 && current < 1000) {
+                cands.addAll(searchService.searchEntitiesByIds(uris.subList(current, current + 10)));
+                current += 10;
+            }
+            if (max < 1000)
+                cands.addAll(searchService.searchEntitiesByIds(uris.subList(current, max)));
+
+
+            Set<String> relevantPropertiesCandidate = new HashSet<>();
+            if (template.getSubject().equals(alreadyKnownTriple.getSubject()) ||
+                    template.getSubject().equals(alreadyKnownTriple.getObject())) {
+                cands.forEach(cand -> relevantPropertiesCandidate.addAll(cand.getConnectedPropertiesSubject()));
+                Set<PropertyCandidate> properties = findProperties(relevantPropertiesCandidate, coOccurrences);
+                properties.forEach(prop -> {
+                    Triple triple = new Triple(template.getSubject(), prop.getUri(), TripleTemplate.VARIABLE_PLACEHOLDER);
+                    triple.multiplyRating(prop.getSimilarityScore());
+                    triples.add(triple);
+                });
+            } else {
+                cands.forEach(cand -> relevantPropertiesCandidate.addAll(cand.getConnectedPropertiesObject()));
+                Set<PropertyCandidate> properties = findProperties(relevantPropertiesCandidate, coOccurrences);
+                properties.forEach(prop -> {
+                    Triple triple = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, prop.getUri(), template.getObject());
+                    triple.multiplyRating(prop.getSimilarityScore());
+                    triples.add(triple);
+                });
+            }
         }
         return triples;
     }
 
     private Set<PropertyCandidate> findProperties(Set<String> propertyUrisToFind, Set<String> coOccurrences) {
 
-        Set<PropertyCandidate> foundProperties = propertyCandidates.stream().filter(propertyCandidate -> propertyUrisToFind.contains(propertyCandidate.getUri())).collect(Collectors.toSet());
-        Set<String> allPropertyCandidateUris = propertyCandidates.stream().map(ResourceCandidate::getUri).collect(Collectors.toSet());
-        List<String> notFound = new ArrayList<>(Sets.difference(propertyUrisToFind, allPropertyCandidateUris));
+//        Set<PropertyCandidate> foundProperties = propertyCandidates.stream().filter(propertyCandidate -> propertyUrisToFind.contains(propertyCandidate.getUri())).collect(Collectors.toSet());
+//        List<String> urisToFind = propertyCandidates.stream().map(ResourceCandidate::getUri).collect(Collectors.toList());
+//        List<String> notFound = new ArrayList<>(Sets.difference(propertyUrisToFind, urisToFind));
 
-        int max = notFound.size();
+//        int max = notFound.size();
+        ArrayList<String> urisToFind = new ArrayList<>(propertyUrisToFind);
+        int max = urisToFind.size();
         int current = 0;
+        Set<PropertyCandidate> foundProperties = new HashSet<>(max);
         while (max > current + 10) {
-            foundProperties.addAll(searchService.searchPropertiesByIds(notFound.subList(current, current + 10)));
+            foundProperties.addAll(searchService.searchPropertiesByIds(urisToFind.subList(current, current + 10)));
             current += 10;
         }
-        foundProperties.addAll(searchService.searchPropertiesByIds(notFound.subList(current, notFound.size())));
+        foundProperties.addAll(searchService.searchPropertiesByIds(urisToFind.subList(current, urisToFind.size())));
 
-        Set<PropertyCandidate> resourceCandidatesFiltered = new HashSet<>();
+        List<PropertyCandidate> resourceCandidatesFiltered = new ArrayList<>();
         double minScore = 0.2;
         for (String coOccurrence : coOccurrences) {
-            resourceCandidatesFiltered.addAll(searchService.getBestCandidates(coOccurrence, foundProperties, minScore));
+            Set<PropertyCandidate> bestCandidates = searchService.getBestCandidates(coOccurrence, foundProperties, minScore);
+
+            // Deep copy objects to avoid conflicts
+            bestCandidates = bestCandidates.stream().map(propertyCandidate -> JSONUtils.safeDeepCopy(propertyCandidate, PropertyCandidate.class)).filter(Objects::nonNull).collect(Collectors.toSet());
+
+            bestCandidates.forEach(propertyCandidate -> propertyCandidate.setCoOccurrenceAndScore(coOccurrence));
+            resourceCandidatesFiltered.addAll(bestCandidates);
+            bestCandidates.clear();
         }
+
+        Set<PropertyCandidate> bestScoredUniqueUris = new HashSet<>();
+        Map<String, List<PropertyCandidate>> uriToCandidates = resourceCandidatesFiltered.stream().collect(Collectors.groupingBy(ResourceCandidate::getUri));
+        uriToCandidates.values().forEach(candidateList -> candidateList.stream().max(Comparator.comparingDouble(PropertyCandidate::getSimilarityScore)).ifPresent(bestScoredUniqueUris::add));
 
         //avoid Gb propblem
         foundProperties.clear();
-        return resourceCandidatesFiltered;
+        resourceCandidatesFiltered.clear();
+
+        return bestScoredUniqueUris;
     }
 
     private static boolean isValidCompound(CompoundTriples compoundTriples, TripleTemplate templateWith2Res, TripleTemplate templateWith1Res) {

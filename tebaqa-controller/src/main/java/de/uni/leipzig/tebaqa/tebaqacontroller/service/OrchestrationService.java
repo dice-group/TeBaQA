@@ -35,18 +35,23 @@ public class OrchestrationService {
         QueryTemplateResponseBean matchingQueryTemplates = templateClassificationService.getMatchingQueryTemplates(question, lang);
         printClassificationInfos(matchingQueryTemplates);
 
-        // 2. Entity linking
-        EntityLinkingResponseBean entityLinkingResponse = entityLinkingService.extractEntities(question, lang);
-        printLinkingInfos(entityLinkingResponse);
+        if(matchingQueryTemplates.getTemplates().size() > 0) {
+            // 2. Entity linking
+            EntityLinkingResponseBean entityLinkingResponse = entityLinkingService.extractEntities(question, lang);
+            printLinkingInfos(entityLinkingResponse);
 
-        // 3. Query ranking
-        QueryRankingResponseBean queryRankingResponse = queryRankingService.generateQueries(question, lang, matchingQueryTemplates, entityLinkingResponse);
-        printQueryRankingInfos(queryRankingResponse);
+            // 3. Query ranking
+            QueryRankingResponseBean queryRankingResponse = queryRankingService.generateQueries(question, lang, matchingQueryTemplates, entityLinkingResponse);
+            printQueryRankingInfos(queryRankingResponse);
 
-        Collection<RatedQuery> ratedQueries = queryRankingResponse.getGeneratedQueries();
+            Collection<RatedQuery> ratedQueries = queryRankingResponse.getGeneratedQueries();
 
-        ResultsetBinding resultsetBinding = this.evaluateAndSelectBestQuery(question, ratedQueries);
-        return new AnswerToQuestion(resultsetBinding);
+            ResultsetBinding resultsetBinding = this.evaluateAndSelectBestQuery(question, ratedQueries);
+            return new AnswerToQuestion(resultsetBinding);
+        } else {
+            LOGGER.warn("No query templates found!");
+            return new AnswerToQuestion(new ResultsetBinding());
+        }
     }
 
     public ResultsetBinding evaluateAndSelectBestQuery(String question, Collection<RatedQuery> ratedQueries) {
