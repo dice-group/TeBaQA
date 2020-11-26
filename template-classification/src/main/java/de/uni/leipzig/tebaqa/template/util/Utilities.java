@@ -150,10 +150,10 @@ public class Utilities {
 
                 if (queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("limit 1")) {
                     isSuperlativeDesc = true;
-                } else if (queryPattern.toLowerCase().contains("order by asc") && queryPattern.toLowerCase().contains("limit 1")) {
+                } else if ((queryPattern.toLowerCase().contains("order by asc") || queryPattern.toLowerCase().contains("order by ")) && queryPattern.toLowerCase().contains("limit 1")) {
                     isSuperlativeAsc = true;
                 }
-                if (queryPattern.toLowerCase().contains("count")) {
+                if (queryPattern.trim().toLowerCase().startsWith("select count(") || queryPattern.trim().toLowerCase().startsWith("select (count(")) {
                     isCountQuery = true;
                 }
 
@@ -168,6 +168,7 @@ public class Utilities {
                     int propertyCnt = 0;
 
                     List<String> triples = Utilities.extractTriples(queryPattern);
+                    boolean invalidPatterns = false;
                     for (String triple : triples) {
                         Matcher argumentMatcher = Utilities.ARGUMENTS_BETWEEN_SPACES.matcher(triple);
                         int argumentCnt = 0;
@@ -180,40 +181,92 @@ public class Utilities {
                                 propertyCnt++;
                             }
                             argumentCnt++;
+
+                            // Make sure there are no invalid arguments e.g. literals
+                            if(!argument.matches("res/(\\d)+") && !argument.startsWith("?")) {
+                                invalidPatterns = true;
+                            }
                         }
                     }
 
-                    // TODO revisit class and property count logic
-                    int finalClassCnt = classCnt;
-                    int finalPropertyCnt = propertyCnt;
-                    if (!mapping.getNumberOfProperties().contains(finalPropertyCnt))
-                        mapping.getNumberOfProperties().add(finalPropertyCnt);
-                    if (!mapping.getNumberOfClasses().contains(finalClassCnt))
-                        mapping.getNumberOfClasses().add(finalClassCnt);
-                    int queryType = SPARQLUtilities.getQueryType(query);
+                    if(!invalidPatterns) {
+                        // TODO revisit class and property count logic
+                        int finalClassCnt = classCnt;
+                        int finalPropertyCnt = propertyCnt;
+                        if (!mapping.getNumberOfProperties().contains(finalPropertyCnt))
+                            mapping.getNumberOfProperties().add(finalPropertyCnt);
+                        if (!mapping.getNumberOfClasses().contains(finalClassCnt))
+                            mapping.getNumberOfClasses().add(finalClassCnt);
+                        int queryType = SPARQLUtilities.getQueryType(query);
 
-                    if (isSuperlativeDesc) {
-                        mapping.setSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
-                    } else if (isSuperlativeAsc) {
-                        mapping.setSelectSuperlativeAscTemplate(queryPattern, question.getQuery());
-                    } else if (isCountQuery) {
-                        mapping.setCountTemplate(queryPattern, question.getQuery());
+                        if (isSuperlativeDesc) {
+                            mapping.setSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
+                        } else if (isSuperlativeAsc) {
+                            mapping.setSelectSuperlativeAscTemplate(queryPattern, question.getQuery());
+                        } else if (isCountQuery) {
+                            mapping.setCountTemplate(queryPattern, question.getQuery());
+                        }
+
+                        boolean alreadySet = isCountQuery || isSuperlativeAsc || isSuperlativeDesc;
+                        if (!alreadySet) {
+                            if (queryType == SPARQLUtilities.SELECT_QUERY) {
+                                mapping.setSelectTemplate(queryPattern, question.getQuery());
+                            } else if (queryType == SPARQLUtilities.ASK_QUERY) {
+                                mapping.setAskTemplate(queryPattern, question.getQuery());
+                            }
+                        }
                     }
 
-                    if (queryType == SPARQLUtilities.SELECT_QUERY) {
-                        mapping.setSelectTemplate(queryPattern, question.getQuery());
-                    } else if (queryType == SPARQLUtilities.ASK_QUERY) {
-                        mapping.setAskTemplate(queryPattern, question.getQuery());
-                    }
-
-                    //add graph <-> query template mapping entry
-                    mappings.put(graph, mapping);
 
                     //log.info(queryPattern);
                 }
             }
             //}
+
+            //add graph <-> query template mapping entry
+            mappings.put(graph, mapping);
         }
         return mappings;
+    }
+
+    public static void main(String[] args) {
+        String query = "ASK WHERE { <http://dbpedia.org/resource/Marc_Chagall> <http://dbpedia.org/property/ethnicity> \"Jewish\"@en }";
+        String queryPattern = SPARQLUtilities.resolveNamespaces(query);
+        queryPattern = queryPattern.replace(" a ", " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ");
+        int i = 0;
+        String regex = "<(.+?)>";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher m = pattern.matcher(queryPattern);
+        HashMap<String, Integer> mappedUris = new HashMap<>();
+
+        while (m.find()) {
+            String group = m.group();
+            if (!group.contains("^") && !group.contains("http://www.w3.org/2001/XMLSchema")) {
+                //if (!wellKnownPredicates.contains(m.group(1))) {
+                if (!mappedUris.containsKey(Pattern.quote(group)))
+                    mappedUris.put(Pattern.quote(group), i);
+                queryPattern = queryPattern.replaceFirst(Pattern.quote(group), "res/" + mappedUris.get(Pattern.quote(group)));
+                i++;
+                //}
+            }
+        }
+
+        List<String> triples = Utilities.extractTriples(queryPattern);
+        for (String triple : triples) {
+            Matcher argumentMatcher = Utilities.ARGUMENTS_BETWEEN_SPACES.matcher(triple);
+            int argumentCnt = 0;
+            int classCnt = 0;
+            int propertyCnt = 0;
+            while (argumentMatcher.find()) {
+                String argument = argumentMatcher.group();
+                //TODO at this point the matched argument is either a ?variable or res/n, both conditions do not match
+                if (argument.startsWith("<^") && (argumentCnt == 0 || argumentCnt == 2)) {
+                    classCnt++;
+                } else if (argument.startsWith("<^") && argumentCnt == 1) {
+                    propertyCnt++;
+                }
+                argumentCnt++;
+            }
+        }
     }
 }

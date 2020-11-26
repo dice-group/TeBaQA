@@ -52,6 +52,7 @@ public class QueryIsomorphism {
                 pss.append(s);
                 query = pss.asQuery();
             } catch (QueryParseException e) {
+                LOGGER.warn("Query: " + s);
                 LOGGER.warn(e.toString(), e);
             }
             try {
