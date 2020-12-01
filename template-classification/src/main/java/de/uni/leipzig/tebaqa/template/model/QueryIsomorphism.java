@@ -43,17 +43,25 @@ public class QueryIsomorphism {
         clusters = new ArrayList<>(new ArrayList<>());
         HashMap<Graph, Integer> graphs = new HashMap<>();
         HashMap<String, List<String>> graphsWithQuestion = new HashMap<>();
+        Map<String, Query> parsedQueries = new HashMap<>();
+
         for (String s : queries.keySet()) {
             //build the graph associated to the query
             final Graph g = GraphFactory.createDefaultGraph();
             Query query = new Query();
+
             try {
                 ParameterizedSparqlString pss = new ParameterizedSparqlString();
                 pss.append(s);
+                pss.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
+                pss.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+                pss.setNsPrefix("xsd", "http://www.w3.org/2001/XMLSchema#");
+                pss.setNsPrefix("dbo", "http://dbpedia.org/ontology/");
+                pss.setNsPrefix("yago", "http://dbpedia.org/class/yago/");
                 query = pss.asQuery();
             } catch (QueryParseException e) {
                 LOGGER.warn("Query: " + s);
-                LOGGER.warn(e.toString(), e);
+                LOGGER.warn(e.toString());
             }
             try {
                 ElementWalker.walk(query.getQueryPattern(), new ElementVisitorBase() {
@@ -113,8 +121,11 @@ public class QueryIsomorphism {
                     currGraph.add(queries.get(s));
                     graphsWithQuestion.put(g.toString(), currGraph);
                 }
+
+                parsedQueries.put(queries.get(s), query);
+
             } catch (NullPointerException e) {
-                LOGGER.warn(e.toString(), e);
+                LOGGER.warn(e.toString());
             }
 
         }
@@ -134,7 +145,7 @@ public class QueryIsomorphism {
             Cluster cluster = new Cluster(graph);
             List<String> list = graphsWithQuestion.get(graph);
             for (String s : list) {
-                CustomQuestion question = new CustomQuestion(inverseQueryMap.get(s), s, getSimpleModifiers(inverseQueryMap.get(s)), graph);
+                CustomQuestion question = new CustomQuestion(parsedQueries.get(s).toString(), s, getSimpleModifiers(parsedQueries.get(s).toString()), graph);
                 HashMap<String, String> languageToQuestion = new HashMap<>();
                 languageToQuestion.put("en", s); //TODO which attributes are important?
                 //question.setLanguageToQuestion(languageToQuestion);

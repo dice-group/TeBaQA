@@ -18,6 +18,9 @@ import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
+import org.aksw.qa.commons.load.json.EJQuestionFactory;
+import org.aksw.qa.commons.load.json.ExtendedQALDJSONLoader;
+import org.aksw.qa.commons.load.json.QaldJson;
 import org.apache.log4j.Logger;
 import weka.classifiers.Classifier;
 import weka.core.Instance;
@@ -113,12 +116,8 @@ public class WekaClassifier {
     }
 
     private static List<Cluster> clusterQueries(Dataset dataset) {
-        //Remove all trainQuestions without SPARQL query
-        List<IQuestion> load = LoaderController.load(dataset);
-        List<IQuestion> result = load.parallelStream()
-                .filter(question -> question.getSparqlQuery() != null)
-                .collect(Collectors.toList());
-        List<HAWKQuestion> trainQuestions = new ArrayList<>(HAWKQuestionFactory.createInstances(result));
+//        List<HAWKQuestion> trainQuestions = loadTrainingQuestions(dataset);
+        List<HAWKQuestion> trainQuestions = dataset == Dataset.QALD9_Train_Multilingual ? loadQALD9Training() : loadTrainingQuestions(dataset);
 
         Map<String, String> trainQuestionsWithQuery = new HashMap<>();
         trainQuestions.forEach(trainQuestion -> trainQuestionsWithQuery.put(trainQuestion.getSparqlQuery(), trainQuestion.getLanguageToQuestion().get("en")));
@@ -141,6 +140,30 @@ public class WekaClassifier {
 
         return queryClusters;
     }
+
+    private static List<HAWKQuestion> loadTrainingQuestions(Dataset dataset) {
+        //Remove all trainQuestions without SPARQL query
+        List<IQuestion> load = LoaderController.load(dataset);
+        List<IQuestion> result = load.parallelStream()
+                .filter(question -> question.getSparqlQuery() != null)
+                .collect(Collectors.toList());
+        return HAWKQuestionFactory.createInstances(result);
+    }
+
+    public static List<HAWKQuestion> loadQALD9Training() {
+        QaldJson json = null;
+        List<IQuestion> out = null;
+        String deriveUri = null;
+        try {
+            json = (QaldJson) ExtendedQALDJSONLoader.readJson(new FileInputStream(new File("qald-9-train-multilingual.json")), QaldJson.class);
+            out = EJQuestionFactory.getQuestionsFromQaldJson(json);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return HAWKQuestionFactory.createInstances(out);
+    }
+
 
     private void saveGraphs(List<String> graphs) {
         String graphsFilePath = PropertyUtils.getGraphsFileAbsolutePath(this.trainDataset.name());
