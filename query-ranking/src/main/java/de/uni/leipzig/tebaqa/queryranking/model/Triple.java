@@ -1,10 +1,15 @@
 package de.uni.leipzig.tebaqa.queryranking.model;
 
 
+import de.uni.leipzig.tebaqa.tebaqacommons.model.ClassCandidate;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.ResourceCandidate;
 import org.apache.jena.vocabulary.RDF;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public class Triple {
 
@@ -16,6 +21,9 @@ public class Triple {
     private ResourceCandidate objectCandidate;
     private boolean literalObject;
     private double rating;
+    private Set<EntityCandidate> usedEntities;
+    private Set<PropertyCandidate> usedProperties;
+    private Set<ClassCandidate> usedClasses;
 
     public Triple(String subject, String predicate, String object) {
         this.subject = subject;
@@ -23,6 +31,9 @@ public class Triple {
         this.object = object;
         this.literalObject = false;
         this.rating = 0.0;
+        this.usedEntities = new HashSet<>();
+        this.usedProperties = new HashSet<>();
+        this.usedClasses = new HashSet<>();
     }
 
     public Triple(String subject, String predicate, String object, boolean literalObject) {
@@ -31,6 +42,9 @@ public class Triple {
         this.object = object;
         this.literalObject = literalObject;
         this.rating = 0.0;
+        this.usedEntities = new HashSet<>();
+        this.usedProperties = new HashSet<>();
+        this.usedClasses = new HashSet<>();
     }
 
     public Triple(ResourceCandidate subject, ResourceCandidate predicate, ResourceCandidate object) {
@@ -43,7 +57,6 @@ public class Triple {
         this.predicateCandidate = predicate;
         this.objectCandidate = object;
         this.rating = calculateRating(subject, predicate, object);
-
     }
 
     private static String getUri(ResourceCandidate resource) {
@@ -147,6 +160,30 @@ public class Triple {
         }
     }
 
+    public Set<EntityCandidate> getUsedEntities() {
+        return usedEntities;
+    }
+
+    public void setUsedEntities(Set<EntityCandidate> usedEntities) {
+        this.usedEntities = usedEntities;
+    }
+
+    public Set<PropertyCandidate> getUsedProperties() {
+        return usedProperties;
+    }
+
+    public void setUsedProperties(Set<PropertyCandidate> usedProperties) {
+        this.usedProperties = usedProperties;
+    }
+
+    public Set<ClassCandidate> getUsedClasses() {
+        return usedClasses;
+    }
+
+    public void setUsedClasses(Set<ClassCandidate> usedClasses) {
+        this.usedClasses = usedClasses;
+    }
+
     @Override
     public String toString() {
         return subject + " " + predicate + " " + object;
@@ -165,5 +202,17 @@ public class Triple {
     @Override
     public int hashCode() {
         return Objects.hash(subject, predicate, object);
+    }
+
+    public void addUsedEntity(EntityCandidate entity) {
+        this.usedEntities.add(entity);
+    }
+
+    public void addUsedClass(ClassCandidate clazz) {
+        this.usedClasses.add(clazz);
+    }
+
+    public void addUsedProperty(PropertyCandidate property) {
+        this.usedProperties.add(property);
     }
 }

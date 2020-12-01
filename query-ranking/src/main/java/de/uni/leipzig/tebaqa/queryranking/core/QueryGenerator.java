@@ -4,8 +4,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import de.uni.leipzig.tebaqa.queryranking.model.*;
 import de.uni.leipzig.tebaqa.queryranking.util.QueryRankingUtils;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryRankingResponseBean;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.RatedQuery;
+import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -76,12 +78,33 @@ public class QueryGenerator {
                         query = query.replace(key, mapping.get(key));
                     }
                 }
-                queries.add(new RatedQuery(query, mapping.getRating()));
+                queries.add(new RatedQuery(query, mapping.getUsedEntities(), mapping.getUsedProperties(), mapping.getUsedClasses(), mapping.getRating()));
             }
         }
 
-        // Give each query am initial rating based on number of res/n which are present in the pattern
+        minifyResponse(queries);
         return queries;
+    }
+
+    /* Remove connectedProperty* and connectedResource* attributes from RatedQuery.usedEntities
+     * This is useful because type:Country entities have large number of connected resources which increases the
+     * response size*/
+    private static void minifyResponse(Set<RatedQuery> queries) {
+        queries.forEach(ratedQuery -> {
+            Set<EntityCandidate> usedEntities = ratedQuery.getUsedEntities();
+            Set<EntityCandidate> minifiedUsedEntities = new HashSet<>(usedEntities.size());
+            usedEntities.forEach(entity -> {
+                EntityCandidate copy = JSONUtils.safeDeepCopy(entity, EntityCandidate.class);
+                if (copy != null) {
+                    copy.getConnectedPropertiesObject().clear();
+                    copy.getConnectedPropertiesSubject().clear();
+                    copy.getConnectedResourcesObject().clear();
+                    copy.getConnectedResourcesSubject().clear();
+                    minifiedUsedEntities.add(copy);
+                }
+            });
+            ratedQuery.setUsedEntities(minifiedUsedEntities);
+        });
     }
 
     private static List<RatedMapping> generateTripleCandidateMappings(List<TripleTemplate> tripleTemplates, EntityLinkingResult linkedEntities) {
@@ -148,6 +171,13 @@ public class QueryGenerator {
             Triple tripleWith2Res = comp.getKnownTriple();
             Triple tripleWith1Res = comp.getNewTriple();
 
+            mapping.addUsedEntities(tripleWith1Res.getUsedEntities());
+            mapping.addUsedClasses(tripleWith1Res.getUsedClasses());
+            mapping.addUsedProperties(tripleWith1Res.getUsedProperties());
+            mapping.addUsedEntities(tripleWith2Res.getUsedEntities());
+            mapping.addUsedClasses(tripleWith2Res.getUsedClasses());
+            mapping.addUsedProperties(tripleWith2Res.getUsedProperties());
+
             // TODO Discuss how to combine two ratings
             mapping.multiplyRating(tripleWith2Res.getRating());
             mapping.multiplyRating(tripleWith1Res.getRating());
@@ -193,6 +223,9 @@ public class QueryGenerator {
         List<RatedMapping> mappings = new ArrayList<>();
         triples.forEach(trip -> {
             RatedMapping mapping = new RatedMapping();
+            mapping.addUsedEntities(trip.getUsedEntities());
+            mapping.addUsedClasses(trip.getUsedClasses());
+            mapping.addUsedProperties(trip.getUsedProperties());
             mapping.multiplyRating(trip.getRating());
 
             if (pattern.getSubject().startsWith(TripleTemplate.RESOURCE_PREFIX_IDENTIFIER))
@@ -224,7 +257,14 @@ public class QueryGenerator {
                 RatedMapping merged = new RatedMapping();
 
                 RatedMapping set1 = mappings.get(x);
+                merged.addUsedEntities(set1.getUsedEntities());
+                merged.addUsedClasses(set1.getUsedClasses());
+                merged.addUsedProperties(set1.getUsedProperties());
+
                 RatedMapping set2 = mappings.get(y);
+                merged.addUsedEntities(set2.getUsedEntities());
+                merged.addUsedClasses(set2.getUsedClasses());
+                merged.addUsedProperties(set2.getUsedProperties());
 
                 // Average the ratings
                 merged.multiplyRating((set1.getRating() + set2.getRating()) / 2);

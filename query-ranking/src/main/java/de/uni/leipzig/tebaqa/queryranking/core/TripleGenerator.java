@@ -1,7 +1,6 @@
 package de.uni.leipzig.tebaqa.queryranking.core;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import de.uni.leipzig.tebaqa.queryranking.elasticsearch.SearchProvider;
 import de.uni.leipzig.tebaqa.queryranking.model.CompoundTriples;
 import de.uni.leipzig.tebaqa.queryranking.model.EntityLinkingResult;
@@ -17,7 +16,6 @@ import de.uni.leipzig.tebaqa.tebaqacommons.model.ResourceCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
 import org.apache.jena.vocabulary.RDF;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,6 +52,7 @@ public class TripleGenerator {
                 Triple triple = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, COUNTRY_PROP, candidate.getUri());
                 //TODO verify
                 triple.multiplyRating(candidate.getSimilarityScore());
+                triple.addUsedEntity(candidate);
                 triples.add(triple);
             }
         }
@@ -67,6 +66,7 @@ public class TripleGenerator {
                 Triple triple = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, Constants.DC_SUBJECT, candidate.getUri());
                 //TODO verify
                 triple.multiplyRating(candidate.getSimilarityScore());
+                triple.addUsedEntity(candidate);
                 triples.add(triple);
             }
         }
@@ -78,6 +78,7 @@ public class TripleGenerator {
         for (ClassCandidate candidate : classCandidates) {
             Triple triple = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, "a", candidate.getUri());
             triple.multiplyRating(candidate.getSimilarityScore()); // TODO verify rating
+            triple.addUsedClass(candidate);
             triples.add(triple);
         }
         return triples;
@@ -129,6 +130,8 @@ public class TripleGenerator {
 //                        Triple t = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, connectedProp, ec.getUri());
 //                        t.multiplyRating(ec.getLevenshteinDistanceScore() * ec.getRelatednessFactor()); // TODO verify
                         Triple t = new Triple(null, matchingProp, ec);
+                        t.addUsedEntity(ec);
+                        t.addUsedProperty((PropertyCandidate) matchingProp);
                         triples.add(t);
                     }
                 }
@@ -142,6 +145,8 @@ public class TripleGenerator {
 //                        Triple t = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, connectedProp, lc.getUri(), true);
 //                        t.multiplyRating(lc.getLevenshteinDistanceScore() * lc.getRelatednessFactor()); // TODO verify
                         Triple t = new Triple(null, matchingProp, lc, true);
+                        t.addUsedEntity(lc);
+                        t.addUsedProperty((PropertyCandidate) matchingProp);
                         triples.add(t);
                     }
                 }
@@ -156,6 +161,8 @@ public class TripleGenerator {
 //                        Triple t = new Triple(ec.getUri(), connectedProp, TripleTemplate.VARIABLE_PLACEHOLDER);
 //                        t.multiplyRating(ec.getLevenshteinDistanceScore() * ec.getRelatednessFactor()); // TODO verify
                         Triple t = new Triple(ec, matchingProp, null);
+                        t.addUsedEntity(ec);
+                        t.addUsedProperty((PropertyCandidate) matchingProp);
                         triples.add(t);
                     }
                 }
@@ -175,6 +182,7 @@ public class TripleGenerator {
                     if (cand.getConnectedPropertiesSubject().contains(prop.getUri())) {
                         Triple t = new Triple(template.getSubject(), prop.getUri(), template.getObject());
                         t.multiplyRating(prop.getSimilarityScore());
+                        t.addUsedProperty((PropertyCandidate) prop);
                         triples.add(t);
                     }
                 });
@@ -183,6 +191,7 @@ public class TripleGenerator {
                     if (cand.getConnectedPropertiesObject().contains(prop.getUri())) {
                         Triple t = new Triple(template.getSubject(), prop.getUri(), template.getObject());
                         t.multiplyRating(prop.getSimilarityScore());
+                        t.addUsedProperty((PropertyCandidate) prop);
                         triples.add(t);
                     }
                 });
@@ -239,6 +248,7 @@ public class TripleGenerator {
             if (!alreadyKnownTriple.getObject().equals(ec.getUri())) {
                 Triple t = new Triple(template.getSubject(), template.getPredicate(), ec.getUri());
                 t.multiplyRating(ec.getSimilarityScore()); // TODO rating, verify
+                t.addUsedEntity((EntityCandidate) ec);
                 triplesFound.add(t);
             }
         }
@@ -248,6 +258,7 @@ public class TripleGenerator {
             if (!alreadyKnownTriple.getSubject().equals(lc.getUri()) && !alreadyKnownTriple.getObject().equals(lc.getUri())) {
                 Triple t = new Triple(template.getSubject(), template.getPredicate(), lc.getUri(), true);
                 t.multiplyRating(lc.getSimilarityScore()); // TODO rating, verify
+                t.addUsedEntity((EntityCandidate) lc);
                 triplesFound.add(t);
             }
         }
@@ -291,6 +302,7 @@ public class TripleGenerator {
                 properties.forEach(prop -> {
                     Triple triple = new Triple(template.getSubject(), prop.getUri(), TripleTemplate.VARIABLE_PLACEHOLDER);
                     triple.multiplyRating(prop.getSimilarityScore());
+                    triple.addUsedProperty(prop);
                     triples.add(triple);
                 });
             } else {
@@ -299,6 +311,7 @@ public class TripleGenerator {
                 properties.forEach(prop -> {
                     Triple triple = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, prop.getUri(), template.getObject());
                     triple.multiplyRating(prop.getSimilarityScore());
+                    triple.addUsedProperty(prop);
                     triples.add(triple);
                 });
             }
@@ -324,7 +337,7 @@ public class TripleGenerator {
         foundProperties.addAll(searchService.searchPropertiesByIds(urisToFind.subList(current, urisToFind.size())));
 
         List<PropertyCandidate> resourceCandidatesFiltered = new ArrayList<>();
-        double minScore = 0.2;
+        double minScore = 0.15;
         for (String coOccurrence : coOccurrences) {
             Set<PropertyCandidate> bestCandidates = searchService.getBestCandidates(coOccurrence, foundProperties, minScore);
 

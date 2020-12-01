@@ -1,13 +1,25 @@
 package de.uni.leipzig.tebaqa.queryranking.model;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.ClassCandidate;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
+
+import java.util.*;
 
 public class RatedMapping {
-    private Map<String, String> mappings = new HashMap<>();
-    private double rating = 0.0;
+    private Map<String, String> mappings;
+    private double rating;
+    private Set<EntityCandidate> usedEntities;
+    private Set<PropertyCandidate> usedProperties;
+    private Set<ClassCandidate> usedClasses;
+
+    public RatedMapping() {
+        mappings = new HashMap<>();
+        rating = 0.0;
+        usedEntities = new HashSet<>();
+        usedProperties = new HashSet<>();
+        usedClasses = new HashSet<>();
+    }
 
     public Map<String, String> getMappings() {
         return mappings;
@@ -57,4 +69,42 @@ public class RatedMapping {
                 this.rating = this.rating * rating;
         }
     }
+
+    public Set<EntityCandidate> getUsedEntities() {
+        return usedEntities;
+    }
+
+    public void setUsedEntities(Set<EntityCandidate> usedEntities) {
+        this.usedEntities = usedEntities;
+    }
+
+    public Set<PropertyCandidate> getUsedProperties() {
+        return usedProperties;
+    }
+
+    public void setUsedProperties(Set<PropertyCandidate> usedProperties) {
+        this.usedProperties = usedProperties;
+    }
+
+    public Set<ClassCandidate> getUsedClasses() {
+        return usedClasses;
+    }
+
+    public void setUsedClasses(Set<ClassCandidate> usedClasses) {
+        this.usedClasses = usedClasses;
+    }
+
+    public void addUsedEntities(Collection<EntityCandidate> entities) {
+        this.usedEntities.addAll(entities);
+    }
+
+    public void addUsedClasses(Collection<ClassCandidate> classes) {
+        this.usedClasses.addAll(classes);
+    }
+
+    public void addUsedProperties(Collection<PropertyCandidate> properties) {
+        this.usedProperties.addAll(properties);
+    }
+
+
 }
