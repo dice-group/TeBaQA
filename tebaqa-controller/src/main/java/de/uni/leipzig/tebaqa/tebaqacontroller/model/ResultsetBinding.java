@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.tebaqacontroller.model;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QuestionAnswerType;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.RatedQuery;
 import de.uni.leipzig.tebaqa.tebaqacontroller.utils.SPARQLUtilities;
 
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ public class ResultsetBinding {
     private String query;
     private Double rating;
     private QuestionAnswerType answerType;
+    private RatedQuery ratedQuery;
 
     private static DateTimeFormatter dateTimeFormatterLong = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static DateTimeFormatter dateTimeFormatterShortMonth = DateTimeFormatter.ofPattern("yyyy-M-dd");
@@ -138,6 +140,14 @@ public class ResultsetBinding {
 
     public void setAnswerType(QuestionAnswerType answerType) {
         this.answerType = answerType;
+    }
+
+    public RatedQuery getRatedQuery() {
+        return ratedQuery;
+    }
+
+    public void setRatedQuery(RatedQuery ratedQuery) {
+        this.ratedQuery = ratedQuery;
     }
 
     private String getDateFromXMLScheme(String s) {
