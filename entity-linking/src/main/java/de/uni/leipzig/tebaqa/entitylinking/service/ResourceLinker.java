@@ -6,6 +6,7 @@ import de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch.SearchService;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.ClassCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.RestServiceConfiguration;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
@@ -42,6 +43,7 @@ public class ResourceLinker {
         this.propertyCandidates = new HashSet<>();
         this.classCandidates = new HashSet<>();
         this.semanticAnalysisHelper = language.getSemanticAnalysisHelper();
+//        this.semanticAnalysisHelper = new SemanticAnalysisHelper(new RestServiceConfiguration("http", "tebaqa.cs.upb.de", "8085"), language);
         this.searchService = new SearchService(PropertyUtil.getElasticSearchConnectionProperties());
         this.disambiguationService = new DisambiguationService(this.searchService);
     }
@@ -93,14 +95,20 @@ public class ResourceLinker {
         List<String> coOccurrenceList = TextUtilities.getNeighborCoOccurrencePermutations(Arrays.asList(wordsFromQuestion));
         coOccurrenceList.sort((s1, s2) -> -(s1.length() - s2.length())); // sort ascending based on length
 
-        List<String> dependentCoOccurrences = new ArrayList<>();
-        if (semanticGraph != null) {
+        List<String> filteredCoOccurrences = new ArrayList<>();
+        if (false) { // TODO if(semanticGraph != null) but this removes some important co-occurrences
             for (String coOccurrence : coOccurrenceList) {
-                if (!StopWordsUtil.containsOnlyStopwords(coOccurrence, Lang.EN) && TextUtilities.isDependent(coOccurrence, semanticGraph))
-                    dependentCoOccurrences.add(coOccurrence);
+                if (!StopWordsUtil.containsOnlyStopwords(coOccurrence, language) && TextUtilities.isDependent(coOccurrence, semanticGraph))
+                    filteredCoOccurrences.add(coOccurrence);
             }
-            coOccurrenceList = dependentCoOccurrences;
+        } else {
+            for (String coOccurrence : coOccurrenceList) {
+                if (!StopWordsUtil.containsOnlyStopwords(coOccurrence, language))
+                    filteredCoOccurrences.add(coOccurrence);
+            }
         }
+        coOccurrenceList = filteredCoOccurrences;
+
         coOccurrenceList.sort((s1, s2) -> -(s1.length() - s2.length()));
         this.coOccurrences.addAll(coOccurrenceList);
 

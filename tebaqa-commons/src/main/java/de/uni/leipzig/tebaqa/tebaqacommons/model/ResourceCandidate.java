@@ -31,7 +31,7 @@ public abstract class ResourceCandidate implements IResourceCandidate {
         double bestScore = 1;
         String bestScoreLabel = null;
         for (String label : this.getResourceLabels()) {
-            double levensteinScore = TextUtilities.getLevenshteinRatio(coOccurrence, label);
+            double levensteinScore = TextUtilities.getDistanceScore(coOccurrence, label);
             if (levensteinScore < bestScore) {
                 bestScore = levensteinScore;
                 bestScoreLabel = label;
@@ -113,7 +113,7 @@ public abstract class ResourceCandidate implements IResourceCandidate {
     public double getDistanceScoreFor(String coOccurrence) {
         double bestScore = 1;
         for (String label : this.getResourceLabels()) {
-            double levensteinScore = TextUtilities.getLevenshteinRatio(coOccurrence, label);
+            double levensteinScore = TextUtilities.getDistanceScore(coOccurrence, label);
             if (levensteinScore < bestScore) {
                 bestScore = levensteinScore;
             }
@@ -126,7 +126,7 @@ public abstract class ResourceCandidate implements IResourceCandidate {
         double bestScore = 1;
         String bestScoreLabel = null;
         for (String label : this.getResourceLabels()) {
-            double levensteinScore = TextUtilities.getLevenshteinRatio(coOccurrence, label);
+            double levensteinScore = TextUtilities.getDistanceScore(coOccurrence, label);
             if (levensteinScore < bestScore) {
                 bestScore = levensteinScore;
                 bestScoreLabel = label;

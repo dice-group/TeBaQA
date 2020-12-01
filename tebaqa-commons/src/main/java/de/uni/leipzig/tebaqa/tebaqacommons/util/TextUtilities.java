@@ -2,8 +2,14 @@ package de.uni.leipzig.tebaqa.tebaqacommons.util;
 
 import edu.stanford.nlp.ling.IndexedWord;
 import edu.stanford.nlp.semgraph.SemanticGraph;
+import edu.stanford.nlp.util.Sets;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.analysis.ngram.NGramTokenizer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.*;
 
 import static java.lang.String.join;
@@ -64,14 +70,20 @@ public class TextUtilities {
         return depend;
     }
 
-    public static double getJWSim(String s, String s2) {
+    private static double getJWSim(String s, String s2) {
         if (s == null || s2 == null) {
             return 0;
         }
-        double jaroWinklerDistance = StringUtils.getJaroWinklerDistance(s, s2);
-//        int lfd = StringUtils.getLevenshteinDistance(s2, s);
-//        return ((double) lfd) / (Math.max(s2.length(), s.length()));
-        return jaroWinklerDistance;
+        return StringUtils.getJaroWinklerDistance(s, s2);
+    }
+
+    private static double getJWDistance(String s, String s2) {
+        return (1.0 - (getJWSim(s, s2) * ((double) Math.min(s2.length(), s.length()) / Math.max(s2.length(), s.length()))));
+    }
+
+    public static double getDistanceScore(String s, String s2) {
+//        return (getJWDistance(s, s2) + nGramDistance(s, s2)) / 2;
+        return (0.8 * getJWDistance(s, s2)) + (0.2 * nGramDistance(s, s2));
     }
 
     public static double getLevenshteinRatio(String s, String s2) {
@@ -111,7 +123,41 @@ public class TextUtilities {
 
     }
 
-    public static void main(String[] args) {
-        System.out.println(getJWSim("height", "height"));
+    private static Set<String> ngrams(String input) {
+        Set<String> nGrams = new HashSet<>();
+        try {
+            Reader reader = new StringReader(input);
+            NGramTokenizer gramTokenizer = new NGramTokenizer(2, 2);
+            gramTokenizer.setReader(reader);
+            CharTermAttribute charTermAttribute = gramTokenizer.addAttribute(CharTermAttribute.class);
+            gramTokenizer.reset();
+
+
+            while (gramTokenizer.incrementToken()) {
+                String token = charTermAttribute.toString();
+                //Do something
+                nGrams.add(token);
+            }
+            gramTokenizer.end();
+            gramTokenizer.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return nGrams;
     }
+
+    private static double nGramSim(String s1, String s2) {
+        Set<String> ngrams1 = ngrams(s1);
+        Set<String> ngrams2 = ngrams(s2);
+
+//        int denominator = Math.max(ngrams1.size(), ngrams2.size());
+//        return (double) Sets.intersection(ngrams1, ngrams2).size() / Sets.union(ngrams1, ngrams2).size();
+        return (double) Sets.intersection(ngrams1, ngrams2).size() / Math.max(ngrams1.size(), ngrams2.size());
+    }
+
+    private static double nGramDistance(String s1, String s2) {
+        return 1.0 - nGramSim(s1, s2);
+    }
+
 }

@@ -56,7 +56,7 @@ public class DisambiguationService {
             }
         }
 
-        Set<EntityCandidate> bestCandidates = searchService.getBestCandidates(coOccurrence, Sets.newHashSet(candidates.values()));
+        Set<EntityCandidate> bestCandidates = searchService.getBestCandidates(coOccurrence, Sets.newHashSet(candidates.values()), EntityCandidate.class);
         if (bestCandidates.size() >= 100)
             bestCandidates.clear();
         return bestCandidates;

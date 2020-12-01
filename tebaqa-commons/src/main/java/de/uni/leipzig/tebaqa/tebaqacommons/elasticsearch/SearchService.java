@@ -14,8 +14,13 @@ public class SearchService {
     private static final Logger LOGGER = Logger.getLogger(SearchService.class);
 
     // TODO Externalize?
-    private static final double MIN_SCORE_NORMAL = 0.32;
-    private static final double MIN_SCORE_WITH_NUMBERS = 0.05;
+    public static final double MATCHING_THRESHOLD_ENTITY = 0.1;
+    public static final double MATCHING_THRESHOLD_CLASS = 0.2;
+    public static final double MATCHING_THRESHOLD_PROPERTY = 0.32;
+    public static final double MATCHING_THRESHOLD_PROPERTY_DISAMBIGUATION = 0.15;
+    public static final double MATCHING_SCORE_WITH_NUMBERS = 0.05;
+//    private static final double MIN_SCORE_NORMAL = 0.32;
+//    private static final double MIN_SCORE_WITH_NUMBERS = 0.05;
     private final ElasticSearchClient index;
 
     // TODO implement caching here
@@ -57,7 +62,7 @@ public class SearchService {
 
         try {
             foundEntities = index.searchEntity(coOccurrence, connectedEntity, connectedProperty, typeFilter);
-            if (coOccurrence.isPresent()) foundEntities = getBestCandidates(coOccurrence.get(), foundEntities);
+            if (coOccurrence.isPresent()) foundEntities = getBestCandidates(coOccurrence.get(), foundEntities, EntityCandidate.class);
 
         } catch (IOException e) {
             LOGGER.info("Searching entities for co-occurrence: " + coOccurrence);
@@ -114,7 +119,7 @@ public class SearchService {
 
         try {
             propertyCandidates = index.searchProperty(coOccurrence, searchSynonyms);
-            propertyCandidates = getBestCandidates(coOccurrence, propertyCandidates);
+            propertyCandidates = getBestCandidates(coOccurrence, propertyCandidates, PropertyCandidate.class);
 
         } catch (IOException e) {
             LOGGER.info("Searching properties for co-occurrence: " + coOccurrence);
@@ -154,7 +159,7 @@ public class SearchService {
         Set<ClassCandidate> classCandidates;
         try {
             classCandidates = index.searchClass(coOccurrence);
-            classCandidates = getBestCandidates(coOccurrence, classCandidates);
+            classCandidates = getBestCandidates(coOccurrence, classCandidates, ClassCandidate.class);
 
         } catch (IOException e) {
             LOGGER.info("Searching classes for co-occurrence: " + coOccurrence);
@@ -190,19 +195,56 @@ public class SearchService {
 //
 //    }
 
-    public <T> Set<T> getBestCandidates(String coOccurrence, Set<? extends ResourceCandidate> foundResources) {
-        return this.getBestCandidates(coOccurrence, foundResources, null);
+    public <T> Set<T> getBestCandidates(String coOccurrence, Set<? extends ResourceCandidate> foundResources, Class<T> clazz) {
+        double threshold;
+        if(coOccurrence.matches(".*\\d+.*"))
+            threshold = MATCHING_SCORE_WITH_NUMBERS;
+        else {
+            if (clazz.equals(ClassCandidate.class)) {
+                threshold = MATCHING_THRESHOLD_CLASS;
+            } else if (clazz.equals(PropertyCandidate.class)) {
+                threshold = MATCHING_THRESHOLD_PROPERTY;
+            } else if (clazz.equals(EntityCandidate.class)) {
+                threshold = MATCHING_THRESHOLD_ENTITY;
+            } else {
+                threshold = MATCHING_THRESHOLD_ENTITY;
+            }
+        }
+
+        return this.getBestCandidates(coOccurrence, foundResources, threshold);
     }
 
-    public <T> Set<T> getBestCandidates(String coOccurrence, Set<? extends ResourceCandidate> foundResources, Double thresholdOverride) {
+//    public <T> Set<T> getBestCandidates(String coOccurrence, Set<? extends ResourceCandidate> foundResources, Double thresholdOverride) {
+//        Set<ResourceCandidate> bestCandidates = new HashSet<>();
+//        for (ResourceCandidate resource : foundResources) {
+//            boolean coOccurrenceNull = resource.getCoOccurrence() == null;
+//            String bestMatchedLabel = coOccurrenceNull ? resource.getBestLabelFor(coOccurrence) : resource.getBestLabel();
+//            double ratio = coOccurrenceNull ? resource.getDistanceScoreFor(coOccurrence) : resource.getDistanceScore();
+//
+//            // Add found entity to final result if it's levenstein score is below threshold (i.e. a good match)
+//            double matchingThreshold = thresholdOverride != null ? thresholdOverride : getLevensteinThreshold(coOccurrence, bestMatchedLabel);
+//            if (ratio <= matchingThreshold) {
+//                double numberOfWords = (TextUtilities.countWords(coOccurrence));
+//                double relFactor = (numberOfWords - (2 * ratio * numberOfWords));
+//                resource.setRelatednessFactor(relFactor);
+//                bestCandidates.add(resource);
+//            }
+//        }
+////        if (clazz.equalsIgnoreCase(EntityCandidate.class.toString()) && bestCandidates.size() == 0 && foundResources.size() == 100)
+////            return (Set<T>) foundResources;
+//
+//        return (Set<T>) bestCandidates;
+//    }
+
+    public <T> Set<T> getBestCandidates(String coOccurrence, Set<? extends ResourceCandidate> foundResources, double matchingThreshold) {
         Set<ResourceCandidate> bestCandidates = new HashSet<>();
         for (ResourceCandidate resource : foundResources) {
             boolean coOccurrenceNull = resource.getCoOccurrence() == null;
-            String bestMatchedLabel = coOccurrenceNull ? resource.getBestLabelFor(coOccurrence) : resource.getBestLabel();
+//            String bestMatchedLabel = coOccurrenceNull ? resource.getBestLabelFor(coOccurrence) : resource.getBestLabel();
             double ratio = coOccurrenceNull ? resource.getDistanceScoreFor(coOccurrence) : resource.getDistanceScore();
 
             // Add found entity to final result if it's levenstein score is below threshold (i.e. a good match)
-            double matchingThreshold = thresholdOverride != null ? thresholdOverride : getLevensteinThreshold(coOccurrence, bestMatchedLabel);
+//            double matchingThreshold = thresholdOverride != null ? thresholdOverride : getLevensteinThreshold(coOccurrence, bestMatchedLabel);
             if (ratio <= matchingThreshold) {
                 double numberOfWords = (TextUtilities.countWords(coOccurrence));
                 double relFactor = (numberOfWords - (2 * ratio * numberOfWords));
@@ -210,8 +252,6 @@ public class SearchService {
                 bestCandidates.add(resource);
             }
         }
-//        if (clazz.equalsIgnoreCase(EntityCandidate.class.toString()) && bestCandidates.size() == 0 && foundResources.size() == 100)
-//            return (Set<T>) foundResources;
 
         return (Set<T>) bestCandidates;
     }
@@ -250,17 +290,6 @@ public class SearchService {
 //            return foundResources;
 //        return bestCandidates;
 //    }
-
-    private static double getLevensteinThreshold(String coOccurrence, String matchedResource) {
-        // If the co-occurence contains a number, then there should be high similarity. This helps in reducing matched
-        // entities in cases like Gleis 1 or LSA 460 where there is a high chance of getting many matches.
-        if (matchedResource != null && (coOccurrence.matches(".*\\d+.*") || matchedResource.matches(".*\\d+.*"))) {
-            return MIN_SCORE_WITH_NUMBERS;
-        }
-
-        return MIN_SCORE_NORMAL;
-    }
-
 
     public static void main(String[] args) throws IOException {
 //        SearchService s = new SearchService();
