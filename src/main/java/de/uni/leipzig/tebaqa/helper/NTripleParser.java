@@ -1,9 +1,9 @@
 package de.uni.leipzig.tebaqa.helper;
 
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.util.FileManager;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.util.FileManager;
 import org.apache.log4j.Logger;
 
 import java.io.InputStream;

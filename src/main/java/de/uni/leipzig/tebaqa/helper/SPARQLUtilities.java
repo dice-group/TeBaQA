@@ -5,32 +5,29 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import de.uni.leipzig.tebaqa.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
+import moa.recommender.rc.utils.Hash;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.jena.graph.Node;
-import org.apache.jena.query.ParameterizedSparqlString;
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryException;
-import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.QueryParseException;
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Node_Literal;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.graph.impl.LiteralLabel;
+import org.apache.jena.query.*;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.sparql.core.ResultBinding;
+import org.apache.jena.sparql.core.TriplePath;
 import org.apache.jena.sparql.core.Var;
 import org.apache.jena.sparql.engine.binding.Binding;
 import org.apache.jena.sparql.engine.http.QueryExceptionHTTP;
+import org.apache.jena.sparql.syntax.ElementPathBlock;
+import org.apache.jena.sparql.syntax.ElementTriplesBlock;
+import org.apache.jena.sparql.syntax.ElementVisitorBase;
+import org.apache.jena.sparql.syntax.ElementWalker;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -86,7 +83,8 @@ public class SPARQLUtilities {
                 log.error("QueryParseException: Unable to parse query: " + qs, e);
                 return results;
             }
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
+//            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
             qe.setTimeout(10000, 10000);
             boolean isAskType = query.isAskType();
             boolean isSelectType = query.isSelectType();
@@ -94,7 +92,7 @@ public class SPARQLUtilities {
             if (isSelectType) {
                 ResultSet rs;
                 try {
-                    rs = qe.execSelect();
+                    rs = ResultSetFactory.copyResults(qe.execSelect());
                 } catch (QueryExceptionHTTP e) {
                     log.error("HTTP Exception while executing SPARQL query: " + sparlQuery, e);
                     return results;
@@ -190,12 +188,76 @@ public class SPARQLUtilities {
         //}
         return results;
     }
+    private static String restoreQuery(ResultsetBinding binding,String originalQuery){
+        Query query=QueryFactory.create(originalQuery);
+        ElementTriplesBlock block = new ElementTriplesBlock();
 
-    public static List<ResultsetBinding> retrieveBinings(String sparlQuery) {
-        List<ResultsetBinding> bindings = new ArrayList<>();
-        sparlQuery = replaceWithWildcard(sparlQuery);
+        ElementWalker.walk(query.getQueryPattern(),
+                new ElementVisitorBase() {
+                    public void visit(ElementPathBlock el) {
+                        Iterator<TriplePath> triples = el.patternElts();
+                        while (triples.hasNext()) {
+                            Node subject;
+                            Node predicate;
+                            Node object;
+                            TriplePath t = triples.next();
+                            if (t.getSubject().toString().startsWith("?var_"))
+                                subject = NodeFactory.createURI(binding.getBindings().get(t.getSubject().getName()));
+                            else subject = t.getSubject();
+                            if (t.getPredicate().toString().startsWith("?var_"))
+                                predicate = NodeFactory.createURI(binding.getBindings().get(t.getPredicate().getName()));
+                            else predicate = t.getPredicate();
+                            if (t.getObject().toString().startsWith("?var_")) {
+                                object = NodeFactory.createURI(binding.getBindings().get(t.getObject().getName()));
+                            }else object = t.getObject();
+                            block.addTriple(new Triple(subject,predicate,object));
+                            //Var uri =Var.alloc(t.getPredicate());
+                            //vars.add(uri);
+                            //resourceLinker.mappedProperties.forEach(ent -> bindings.add(BindingFactory.binding(uri, NodeFactory.createURI(ent.getUri()))));
+                        }
+
+                    }
+
+
+
+                }
+        );
+        query.setQueryPattern(block);
+
+        return query.toString();
+
+    }
+    public static ResultsetBinding executeQuery(String queryString){
+        Query query = QueryFactory.create(queryString);
+        QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
+//        QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+        ResultsetBinding b=new ResultsetBinding();
+        if (query.isSelectType()){
+
+            ResultSet rs=qe.execSelect();
+            while(rs.hasNext()){
+                RDFNode v=rs.nextSolution().get(query.getResultVars().get(0));
+                if(v.isLiteral())
+                    b.addResult(v.asLiteral().getLexicalForm());
+                else b.addResult(v.toString());
+            }
+        }
+
+        else{
+            boolean res=qe.execAsk();
+            if(res)b.addResult("true");
+            else b.addResult("false");
+        }
+        b.setQuery(queryString);
+        b.setAnswerType(determineAnswerType(b));
+        return b;
+    }
+    public static List<ResultsetBinding> retrieveBinings(String queryWithValues,String pattern) {
+        String sparlQuery = replaceWithWildcard(queryWithValues);
         ParameterizedSparqlString qs = new ParameterizedSparqlString(sparlQuery);
         boolean isAskType;
+        List<ResultsetBinding> mergedBindings = new ArrayList<>();
+
         if (sparlQuery.contains("<^")) {
             log.error("ERROR: Invalid SPARQL Query: " + sparlQuery);
         } else {
@@ -205,93 +267,107 @@ public class SPARQLUtilities {
             } catch (QueryParseException e) {
                 log.error("QueryParseException: Unable to parse query: " + qs, e);
             }
-
-            isAskType = query.isAskType();
-            String originalAskQuery = "";
-            boolean isCountQuery = isCountQuery(query.toString());
-            List<ResultsetBinding> countBindings = new ArrayList<>();
-            if (isAskType) {
-                originalAskQuery = query.toString();
-                query.setQuerySelectType();
-                query.setQueryResultStar(true);
-            } else if (isCountQuery) {
-                countBindings = retrieveBinings(transformCountToStarQuery(query.toString()));
-            }
-
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            Optional<String>orderVar=Optional.empty();
+            if(query.getOrderBy()!=null)
+                orderVar=Optional.of(query.getOrderBy().get(0).expression.getExprVar().asVar().getVarName());
+                isAskType = QueryFactory.create(queryWithValues).isAskType();
+            boolean isCountQuery = isCountQuery(queryWithValues);
+            boolean isLiteralResult=false;
+//            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
             qe.setTimeout(10000, 10000);
             if (query.isSelectType()) {
                 ResultSet rs = null;
                 try {
-                    rs = qe.execSelect();
+                    rs = ResultSetFactory.copyResults(qe.execSelect());
+                    qe.close();
                 } catch (QueryExceptionHTTP e) {
                     log.error("HTTP Exception while executing SPARQL query: " + sparlQuery, e);
                 }
-                while (rs.hasNext()) {
+
+
+
+                while (rs!=null&&rs.hasNext()) {
+                    boolean isValidOrderedByNumericValue=true;
+                    isAskType = QueryFactory.create(queryWithValues).isAskType();
+                    Set<String>results=new HashSet<>();
+                    Map<String, String>placeHolderBinding=new HashMap<>();
                     ResultBinding s = (ResultBinding) rs.nextSolution();
-                    Map<String, String> binding = getBinding(s);
-                    ResultsetBinding selectBinding = new ResultsetBinding();
-                    ResultsetBinding askBinding = new ResultsetBinding();
+                    Map<String, Node> binding = getBinding(s);
                     for (String variable : binding.keySet()) {
-                        if (isAskType) {
-                            if ("uri".equalsIgnoreCase(variable)) {
-                                askBinding.addResult("true");
-                            } else {
-                                askBinding.addBinding(variable, binding.get(variable));
+                        if(variable.startsWith("var_")) {
+                            placeHolderBinding.put(variable, binding.get(variable).toString());
+                        }
+                        if(orderVar.isPresent()&&variable.equals(orderVar.get())){
+                            Node v=binding.get(variable);
+                            if(v.isLiteral()&&!v.getLiteral().toString().contains("[a-zA-Z]+")) {
+                                isValidOrderedByNumericValue = false;
+                                System.out.println("---------ValidOrderedByNumericValue was set------");
                             }
+
                         }
-                        if ("uri".equals(variable)) {
-                            selectBinding.addResult(binding.get(variable));
-                        } else {
-                            selectBinding.addBinding(variable, binding.get(variable));
+                        else if ("uri".equals(variable)) {
+                            Node v=binding.get(variable);
+                            if(v.isLiteral()){
+                                isLiteralResult=true;
+                                results.add(binding.get(variable).getLiteralLexicalForm());
+                            }
+                            else results.add(binding.get(variable).toString());
                         }
                     }
+                    boolean alreadyKnown=false;
+                    for(ResultsetBinding bind:mergedBindings){
+                        if(bind.isSameBinding(placeHolderBinding)) {
+                            if(!isAskType) bind.getResult().addAll(results);
 
-                    if (isAskType) {
-                        query.setQueryResultStar(false);
-                        selectBinding.setQuery(rebuildSeperatedQuery(binding, addUriResultVariable(query.toString())));
+                            alreadyKnown=true;
+                        }
 
-                        askBinding.setQuery(rebuildSeperatedQuery(binding, originalAskQuery));
-                        askBinding.setAnswerType(SPARQLResultSet.BOOLEAN_ANSWER_TYPE);
-                        bindings.add(askBinding);
-                    } else if (isCountQuery && countBindings.size() == 1) {
-                        selectBinding.setQuery(rebuildSeperatedQuery(countBindings.get(0).getBindings(), sparlQuery));
-                    } else if (isCountQuery && countBindings.size() != 1) {
-                        selectBinding.setQuery(rebuildSeperatedQuery(binding, sparlQuery));
-                    } else {
-                        selectBinding.setQuery(rebuildSeperatedQuery(binding, sparlQuery));
                     }
-                    selectBinding.setAnswerType(determineAnswerType(selectBinding));
-                    bindings.add(selectBinding);
+                    if(isValidOrderedByNumericValue&&
+                            !alreadyKnown&&!hasDoubleBoundResource(placeHolderBinding)&&
+                            !(isLiteralResult&&isCountQuery)){
+                        ResultsetBinding b=new ResultsetBinding();
+                        b.getBindings().putAll(placeHolderBinding);
+                        if(isAskType){
+                            if(results.size()>0) b.addResult("true");
+                            else b.addResult("false");
+
+                        }
+                        else b.getResult().addAll(results);
+                        b.setQuery(restoreQuery(b,pattern));
+                        mergedBindings.add(b);
+                    }
+
                 }
+                /*if(isCountQuery&&isLiteralResult){
+                    mergedBindings.clear();
+                    return mergedBindings;
+                }*/
+                if(isCountQuery)mergedBindings.forEach(bind->{
+                    String result=""+bind.getResult().size();
+                    bind.getResult().clear();
+                    bind.addResult(result);
+                });
+                mergedBindings.forEach(bin->bin.setAnswerType(determineAnswerType(bin)));
+
             }
         }
 
-        //Merge bindings with the same query and binding variables
-        List<ResultsetBinding> mergedBindings = new ArrayList<>();
-        Map<String, List<ResultsetBinding>> bindingsGroupedByQuery = bindings.stream().collect(Collectors.groupingBy(ResultsetBinding::getQuery));
-        for (List<ResultsetBinding> resultSetBindingsByQuery : bindingsGroupedByQuery.values()) {
-            Map<Map<String, String>, List<ResultsetBinding>> bindingsGroupedByBindings = resultSetBindingsByQuery.stream().collect(Collectors.groupingBy(ResultsetBinding::getBindings));
-            for (List<ResultsetBinding> resultsetBindings : bindingsGroupedByBindings.values()) {
-                Set<String> result = resultsetBindings.stream().flatMap(resultsetBinding -> resultsetBinding.getResult().stream()).collect(Collectors.toSet());
-                if (!resultsetBindings.isEmpty()) {
-                    ResultsetBinding resultsetBinding = resultsetBindings.get(0);
-                    //Only use the first 50 answers
-                    if (result.size() > 50) {
-                        resultsetBinding.setResult(Sets.newHashSet(Iterables.limit(result, 50)));
-                    } else {
-                        resultsetBinding.setResult(result);
 
-                    }
-                    resultsetBinding.setAnswerType(determineAnswerType(resultsetBinding));
-                    mergedBindings.add(resultsetBinding);
-                }
-            }
 
-        }
         return mergedBindings;
     }
+    private static boolean hasDoubleBoundResource(Map<String, String>placeHolderBinding){
+        HashSet found=new HashSet();
+        for(String key:placeHolderBinding.keySet()){
+            if(!found.contains(placeHolderBinding.get(key)))
+                found.add(placeHolderBinding.get(key));
+            else return true;
 
+        }
+        return false;
+    }
     private static boolean isCountQuery(String query) {
         return TextUtilities.trim(query.toLowerCase()).startsWith("select (count");
     }
@@ -309,6 +385,9 @@ public class SPARQLUtilities {
     static int determineAnswerType(ResultsetBinding rs) {
         Set<String> result = rs.getResult();
 
+        if(result.isEmpty())
+            return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
+
         //Check for scientific numbers like 3.40841e+10
         if (result.stream().allMatch(SPARQLUtilities::isNumericOrScientific)) {
             return SPARQLResultSet.NUMBER_ANSWER_TYPE;
@@ -323,7 +402,7 @@ public class SPARQLUtilities {
             } else {
                 return SPARQLResultSet.SINGLE_ANSWER;
             }
-        } else if (result.size() > 1 && result.stream().allMatch(SPARQLUtilities::isResource)) {
+        } else if (result.size() > 1 && (result.stream().allMatch(SPARQLUtilities::isResource) || result.stream().noneMatch(SPARQLUtilities::isResource))) {
             return SPARQLResultSet.LIST_OF_RESOURCES_ANSWER_TYPE;
         } else {
             return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
@@ -332,7 +411,7 @@ public class SPARQLUtilities {
 
     static String replaceWithWildcard(String sparlQuery) {
         int endPosition = sparlQuery.toLowerCase().indexOf("where");
-        sparlQuery = sparlQuery.substring(0, endPosition).replace("?uri", "*") + sparlQuery.substring(endPosition, sparlQuery.length());
+        sparlQuery = "SELECT * " + sparlQuery.substring(endPosition, sparlQuery.length());
         return sparlQuery;
     }
 
@@ -375,24 +454,24 @@ public class SPARQLUtilities {
     }
 
 
-    private static Map<String, String> getBinding(ResultBinding s) {
-        Map<String, String> bindings = new HashMap<>();
+    private static Map<String, Node> getBinding(ResultBinding s) {
+        Map<String, Node> bindings = new HashMap<>();
         Binding binding = s.getBinding();
         Iterator<Var> vars = binding.vars();
         while (vars.hasNext()) {
             Var next = vars.next();
             Node node = binding.get(next);
-            if (node.isURI()) {
-                bindings.put(next.getVarName(), node.getURI());
-            } else if (node.isLiteral()) {
+            //if (node.isURI()) {
+            bindings.put(next.getVarName(), node);
+            /*} else if (node.isLiteral()) {
                 bindings.put("uri", node.getLiteral().toString());
-            }
+            }*/
         }
         return bindings;
     }
 
-    private static boolean isResource(String s) {
-        return s.startsWith("http://dbpedia.org/resource/");
+    public static boolean isResource(String s) {
+        return s.toLowerCase().startsWith("http:") || s.toLowerCase().startsWith("urn:");
     }
 
     public static boolean isNumericOrScientific(String s) {

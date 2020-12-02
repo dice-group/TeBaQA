@@ -81,19 +81,59 @@ function createEmptyInfobox(title) {
     })).hide());
 }
 
+function disableExtend() {
+    var x = document.getElementById("extended");
+    if (document.getElementById('keyword').checked) {
+        x.style.display = "block";
+    } else {
+        x.style.display = "none";
+    }
 
-function submitForm(s) {
+}
+
+function submitForm(s,t,p,c) {
+    var sendUrl='qa-simple';
+    var data;
+    if(document.getElementById('keyword').checked) {
+        sendUrl = 'keyword';
+        var serachIn;
+        if (document.getElementById('all').checked) {
+            serachIn = document.getElementById('all').value;
+        }
+        else if (document.getElementById('entity').checked) {
+            serachIn = document.getElementById('entity').value;
+        }
+        else if (document.getElementById('prop').checked) {
+            serachIn = document.getElementById('prop').value;
+        }
+        else {
+            serachIn = document.getElementById('class').value;
+        }
+        data= {
+            'query': s,
+            'lang': 'en',
+            'type': t,
+            'property': p,
+            'connect': c,
+            'searchIn':serachIn
+        }
+    }
+    else{
+        data= {
+            'query': s,
+            'lang': 'en'
+        }
+    }
     $.ajax({
+
         beforeSend() {
             showSpinner();
         },
-        url: 'qa-simple',
+
+        url: sendUrl,
         timeout: 60000,
         type: 'post',
-        data: {
-            'query': s,
-            'lang': 'en'
-        },
+        data: data,
         success(msg) {
             let ajaxRequests = [];
             emptyAnswerList();
@@ -188,7 +228,7 @@ function init() {
     initExamples();
     hideSpinner();
     $('#search-form-id').submit(function () {
-        submitForm($('#search-bar').val());
+        submitForm($('#search-bar').val(),$('#type').val(),$('#property').val(),$('#connect').val());
         return false;
     });
 

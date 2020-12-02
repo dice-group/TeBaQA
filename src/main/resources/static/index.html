@@ -1,7 +1,8 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <title>TeBaQA: Question Answering</title>
+    <!--<title>TeBaQA: Question Answering</title>-->
+    <title>Question Answering</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="HandheldFriendly" content="true">
@@ -36,17 +37,48 @@
 </head>
 <body onload="init()">
 <h1>TeBaQA</h1>
+<img src="img/limbo.png" width="500" class="center">
+<br>
 <h2>Template-Based Question Answering</h2>
 <div class="container h-100">
     <div class="h-100 justify-content-center align-items-center inner-form-wrapper">
+    <fieldset id="radio">
+        <input type="radio" id="qa" name="variant" value="Question Answering" onclick="disableExtend()">
+        <label for="qa"> Question Answering</label>
+        <input type="radio" id="keyword" name="variant" value="Keyword" onclick="disableExtend()" checked>
+        <label for="keyword"> Keyword</label>
+    </fieldset>
+
+        <div id="extended">
+            <input type="text" id="type" placeholder="Type" required pattern=".*\S+.*"
+                   autofocus>
+            <input type="text" id="property" placeholder="Property" required pattern=".*\S+.*"
+                   autofocus>
+            <input type="text" id="connect" placeholder="Connection" required pattern=".*\S+.*"
+                   autofocus>
+
+            <fieldset id="search_in">
+                <input type="radio" id="all" name="search" value="all" checked>
+                <label for="all"> All</label>
+                <input type="radio" id="entity" name="search" value="entity">
+                <label for="entity">Entity</label>
+                <input type="radio" id="prop" name="search" value="property">
+                <label for="prop">Property</label>
+                <input type="radio" id="class" name="search" value="class">
+                <label for="class">Class</label>
+            </fieldset>
+        </div>
+<!--</div>
+    <div class="h-100 justify-content-center align-items-center inner-form-wrapper">-->
         <form class="search-container form-wrapper cf" id="search-form-id">
             <input type="text" id="search-bar" placeholder="What do you want to know?" required pattern=".*\S+.*"
                    autofocus>
             <button type="submit" id="answer-button">Answer</button>
+
         </form>
     </div>
 </div>
-<div class="examples-container container">
+<!--<div class="examples-container container">
     <ul class="nav">
         <li class="nav-item">
             <a class="nav-link active" href="#" id="example-1">Example 1</a>
@@ -73,7 +105,7 @@
             <a class="nav-link active" href="#" id="example-8">Example 8</a>
         </li>
     </ul>
-</div>
+</div>-->
 <div id="overlay" disabled="true"></div>
 <div id="loaderDiv" disabled="true"><img src="img/spinner.gif" alt="Please wait..."/></div>
 <div class="container">

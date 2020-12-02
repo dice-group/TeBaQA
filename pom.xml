@@ -44,16 +44,25 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <configuration>
+                    <mainClass>de.uni.leipzig.tebaqa.indexGeneration.GenerateIndexes</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <properties>
         <java.version>1.8</java.version>
         <start-class>de.uni.leipzig.tebaqa.spring.Application</start-class>
+        <dllearner.version>1.3.1-SNAPSHOT</dllearner.version>
     </properties>
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.5.9.RELEASE</version>
+        <version>2.1.7.RELEASE</version>
     </parent>
     <repositories>
         <repository>
@@ -92,6 +101,24 @@
     <version>0.0.1</version>
     <dependencies>
         <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+            <version>6.6.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>6.6.1</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-core -->
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>7.6.0</version>
+        </dependency>
+
+
+        <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
@@ -114,24 +141,52 @@
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
-            <version>3.7.0</version>
+            <version>3.9.2</version>
         </dependency>
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
-            <version>3.7.0</version>
-            <classifier>models</classifier> <!--  will get the dependent model jars -->
+            <version>3.9.2</version>
+            <classifier>models</classifier>
         </dependency>
         <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>3.9.2</version>
+            <classifier>models-german</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>apache-jena-libs</artifactId>
+            <type>pom</type>
+            <version>3.14.0</version>
+        </dependency>
+        <!--<dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>3.7.0</version>-->
+            <!--<classifier>models</classifier>--> <!--  will get the dependent model jars -->
+        <!--</dependency>-->
+        <!--<dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-arq</artifactId>
             <version>3.5.0</version>
         </dependency>
         <dependency>
+            <groupId>org.aksw.jena-sparql-api</groupId>
+            <artifactId>jena-sparql-api-core</artifactId>
+            <version>3.6.0-3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.aksw.jena-sparql-api</groupId>
+            <artifactId>jena-sparql-api-cache-h2</artifactId>
+            <version>3.6.0-3</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-osgi</artifactId>
             <version>2.13.0</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>nz.ac.waikato.cms.weka</groupId>
             <artifactId>weka-stable</artifactId>
@@ -189,6 +244,9 @@
             <artifactId>spring-boot-devtools</artifactId>
             <optional>true</optional>
         </dependency>
+
+
+
         <!--<dependency>-->
             <!--<groupId>org.springframework.boot</groupId>-->
             <!--<artifactId>spring-boot-starter-tomcat</artifactId>-->
@@ -205,5 +263,11 @@
             <artifactId>ws4j</artifactId>
             <version>1.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.dllearner</groupId>
+            <artifactId>components-core</artifactId>
+            <version>${dllearner.version}</version>
+        </dependency>
+
     </dependencies>
 </project>

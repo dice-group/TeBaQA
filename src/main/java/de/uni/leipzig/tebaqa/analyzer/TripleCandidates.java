@@ -3,6 +3,7 @@ package de.uni.leipzig.tebaqa.analyzer;
 import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
 import edu.stanford.nlp.ie.AbstractSequenceClassifier;
 import edu.stanford.nlp.ie.crf.CRFClassifier;
+import edu.stanford.nlp.io.IOUtils;
 import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import static edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 
@@ -42,7 +44,16 @@ public class TripleCandidates implements IAnalyzer {
     private AbstractSequenceClassifier<CoreLabel> classifier = CRFClassifier.getClassifier(serializedClassifier);
 
     TripleCandidates() throws IOException, ClassNotFoundException {
-        pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
+        Properties props = new Properties();
+        try {
+            props.load(IOUtils.readerFromString("StanfordCoreNLP-german.properties"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        props.remove("annotators");
+        props.setProperty("annotators","tokenize,ssplit,pos,ner,parse");
+        this.pipeline= new StanfordCoreNLP(props);
+        //pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
 
         attribute = new Attribute("TripleCandidatesCount");
     }

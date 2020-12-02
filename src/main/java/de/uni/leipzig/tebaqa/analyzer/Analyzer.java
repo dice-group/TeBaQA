@@ -1,10 +1,8 @@
 package de.uni.leipzig.tebaqa.analyzer;
 
 import org.aksw.mlqa.analyzer.IAnalyzer;
-import org.aksw.mlqa.analyzer.comperative.Comperative;
-import org.aksw.mlqa.analyzer.entityType.EntityPerson;
+
 import org.aksw.mlqa.analyzer.numberOfToken.NumberOfToken;
-import org.aksw.mlqa.analyzer.questionword.QuestionWord;
 import org.apache.log4j.Logger;
 import weka.core.Attribute;
 import weka.core.DenseInstance;

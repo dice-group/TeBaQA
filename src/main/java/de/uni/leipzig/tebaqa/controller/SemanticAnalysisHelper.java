@@ -1,25 +1,20 @@
 package de.uni.leipzig.tebaqa.controller;
 
-import com.hp.hpl.jena.rdf.model.RDFNode;
 import de.uni.leipzig.tebaqa.analyzer.Analyzer;
-import de.uni.leipzig.tebaqa.helper.ClassifierProvider;
-import de.uni.leipzig.tebaqa.helper.QueryMappingFactory;
-import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
-import de.uni.leipzig.tebaqa.helper.StanfordPipelineProvider;
-import de.uni.leipzig.tebaqa.helper.TextUtilities;
-import de.uni.leipzig.tebaqa.helper.Utilities;
-import de.uni.leipzig.tebaqa.model.CustomQuestion;
-import de.uni.leipzig.tebaqa.model.QueryTemplateMapping;
-import de.uni.leipzig.tebaqa.model.ResultsetBinding;
-import de.uni.leipzig.tebaqa.model.SPARQLResultSet;
+import de.uni.leipzig.tebaqa.helper.*;
+import de.uni.leipzig.tebaqa.model.*;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.IndexedWord;
+import edu.stanford.nlp.ling.Label;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
+import edu.stanford.nlp.trees.Dependency;
+import edu.stanford.nlp.trees.TreeCoreAnnotations;
 import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.util.Sets;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
@@ -27,15 +22,8 @@ import weka.classifiers.Classifier;
 import weka.core.Instance;
 
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -56,27 +44,32 @@ public class SemanticAnalysisHelper {
     public SemanticAnalysisHelper() {
         this.pipeline = StanfordPipelineProvider.getSingletonPipelineInstance();
     }
-
-    public static int determineQueryType(String q) {
+    public SemanticAnalysisHelper(StanfordCoreNLP pipeline) {
+            this.pipeline = pipeline;
+    }
+    public int determineQueryType(String q) {
         List<String> selectIndicatorsList = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which".split("\\|"));
         List<String> askIndicatorsList = Arrays.asList("is|are|did|was|does|can".split("\\|"));
         //log.debug("String question: " + q);
         String[] split = q.split("\\s+");
         List<String> firstThreeWords = new ArrayList<>();
+        String firstWord=split[0];
         if (split.length > 3) {
             firstThreeWords.addAll(Arrays.asList(split).subList(0, 3));
         } else {
             firstThreeWords.addAll(Arrays.asList(split));
         }
-        if (SemanticAnalysisHelper.hasAscAggregation(q)) {
+        if (hasAscAggregation(q)) {
             return SPARQLUtilities.SELECT_SUPERLATIVE_ASC_QUERY;
-        } else if (SemanticAnalysisHelper.hasDescAggregation(q)) {
+        } else if (hasDescAggregation(q)) {
             return SPARQLUtilities.SELECT_SUPERLATIVE_DESC_QUERY;
-        } else if (SemanticAnalysisHelper.hasCountAggregation(q)) {
+        } else if (hasCountAggregation(q)) {
             return SPARQLUtilities.SELECT_COUNT_QUERY;
         } else if (firstThreeWords.parallelStream().anyMatch(s -> selectIndicatorsList.contains(s.toLowerCase()))) {
             return SPARQLUtilities.SELECT_QUERY;
-        } else if (firstThreeWords.parallelStream().anyMatch(s -> askIndicatorsList.contains(s.toLowerCase()))) {
+        } /*else if (firstThreeWords.parallelStream().anyMatch(s -> askIndicatorsList.contains(s.toLowerCase()))) {
+            return SPARQLUtilities.ASK_QUERY;*/
+        else if (askIndicatorsList.contains(firstWord)) {
             return SPARQLUtilities.ASK_QUERY;
         } else {
             return SPARQLUtilities.QUERY_TYPE_UNKNOWN;
@@ -105,6 +98,7 @@ public class SemanticAnalysisHelper {
             log.error("There is more than one sentence to analyze: " + text);
         }
         CoreMap sentence = sentences.get(0);
+        //SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
         SemanticGraph dependencyGraph = sentence.get(SemanticGraphCoreAnnotations.EnhancedDependenciesAnnotation.class);
         if (dependencyGraph == null) {
             return sentence.get(SemanticGraphCoreAnnotations.BasicDependenciesAnnotation.class);
@@ -117,58 +111,175 @@ public class SemanticAnalysisHelper {
      * Extracts a map of possible query templates and their graph patterns.
      *
      * @param questions The questions which contain a SPARQL query which will be used as template.
-     * @param nodes     A list containing all entities from DBpedia's ontology.
      * @return A list which contains SPARQL query templates, divided by their number of entities and classes and by
      * their query type (ASK or SELECT).
      */
-    public Map<String, QueryTemplateMapping> extractTemplates(List<CustomQuestion> questions, List<RDFNode> nodes, List<String> properties) {
+    public Map<String, QueryTemplateMapping> extractTemplates(List<Cluster> questions,HashMap<String, Set<String>>[] commonTuples) {
         Map<String, QueryTemplateMapping> mappings = new HashMap<>();
-        for (CustomQuestion question : questions) {
-            String query = question.getQuery();
-            QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question.getQuestionText(), query, nodes, properties);
-            String queryPattern = queryMappingFactory.getQueryPattern();
-            boolean isSuperlativeDesc = false;
-            boolean isSuperlativeAsc = false;
-            boolean isCountQuery = false;
+        //Set<String> wellKnownPredicates = Sets.union(commonTuples[0].keySet(), commonTuples[1].keySet());
+        for (Cluster c : questions) {
+            String graph = c.getGraph();
+            QueryTemplateMapping mapping = new QueryTemplateMapping();
+           // if (c.size() > 10){
+                for (CustomQuestion question : c.getQuestions()) {
+                    String query = question.getQuery();
+                    //QueryMappingFactoryLabels queryMappingFactory = new QueryMappingFactoryLabels(question.getQuestionText(), query,this);
+                    String queryPattern = SPARQLUtilities.resolveNamespaces(query);
+                    queryPattern = queryPattern.replace(" a "," <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ");
+                    int i = 0;
+                    String regex = "<(.+?)>";
+                    Pattern pattern = Pattern.compile(regex);
+                    Matcher m = pattern.matcher(queryPattern);
+                    HashMap<String, Integer> mappedUris = new HashMap<>();
 
-            if (queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("limit 1")) {
-                isSuperlativeDesc = true;
-            } else if (queryPattern.toLowerCase().contains("order by asc") && queryPattern.toLowerCase().contains("limit 1")) {
-                isSuperlativeAsc = true;
-            }
-            if (queryPattern.toLowerCase().contains("count")) {
-                isCountQuery = true;
-            }
-
-            if (!queryPattern.toLowerCase().contains("http://dbpedia.org/resource/")
-                    && !queryPattern.toLowerCase().contains("sum") && !queryPattern.toLowerCase().contains("avg")
-                    && !queryPattern.toLowerCase().contains("min") && !queryPattern.toLowerCase().contains("max")
-                    && !queryPattern.toLowerCase().contains("filter") && !queryPattern.toLowerCase().contains("bound")) {
-                int classCnt = 0;
-                int propertyCnt = 0;
-
-                List<String> triples = Utilities.extractTriples(queryPattern);
-                for (String triple : triples) {
-                    Matcher argumentMatcher = ARGUMENTS_BETWEEN_SPACES.matcher(triple);
-                    int argumentCnt = 0;
-                    while (argumentMatcher.find()) {
-                        String argument = argumentMatcher.group();
-                        if (argument.startsWith("<^") && (argumentCnt == 0 || argumentCnt == 2)) {
-                            classCnt++;
-                        } else if (argument.startsWith("<^") && argumentCnt == 1) {
-                            propertyCnt++;
+                    while (m.find()) {
+                        String group = m.group();
+                        if (!group.contains("^") && !group.contains("http://www.w3.org/2001/XMLSchema")) {
+                            //if (!wellKnownPredicates.contains(m.group(1))) {
+                            if (!mappedUris.containsKey(Pattern.quote(group)))
+                                mappedUris.put(Pattern.quote(group), i);
+                            queryPattern = queryPattern.replaceFirst(Pattern.quote(group), "res/" + mappedUris.get(Pattern.quote(group)));
+                            i++;
+                            //}
                         }
-                        argumentCnt++;
+                    }
+                    boolean isSuperlativeDesc = false;
+                    boolean isSuperlativeAsc = false;
+                    boolean isCountQuery = false;
+
+                    if (queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("limit 1")) {
+                        isSuperlativeDesc = true;
+                    } else if (queryPattern.toLowerCase().contains("order by asc") && queryPattern.toLowerCase().contains("limit 1")) {
+                        isSuperlativeAsc = true;
+                    }
+                    if (queryPattern.toLowerCase().contains("count")) {
+                        isCountQuery = true;
+                    }
+
+                    if (!queryPattern.toLowerCase().contains("http://dbpedia.org/resource/")
+                            && !queryPattern.toLowerCase().contains("'")
+                            && !queryPattern.toLowerCase().contains("union")
+                            && !queryPattern.toLowerCase().contains("sum") && !queryPattern.toLowerCase().contains("avg")
+                            && !queryPattern.toLowerCase().contains("min") && !queryPattern.toLowerCase().contains("max")
+                            && !queryPattern.toLowerCase().contains("filter") && !queryPattern.toLowerCase().contains("bound")) {
+                        int classCnt = 0;
+                        int propertyCnt = 0;
+
+                        List<String> triples = Utilities.extractTriples(queryPattern);
+                        for (String triple : triples) {
+                            Matcher argumentMatcher = ARGUMENTS_BETWEEN_SPACES.matcher(triple);
+                            int argumentCnt = 0;
+                            while (argumentMatcher.find()) {
+                                String argument = argumentMatcher.group();
+                                if (argument.startsWith("<^") && (argumentCnt == 0 || argumentCnt == 2)) {
+                                    classCnt++;
+                                } else if (argument.startsWith("<^") && argumentCnt == 1) {
+                                    propertyCnt++;
+                                }
+                                argumentCnt++;
+                            }
+                        }
+
+                        int finalClassCnt = classCnt;
+                        int finalPropertyCnt = propertyCnt;
+                        if (!mapping.getNumberOfProperties().contains(finalPropertyCnt))
+                            mapping.getNumberOfProperties().add(finalPropertyCnt);
+                        if (!mapping.getNumberOfClasses().contains(finalClassCnt))
+                            mapping.getNumberOfClasses().add(finalClassCnt);
+                        int queryType = SPARQLUtilities.getQueryType(query);
+                        if (isSuperlativeDesc) {
+                            mapping.addSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
+                        } else if (isSuperlativeAsc) {
+                            mapping.addSelectSuperlativeAscTemplate(queryPattern, question.getQuery());
+                        } else if (isCountQuery) {
+                            mapping.addCountTemplate(queryPattern, question.getQuery());
+                        } else if (queryType == SPARQLUtilities.SELECT_QUERY) {
+                            mapping.addSelectTemplate(queryPattern, question.getQuery());
+                        } else if (queryType == SPARQLUtilities.ASK_QUERY) {
+                            mapping.addAskTemplate(queryPattern, question.getQuery());
+                        }
+                        //create a new mapping class
+                        mappings.put(graph, mapping);
+
+                        //log.info(queryPattern);
                     }
                 }
+            //}
+        }
+        return mappings;
+    }
+    /*public Map<String, QueryTemplateMapping> extractTemplates(List<Cluster> questions) {
+        Map<String, QueryTemplateMapping> mappings = new HashMap<>();
+        HashMap<String, Set<String>>[] commonTuples = CommonTupels.getCommonTuples();
+        for (Cluster c : questions){
+            for (CustomQuestion question : c.getQuestions()) {
+                String query = question.getQuery();
+                //QueryMappingFactoryLabels queryMappingFactory = new QueryMappingFactoryLabels(question.getQuestionText(), query,this);
+                String queryPattern = SPARQLUtilities.resolveNamespaces(query);
+                queryPattern = queryPattern.replace("<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>", "a");
+                int i = 0;
+                String regex = "<(.+?)>";
+                Pattern pattern = Pattern.compile(regex);
+                Matcher m = pattern.matcher(queryPattern);
+                HashMap<String, Integer> mappedUris = new HashMap<>();
+                Set<String> wellKnownPredicates = Sets.union(commonTuples[0].keySet(), commonTuples[1].keySet());
+                while (m.find()) {
+                    String group = m.group();
+                    if (!group.contains("^") && !group.contains("http://www.w3.org/2001/XMLSchema")) {
+                        if (!wellKnownPredicates.contains(m.group(1))) {
+                            if (!mappedUris.containsKey(Pattern.quote(group)))
+                                mappedUris.put(Pattern.quote(group), i);
+                            queryPattern = queryPattern.replaceFirst(Pattern.quote(group), "<^VAR_" + mappedUris.get(Pattern.quote(group)) + "^>");
+                            i++;
+                        }
+                    }
+                }
+                boolean isSuperlativeDesc = false;
+                boolean isSuperlativeAsc = false;
+                boolean isCountQuery = false;
 
-                int finalClassCnt = classCnt;
-                int finalPropertyCnt = propertyCnt;
-                String graph = question.getGraph();
-                int queryType = SPARQLUtilities.getQueryType(query);
-                if (mappings.containsKey(graph)) {
-                    QueryTemplateMapping mapping = mappings.get(graph);
-                    if (mapping.getNumberOfClasses() == finalClassCnt && mapping.getNumberOfClasses() == finalPropertyCnt) {
+                if (queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("order by desc") && queryPattern.toLowerCase().contains("limit 1")) {
+                    isSuperlativeDesc = true;
+                } else if (queryPattern.toLowerCase().contains("order by asc") && queryPattern.toLowerCase().contains("limit 1")) {
+                    isSuperlativeAsc = true;
+                }
+                if (queryPattern.toLowerCase().contains("count")) {
+                    isCountQuery = true;
+                }
+
+                if (!queryPattern.toLowerCase().contains("http://dbpedia.org/resource/")
+                        && !queryPattern.toLowerCase().contains("sum") && !queryPattern.toLowerCase().contains("avg")
+                        && !queryPattern.toLowerCase().contains("min") && !queryPattern.toLowerCase().contains("max")
+                        && !queryPattern.toLowerCase().contains("filter") && !queryPattern.toLowerCase().contains("bound")) {
+                    int classCnt = 0;
+                    int propertyCnt = 0;
+
+                    List<String> triples = Utilities.extractTriples(queryPattern);
+                    for (String triple : triples) {
+                        Matcher argumentMatcher = ARGUMENTS_BETWEEN_SPACES.matcher(triple);
+                        int argumentCnt = 0;
+                        while (argumentMatcher.find()) {
+                            String argument = argumentMatcher.group();
+                            if (argument.startsWith("<^") && (argumentCnt == 0 || argumentCnt == 2)) {
+                                classCnt++;
+                            } else if (argument.startsWith("<^") && argumentCnt == 1) {
+                                propertyCnt++;
+                            }
+                            argumentCnt++;
+                        }
+                    }
+
+                    int finalClassCnt = classCnt;
+                    int finalPropertyCnt = propertyCnt;
+                    String graph = question.getGraph();
+                    int queryType = SPARQLUtilities.getQueryType(query);
+                    if (mappings.containsKey(graph)) {
+                        QueryTemplateMapping mapping = mappings.get(graph);
+                        if (!mapping.getNumberOfClasses().contains(finalClassCnt) || !mapping.getNumberOfProperties().contains(finalPropertyCnt)) {
+                            mapping.getNumberOfClasses().add(finalClassCnt);
+                            mapping.getNumberOfProperties().add(finalPropertyCnt);
+
+                        }
                         if (isSuperlativeDesc) {
                             mapping.addSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
                         } else if (isSuperlativeAsc) {
@@ -182,30 +293,31 @@ public class SemanticAnalysisHelper {
                         } else if (queryType == SPARQLUtilities.QUERY_TYPE_UNKNOWN) {
                             log.error("Unknown query type: " + query);
                         }
-                    }
-                } else {
-                    QueryTemplateMapping mapping = new QueryTemplateMapping(classCnt, propertyCnt);
-                    if (isSuperlativeDesc) {
-                        mapping.addSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
-                    } else if (isSuperlativeAsc) {
-                        mapping.addSelectSuperlativeAscTemplate(queryPattern, question.getQuery());
-                    } else if (isCountQuery) {
-                        mapping.addCountTemplate(queryPattern, question.getQuery());
-                    } else if (queryType == SPARQLUtilities.SELECT_QUERY) {
-                        mapping.addSelectTemplate(queryPattern, question.getQuery());
-                    } else if (queryType == SPARQLUtilities.ASK_QUERY) {
-                        mapping.addAskTemplate(queryPattern, question.getQuery());
-                    }
-                    //create a new mapping class
-                    mappings.put(graph, mapping);
-                }
-                //log.info(queryPattern);
-            }
-        }
-        return mappings;
-    }
 
-    public static Map<String, String> getLemmas(String q) {
+                    } else {
+                        QueryTemplateMapping mapping = new QueryTemplateMapping(classCnt, propertyCnt);
+                        if (isSuperlativeDesc) {
+                            mapping.addSelectSuperlativeDescTemplate(queryPattern, question.getQuery());
+                        } else if (isSuperlativeAsc) {
+                            mapping.addSelectSuperlativeAscTemplate(queryPattern, question.getQuery());
+                        } else if (isCountQuery) {
+                            mapping.addCountTemplate(queryPattern, question.getQuery());
+                        } else if (queryType == SPARQLUtilities.SELECT_QUERY) {
+                            mapping.addSelectTemplate(queryPattern, question.getQuery());
+                        } else if (queryType == SPARQLUtilities.ASK_QUERY) {
+                            mapping.addAskTemplate(queryPattern, question.getQuery());
+                        }
+                        //create a new mapping class
+                        mappings.put(graph, mapping);
+                    }
+                    //log.info(queryPattern);
+                }
+            }
+    }
+        return mappings;
+    }*/
+
+    public Map<String, String> getLemmas(String q) {
         if (q.isEmpty()) {
             return new HashMap<>();
         }
@@ -225,7 +337,7 @@ public class SemanticAnalysisHelper {
         return lemmas;
     }
 
-    public static Map<String, String> getPOS(String q) {
+    public Map<String, String> getPOS(String q) {
         if (q.isEmpty()) {
             return new HashMap<>();
         }
@@ -251,7 +363,7 @@ public class SemanticAnalysisHelper {
      * @param sentence A string which contains a sentence.
      * @return If the sentence contains keywords which are used in ascending aggregation queries.
      */
-    public static boolean hasAscAggregation(String sentence) {
+    public boolean hasAscAggregation(String sentence) {
         String[] ascIndicators = new String[]{"first", "oldest", "smallest", "lowest", "shortest", "least"};
         String[] words = sentence.split(NON_WORD_CHARACTERS_REGEX);
         return Arrays.stream(words).anyMatch(Arrays.asList(ascIndicators)::contains);
@@ -263,15 +375,15 @@ public class SemanticAnalysisHelper {
      * @param sentence A string which contains a sentence.
      * @return If the sentence contains keywords which are used in descending aggregation queries.
      */
-    public static boolean hasDescAggregation(String sentence) {
+    public boolean hasDescAggregation(String sentence) {
         String[] descIndicators = new String[]{"largest", "last", "highest", "most", "biggest", "youngest", "longest", "tallest"};
         String[] words = sentence.split(NON_WORD_CHARACTERS_REGEX);
         return Arrays.stream(words).anyMatch(Arrays.asList(descIndicators)::contains);
     }
 
 
-    private static boolean hasCountAggregation(String sentence) {
-        return sentence.toLowerCase().trim().startsWith("how many") || sentence.toLowerCase().trim().startsWith("how much");
+    private boolean hasCountAggregation(String sentence) {
+        return sentence.toLowerCase().trim().startsWith("how many");
     }
 
     /**
@@ -341,13 +453,32 @@ public class SemanticAnalysisHelper {
                 //remove every consecutive spaces
                 .replaceAll("\\s+", " ");
     }
+    public HashMap<String,String>getPosTags(String text){
+        Annotation annotation = new Annotation(text);
+        pipeline.annotate(annotation);
+        List<CoreLabel> tokens = annotation.get(CoreAnnotations.TokensAnnotation.class);
+        HashMap<String,String>posTags=new HashMap<>();
+        for(CoreLabel token:tokens){
+            String value = token.getString(CoreAnnotations.ValueAnnotation.class);
+            String pos = token.getString(CoreAnnotations.PartOfSpeechAnnotation.class);
+            posTags.put(value,pos);
+        }
 
+
+        return posTags;
+    }
+    public List<CoreLabel>getTokens(String text){
+        Annotation annotation = new Annotation(text);
+        pipeline.annotate(annotation);
+        return annotation.get(CoreAnnotations.TokensAnnotation.class);
+
+    }
     public List<IndexedWord> getDependencySequence(SemanticGraph semanticGraph) {
         IndexedWord firstRoot = semanticGraph.getFirstRoot();
         return getDependenciesFromEdge(firstRoot, semanticGraph);
     }
 
-    private static List<IndexedWord> getDependenciesFromEdge(IndexedWord root, SemanticGraph semanticGraph) {
+    private List<IndexedWord> getDependenciesFromEdge(IndexedWord root, SemanticGraph semanticGraph) {
         final String posExclusion = "DT|IN|WDT|W.*|\\.";
         final String lemmaExclusion = "have|do|be|many|much|give|call|list";
         List<IndexedWord> sequence = new ArrayList<>();
@@ -376,14 +507,14 @@ public class SemanticAnalysisHelper {
         return sequence;
     }
 
-    public static int detectQuestionAnswerType(String question) {
+    public int detectQuestionAnswerType(String question) {
         SemanticAnalysisHelper semanticAnalysisHelper = new SemanticAnalysisHelper();
         SemanticGraph semanticGraph = semanticAnalysisHelper.extractDependencyGraph(question);
         List<IndexedWord> sequence = semanticAnalysisHelper.getDependencySequence(semanticGraph);
         Pattern pattern = Pattern.compile("\\w+");
         Matcher m = pattern.matcher(question);
         if (m.find()) {
-            Optional<String> first = SemanticAnalysisHelper.getLemmas(m.group()).values().stream().findFirst();
+            Optional<String> first = getLemmas(m.group()).values().stream().findFirst();
             if (first.isPresent()) {
                 if (first.get().toLowerCase().matches("be|do|have"))
                     return SPARQLResultSet.BOOLEAN_ANSWER_TYPE;
@@ -414,8 +545,97 @@ public class SemanticAnalysisHelper {
         return SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
     }
 
+    ResultsetBinding orderByQueryType(List<ResultsetBinding>bindings){
+        int type=-5;
+        List<ResultsetBinding>select=new ArrayList<>();
+        List<ResultsetBinding>ask=new ArrayList<>();
+        List<ResultsetBinding>count=new ArrayList<>();
+        List<ResultsetBinding>sudesc=new ArrayList<>();
+        List<ResultsetBinding>suasc=new ArrayList<>();
 
-    ResultsetBinding getBestAnswer(Set<ResultsetBinding> results, Map<String, String> entitiyToQuestionMapping, int expectedAnswerType, boolean forceResult) {
+        //for(ResultsetBinding bind:bestAnswersWithMatchingType)
+
+            /*if(hasAscAggregation(bind.getQuery())) ask.add(bind);
+            else if (hasDescAggregation(bind.getQuery()))sudesc.add(bind);
+            else if (hasCountAggregation(bind.getQuery()))count.add(bind);
+            else if (firstThreeWords.parallelStream().anyMatch(s -> selectIndicatorsList.contains(s.toLowerCase()))) {
+                return SPARQLUtilities.SELECT_QUERY;
+            } else if (firstThreeWords.parallelStream().anyMatch(s -> askIndicatorsList.contains(s.toLowerCase()))) {
+                return SPARQLUtilities.ASK_QUERY;
+            } else {
+                return SPARQLUtilities.QUERY_TYPE_UNKNOWN;
+            }*/
+            return null;
+    }
+    ResultsetBinding getBestAnswer(List<ResultsetBinding> results,int expectedAnswerType, boolean forceResult) {
+        results.parallelStream().forEach(resultsetBinding -> {
+            Map<String, String> bindings = resultsetBinding.getBindings();
+            Double rating = 1.0;
+            if (!forceResult && resultsetBinding.getAnswerType() != expectedAnswerType) {
+                resultsetBinding.setRating(0.0);
+            } else {
+                if (rating > 0) {
+                    if (resultsetBinding.getResult().size() >= 50) {
+                        rating *= (1 / 3);
+                    }
+                    if (resultsetBinding.getAnswerType() != expectedAnswerType) {
+                        rating *= 2;
+                    }
+                    if(expectedAnswerType==SPARQLResultSet.NUMBER_ANSWER_TYPE&&results.size()==1)
+                        rating*=3;
+                    if (resultsetBinding.getAnswerType() == SPARQLResultSet.BOOLEAN_ANSWER_TYPE && resultsetBinding.getResult().size() == 1 && resultsetBinding.getResult().stream().findFirst().get().equalsIgnoreCase("false")) {
+                        rating *= (1 / 2);
+                    }
+                } else {
+                    if (resultsetBinding.getResult().size() >= 50) {
+                        rating *= 3;
+                    }
+                    if(expectedAnswerType==SPARQLResultSet.NUMBER_ANSWER_TYPE&&results.size()==1)
+                        rating*=1/3;
+                    if (resultsetBinding.getAnswerType() != expectedAnswerType) {
+                        rating *= (1 / 2);
+                    }
+
+                    if (resultsetBinding.getAnswerType() == SPARQLResultSet.BOOLEAN_ANSWER_TYPE && resultsetBinding.getResult().size() == 1 && resultsetBinding.getResult().stream().findFirst().get().equalsIgnoreCase("false")) {
+                        rating *= 2;
+                    }
+                }
+
+                resultsetBinding.setRating(rating);
+            }
+        });
+
+        Optional<ResultsetBinding> bestAnswerWithMatchingResultType = results.stream().filter(resultsetBinding -> resultsetBinding.getAnswerType() == expectedAnswerType).max(Comparator.comparingDouble(ResultsetBinding::getRating));
+        List<ResultsetBinding>answersWithMatchingType=results.stream().filter(resultsetBinding -> resultsetBinding.getAnswerType() == expectedAnswerType).collect(Collectors.toList());
+        double maxScore=-5;
+        List<ResultsetBinding>bestAnswersWithMatchingType=new ArrayList<>();
+        for(ResultsetBinding binding:answersWithMatchingType){
+            if(binding.getRating()>maxScore){
+                maxScore=binding.getRating();
+                bestAnswersWithMatchingType.clear();
+                bestAnswersWithMatchingType.add(binding);
+            }
+            else if (binding.getRating()== maxScore)bestAnswersWithMatchingType.add(binding);
+
+        }
+        if(bestAnswersWithMatchingType.size()>1){
+            //prefer easier query
+
+        }
+        if (bestAnswersWithMatchingType.size()==1) {
+            return bestAnswersWithMatchingType.get(0);
+        } else {
+            if (forceResult) {
+                return results.stream()
+                        .max(Comparator.comparingDouble(ResultsetBinding::getRating)).orElseGet(ResultsetBinding::new);
+            } else {
+                return results.stream()
+                        .filter(resultsetBinding -> resultsetBinding.getRating() > 0)
+                        .max(Comparator.comparingDouble(ResultsetBinding::getRating)).orElseGet(ResultsetBinding::new);
+            }
+        }
+    }
+    ResultsetBinding getBestAnswer(Set<ResultsetBinding> results,ResourceLinker links, Map<String, String> entitiyToQuestionMapping, int expectedAnswerType, boolean forceResult) {
         results.parallelStream().forEach(resultsetBinding -> {
             Map<String, String> bindings = resultsetBinding.getBindings();
             Double rating = 0.0;
@@ -423,22 +643,41 @@ public class SemanticAnalysisHelper {
                 resultsetBinding.setRating(0.0);
             } else {
                 for (String variable : bindings.keySet()) {
-                    if (variable.toLowerCase().startsWith("class_") || variable.toLowerCase().startsWith("property_")) {
+                    if (variable.toLowerCase().startsWith("var_")) {
                         String uri = bindings.get(variable);
-                        String relatedPhrase = entitiyToQuestionMapping.getOrDefault(uri, "");
-                        double relatednessFactor;
-                        if (relatedPhrase.isEmpty()) {
-                            relatednessFactor = 0;
-                        } else {
-                            relatednessFactor = TextUtilities.countWords(relatedPhrase) - getLevenshteinRatio(SPARQLUtilities.getBaseNameFromDBpediaEntitiy(uri).toLowerCase(), relatedPhrase.toLowerCase());
+                        Double relatednessFector=null;
+                        for(ResourceCandidate e:links.mappedEntities){
+                            if(e.getUri().equals(uri)) {
+                                relatednessFector = e.getRelatednessFactor();
+                                break;
+                            }
                         }
-                        if (bindings.values().stream().filter(s -> s.equals(uri)).collect(Collectors.toList()).size() > 1) {
+                        if(relatednessFector!=null) {
+                            for (ResourceCandidate e : links.mappedProperties) {
+                                if (e.getUri().equals(uri)) {
+                                    relatednessFector = e.getRelatednessFactor();
+                                    break;
+                                }
+                            }
+                        }
+                        if(relatednessFector!=null) {
+                            for (ResourceCandidate e : links.mappedClasses) {
+                                if (e.getUri().equals(uri)) {
+                                    relatednessFector = e.getRelatednessFactor();
+                                    break;
+                                }
+                            }
+                        }
+                        if (relatednessFector==null)
+                            relatednessFector = 0.0;
+
+                        //if (bindings.values().stream().filter(s -> s.equals(uri)).collect(Collectors.toList()).size() > 1) {
                             //If the binding is used more than once reduce its rating
                             //rating += relatednessFactor / 2;
-                            rating = 0.0;
-                        } else {
-                            rating += relatednessFactor;
-                        }
+                        //    rating = 0.0;
+                        //} else {
+                            rating += relatednessFector;
+                        //}
                     } else {
                         //Unbound variables mostly lead to worse results
                         rating = -5.0;
@@ -471,10 +710,25 @@ public class SemanticAnalysisHelper {
             }
         });
 
-
         Optional<ResultsetBinding> bestAnswerWithMatchingResultType = results.stream().filter(resultsetBinding -> resultsetBinding.getAnswerType() == expectedAnswerType).max(Comparator.comparingDouble(ResultsetBinding::getRating));
-        if (bestAnswerWithMatchingResultType.isPresent()) {
-            return bestAnswerWithMatchingResultType.get();
+        List<ResultsetBinding>answersWithMatchingType=results.stream().filter(resultsetBinding -> resultsetBinding.getAnswerType() == expectedAnswerType).collect(Collectors.toList());
+        double maxScore=-5;
+        List<ResultsetBinding>bestAnswersWithMatchingType=new ArrayList<>();
+        for(ResultsetBinding binding:answersWithMatchingType){
+            if(binding.getRating()>maxScore){
+                maxScore=binding.getRating();
+                bestAnswersWithMatchingType.clear();
+                bestAnswersWithMatchingType.add(binding);
+            }
+            else if (binding.getRating()== maxScore)bestAnswersWithMatchingType.add(binding);
+
+        }
+        if(bestAnswersWithMatchingType.size()>1){
+            //prefer easier query
+
+        }
+        if (bestAnswersWithMatchingType.size()==1) {
+            return bestAnswersWithMatchingType.get(0);
         } else {
             if (forceResult) {
                 return results.stream()
@@ -487,7 +741,7 @@ public class SemanticAnalysisHelper {
         }
     }
 
-    public static List<String> getHypernymsFromWiktionary(String s) {
+    public List<String> getHypernymsFromWiktionary(String s) {
         Map<String, List<String>> hypernymMapping = getHypernymMapping();
         return hypernymMapping.getOrDefault(s, new ArrayList<>());
     }
@@ -497,8 +751,8 @@ public class SemanticAnalysisHelper {
         return s.chars().filter(Character::isUpperCase).count();
     }
 
-    public static String removeQuestionWords(String question) {
-        List<String> questionWords = Arrays.asList("list|give me|give|show me|show|who|when|were|what|why|whose|how|where|which|is|are|did|was|does".split("\\|"));
+    public String removeQuestionWords(String question) {
+        List<String> questionWords = Arrays.asList("how many|how much|give me|list|give|show me|show|who|whom|when|were|what|why|whose|how|where|which|is|are|did|was|does".split("\\|"));
 
         for (String questionWord : questionWords) {
             if (question.toLowerCase().startsWith(questionWord)) {

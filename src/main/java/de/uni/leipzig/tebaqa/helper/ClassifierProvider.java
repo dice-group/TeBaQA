@@ -10,6 +10,7 @@ import weka.core.SerializationHelper;
 
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,7 +33,7 @@ public class ClassifierProvider {
      *
      * @return A shared instance of the Classifier.
      */
-    public static Classifier init(Set<String> graphs) {
+    public static Classifier init(List<String> graphs) {
         log.info("Creating weka classifier...");
         ArrayList<Attribute> attributes = new ArrayList<>();
         classAttribute = new Attribute("class", new ArrayList<>(graphs));

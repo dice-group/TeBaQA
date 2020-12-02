@@ -1,6 +1,6 @@
 package de.uni.leipzig.tebaqa.helper;
 
-import com.hp.hpl.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.RDFNode;
 import org.junit.Test;
 
 import java.util.Set;

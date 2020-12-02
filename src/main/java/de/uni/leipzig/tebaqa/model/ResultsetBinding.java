@@ -26,10 +26,16 @@ public class ResultsetBinding {
         this.bindings = new HashMap<>();
         this.result = new HashSet<>();
         this.query = "";
-        this.rating = -1.0;
+        this.rating = 1.0;
         this.answerType = SPARQLResultSet.UNKNOWN_ANSWER_TYPE;
     }
-
+    public boolean isSameBinding(Map<String,String>binding){
+        for(String key:this.bindings.keySet()){
+            if(!this.bindings.get(key).equals(binding.get(key)))
+                return false;
+        }
+        return true;
+    }
     public Map<String, String> getBindings() {
         return bindings;
     }
@@ -153,6 +159,13 @@ public class ResultsetBinding {
         } else {
             return s;
         }
+    }
+
+    public double getNumericalResultValue(){
+        if(this.answerType != SPARQLResultSet.NUMBER_ANSWER_TYPE)
+            throw new UnsupportedOperationException("Cannot get numerical result value for non-numerical result");
+
+        return new Double(this.getResult().stream().findFirst().orElse("0"));
     }
 
     @Override

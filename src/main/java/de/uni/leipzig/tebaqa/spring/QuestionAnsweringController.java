@@ -1,6 +1,8 @@
 package de.uni.leipzig.tebaqa.spring;
 
+import de.uni.leipzig.tebaqa.controller.KeyWordController;
 import de.uni.leipzig.tebaqa.controller.PipelineController;
+import de.uni.leipzig.tebaqa.controller.PipelineControllerTripleTemplates;
 import de.uni.leipzig.tebaqa.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.model.ResultsetBinding;
 import org.apache.log4j.Logger;
@@ -15,8 +17,11 @@ import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
+import java.util.Optional;
 
+import static de.uni.leipzig.tebaqa.helper.KeyWordPipelineProvider.getKeyWordPipeline;
 import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipeline;
+import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipelineTripleTemplates;
 import static de.uni.leipzig.tebaqa.spring.ExtendedQALDAnswer.extractAnswerString;
 
 @RestController
@@ -33,7 +38,7 @@ public class QuestionAnsweringController {
             PipelineController qaPipeline = getQAPipeline();
             String result;
             try {
-                result = new ExtendedQALDAnswer(qaPipeline.answerQuestion(query)).getResult();
+                result = new ExtendedQALDAnswer(qaPipeline.answerLimboQuestion(query)).getResult();
             } catch (Exception e) {
                 result = new ExtendedQALDAnswer(new AnswerToQuestion(new ResultsetBinding(), new HashMap<>())).getResult();
                 log.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);
@@ -52,7 +57,40 @@ public class QuestionAnsweringController {
                                   HttpServletResponse response) {
         return this.answerQuestion(query, lang, response);
     }
+    @RequestMapping(method = RequestMethod.POST, path = "/keyword")
+    public String keywordQuery(@RequestParam String query,
+                                  @RequestParam(required = false, defaultValue = "en") String lang,
+                                  @RequestParam(required = false, defaultValue = "")String type,
+                                  @RequestParam(required = false, defaultValue = "")String property,
+                                  @RequestParam(required = false, defaultValue = "")String connect,
+                                  @RequestParam(required = false, defaultValue = "")String searchIn,
+                                  HttpServletResponse response) {
+        KeyWordController pipeline=getKeyWordPipeline();
+        String result;
+        try {
+            Optional<String>search=Optional.empty();
+            if(!searchIn.equals("all"))search=Optional.of(searchIn);
+            Optional<String>connResoure=Optional.empty();
+            if(!connect.equals(""))connResoure=Optional.of(connect);
+            Optional<String>connProp=Optional.empty();
+            if(!property.equals(""))connProp=Optional.of(property);
+            Optional<String>connClass=Optional.empty();
+            if(!type.equals(""))connClass=Optional.of(type);
+            AnswerToQuestion answer= new AnswerToQuestion(pipeline.searchByKeywords(query, search,connClass,connProp,connResoure));
+            JsonArrayBuilder resultArray = Json.createArrayBuilder();
+            answer.getAnswer().forEach(a -> resultArray.add(extractAnswerString(a)));
+            result = Json.createObjectBuilder()
+                    .add("answers", resultArray)
+                    .add("sparql", answer.getSparqlQuery())
+                    .build().toString();
 
+        } catch (Exception e) {
+            result = Json.createObjectBuilder().add("answers", Json.createArrayBuilder()).build().toString();
+            log.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);
+        }
+        log.info("Answer: " + result);
+        return result;
+    }
     @RequestMapping(method = RequestMethod.POST, path = "/qa-simple")
     public String answerQuestionSimple(@RequestParam String query,
                                        @RequestParam(required = false, defaultValue = "en") String lang,
@@ -62,7 +100,7 @@ public class QuestionAnsweringController {
             PipelineController qaPipeline = getQAPipeline();
             String result;
             try {
-                AnswerToQuestion answer = qaPipeline.answerQuestion(query);
+                AnswerToQuestion answer = qaPipeline.answerLimboQuestion(query);
                 JsonArrayBuilder resultArray = Json.createArrayBuilder();
                 answer.getAnswer().forEach(a -> resultArray.add(extractAnswerString(a)));
                 result = Json.createObjectBuilder()

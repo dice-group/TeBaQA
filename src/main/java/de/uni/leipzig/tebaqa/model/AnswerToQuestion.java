@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.model;
 
+import de.uni.leipzig.tebaqa.helper.SPARQLUtilities;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashSet;
@@ -18,11 +19,28 @@ public class AnswerToQuestion {
         this.sparqlQuery = answer.getQuery();
         this.rdfEntities = entitiyToQuestionMapping;
 
-        if (!this.answer.isEmpty() && this.answer.parallelStream().allMatch(a -> a.startsWith("http://dbpedia.org/"))) {
+        if (!this.answer.isEmpty() && this.answer.parallelStream().allMatch(SPARQLUtilities::isResource)) {
             this.answerType = "uri";
         } else {
             //NO uri but date, string or number
-            if (!this.answer.parallelStream().allMatch(StringUtils::isNumeric)) {
+            if (this.answer.parallelStream().allMatch(StringUtils::isNumeric)) {
+                this.answerType = "number";
+            } else {
+                this.answerType = "literal";
+            }
+        }
+    }
+    public AnswerToQuestion(Set<ResourceCandidate> answers) {
+        this.answer = new HashSet<>();
+        answers.forEach(as->answer.add(as.getUri()));
+        this.sparqlQuery = "";
+        this.rdfEntities = null;
+
+        if (!this.answer.isEmpty() && this.answer.parallelStream().allMatch(SPARQLUtilities::isResource)) {
+            this.answerType = "uri";
+        } else {
+            //NO uri but date, string or number
+            if (this.answer.parallelStream().allMatch(StringUtils::isNumeric)) {
                 this.answerType = "number";
             } else {
                 this.answerType = "literal";
