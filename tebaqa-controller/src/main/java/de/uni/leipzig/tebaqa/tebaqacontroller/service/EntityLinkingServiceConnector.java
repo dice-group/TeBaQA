@@ -10,13 +10,28 @@ import org.springframework.util.MultiValueMap;
 public class EntityLinkingServiceConnector extends AbstractServiceConnector {
 
     public EntityLinkingResponseBean extractEntities(String question, Lang language) {
-        String serviceUrl = ControllerPropertyUtils.getEntityLinkingServiceUrl();
+//        if(ControllerPropertyUtils.ablationEL()) {
+//            return ablation(question);
+//        }
+//        else {
+            String serviceUrl = ControllerPropertyUtils.getEntityLinkingServiceUrl();
 
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("question", question);
-        params.add("lang", language.getLanguageCode());
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("question", question);
+            params.add("lang", language.getLanguageCode());
 
-        ResponseEntity<EntityLinkingResponseBean> responseEntity = this.connect(serviceUrl, params, EntityLinkingResponseBean.class);
-        return responseEntity.getBody();
+            ResponseEntity<EntityLinkingResponseBean> responseEntity = this.connect(serviceUrl, params, EntityLinkingResponseBean.class);
+            return responseEntity.getBody();
+//        }
     }
+
+//    private EntityLinkingResponseBean ablation(String question) {
+//        CustomQuestion enrichedQuestion = AblationProvider.getEnrichedQuestion(question);
+//        EntityLinkingResponseBean entityLinkingResponseBean = new EntityLinkingResponseBean();
+//
+//        if(enrichedQuestion == null)
+//            return entityLinkingResponseBean;
+//
+//        return enrichedQuestion.getLinkedEntities();
+//    }
 }

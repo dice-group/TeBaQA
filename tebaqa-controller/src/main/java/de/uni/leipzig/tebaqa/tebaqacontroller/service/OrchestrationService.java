@@ -8,7 +8,6 @@ import de.uni.leipzig.tebaqa.tebaqacontroller.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.tebaqacontroller.utils.SPARQLUtilities;
 import org.apache.log4j.Logger;
-import org.springframework.boot.configurationprocessor.json.JSONException;
 
 import java.io.IOException;
 import java.util.*;
@@ -31,28 +30,46 @@ public class OrchestrationService {
 //        this.semanticAnalysisHelper = new SemanticAnalysisHelper(new RestServiceConfiguration("http", "tebaqa.cs.upb.de", "8085"), Lang.EN);
     }
 
-    public AnswerToQuestion answerQuestion(String question, Lang lang) throws JsonProcessingException, JSONException {
+    public AnswerToQuestion answerQuestion(String question, Lang lang) throws JsonProcessingException {
         // 1. Template classification
         QueryTemplateResponseBean matchingQueryTemplates = templateClassificationService.getMatchingQueryTemplates(question, lang);
         printClassificationInfos(matchingQueryTemplates);
 
-        if(matchingQueryTemplates.getTemplates().size() > 0) {
-            // 2. Entity linking
-            EntityLinkingResponseBean entityLinkingResponse = entityLinkingService.extractEntities(question, lang);
-            printLinkingInfos(entityLinkingResponse);
+        boolean allTemplatesTried = false;
+        if(matchingQueryTemplates.getTemplates().size() == 0) {
+            LOGGER.warn("No query templates found!");
+            matchingQueryTemplates = templateClassificationService.getAllQueryTemplates(question, lang);
+            allTemplatesTried = true;
+        }
+
+        // 2. Entity linking
+        EntityLinkingResponseBean entityLinkingResponse = entityLinkingService.extractEntities(question, lang);
+        printLinkingInfos(entityLinkingResponse);
+
+        // 3. Query ranking
+        QueryRankingResponseBean queryRankingResponse = queryRankingService.generateQueries(question, lang, matchingQueryTemplates, entityLinkingResponse);
+        printQueryRankingInfos(queryRankingResponse);
+
+        Collection<RatedQuery> ratedQueries = queryRankingResponse.getGeneratedQueries();
+        ResultsetBinding resultsetBinding = this.evaluateAndSelectBestQuery(question, ratedQueries);
+
+        // Try all query templates if an answer is not yet found
+        if(!allTemplatesTried && resultsetBinding.getResult().isEmpty()) {
+            LOGGER.info("None of the queries worked, trying all templates");
+            QueryTemplateResponseBean allQueryTemplates = templateClassificationService.getAllQueryTemplates(question, lang);
+            printClassificationInfos(matchingQueryTemplates);
 
             // 3. Query ranking
-            QueryRankingResponseBean queryRankingResponse = queryRankingService.generateQueries(question, lang, matchingQueryTemplates, entityLinkingResponse);
+            queryRankingResponse = queryRankingService.generateQueries(question, lang, allQueryTemplates, entityLinkingResponse);
             printQueryRankingInfos(queryRankingResponse);
 
-            Collection<RatedQuery> ratedQueries = queryRankingResponse.getGeneratedQueries();
-
-            ResultsetBinding resultsetBinding = this.evaluateAndSelectBestQuery(question, ratedQueries);
-            return new AnswerToQuestion(resultsetBinding);
-        } else {
-            LOGGER.warn("No query templates found!");
-            return new AnswerToQuestion(new ResultsetBinding());
+            ratedQueries = queryRankingResponse.getGeneratedQueries();
+            resultsetBinding = this.evaluateAndSelectBestQuery(question, ratedQueries);
         }
+
+        LOGGER.info("Selected query: " + resultsetBinding.getQuery());
+        return new AnswerToQuestion(resultsetBinding);
+
     }
 
     public ResultsetBinding evaluateAndSelectBestQuery(String question, Collection<RatedQuery> ratedQueries) {
@@ -66,13 +83,74 @@ public class OrchestrationService {
             }
         }
 
+//        ResultsetBinding ablationResult = this.ablation(question, queryResults);
+//        if(ablationResult != null)
+//            return ablationResult;
+
         final QuestionAnswerType expectedAnswerType = semanticAnalysisHelper.detectQuestionAnswerType(question);
         ResultsetBinding rsBinding = this.getBestAnswerNew(queryResults, expectedAnswerType, false);
-        if(rsBinding.getResult().isEmpty()) rsBinding = this.getBestAnswerNew(queryResults, expectedAnswerType, true);
+        if (rsBinding.getResult().isEmpty())
+            rsBinding = this.getBestAnswerNew(queryResults, expectedAnswerType, true);
 
         rsBinding.retrieveRedirects();
         return rsBinding;
     }
+
+//    private ResultsetBinding ablation(String question, List<ResultsetBinding> queryResults) {
+//        // ablation
+//        if(ControllerPropertyUtils.ablationQueryRanking()) {
+//            Set<String> goldenAnswers = AblationProvider.getGoldenAnswers(question);
+//            ResultsetBinding best = null;
+//
+//            // handle differently for boolean answers
+//            if(goldenAnswers.contains("true") || goldenAnswers.contains("false")) {
+//                CustomQuestion enrichedQuestion = AblationProvider.getEnrichedQuestion(question);
+//                if(enrichedQuestion != null) {
+//                    EntityLinkingResponseBean linked = enrichedQuestion.getLinkedEntities();
+//
+//                    if (linked != null && (linked.getClassCandidates().size() + linked.getEntityCandidates().size() + linked.getPropertyCandidates().size() > 0)) {
+//                        List<ResultsetBinding> filtered = queryResults.stream().filter(resultsetBinding -> resultsetBinding.getAnswerType() != QuestionAnswerType.BOOLEAN_ANSWER_TYPE).collect(Collectors.toList());
+//                        for (ResultsetBinding rs : filtered) {
+//                            EntityLinkingResponseBean linkedForThis = AblationProvider.link(rs.getQuery(), question, false);
+//                            boolean p = linkedForThis.getPropertyCandidates().containsAll(linked.getPropertyCandidates()) && linked.getPropertyCandidates().containsAll(linkedForThis.getPropertyCandidates());
+//                            boolean c = linkedForThis.getClassCandidates().containsAll(linked.getClassCandidates()) && linked.getClassCandidates().containsAll(linkedForThis.getClassCandidates());
+//                            boolean e = linkedForThis.getEntityCandidates().containsAll(linked.getEntityCandidates()) && linked.getEntityCandidates().containsAll(linkedForThis.getEntityCandidates());
+//
+//                            if (p & c & e) {
+//                                LOGGER.info("Ablation QR found best boolean result");
+//                                return rs;
+//                            }
+//                        }
+//
+//                    }
+//                }
+//
+//            } else {
+//                // Try to find exact matching results
+//                for (ResultsetBinding result : queryResults) {
+//                    if (goldenAnswers.containsAll(result.getResult()) && result.getResult().containsAll(goldenAnswers)) {
+//                        best = result;
+//                        break;
+//                    }
+//                }
+//                if (best != null) {
+//                    LOGGER.info("Ablation QR found best result");
+//                    return best;
+//                }
+//
+//                // If exact matching result is not found then select one which has maximum common results
+//                Optional<ResultsetBinding> max = queryResults.stream().max(Comparator.comparingInt(o -> Sets.intersection(o.getResult(), goldenAnswers).size()));
+//                if (max.isPresent()) {
+//                    if (Sets.intersection(max.get().getResult(), goldenAnswers).size() > 0) {
+//                        LOGGER.info("Ablation QR found best matching result");
+//                        return max.get();
+//                    }
+//                }
+//            }
+//        }
+//
+//        return null;
+//    }
 
     public ResultsetBinding getBestAnswerNew(List<ResultsetBinding> results, QuestionAnswerType expectedAnswerType, boolean forceResult) {
         Set<QuestionAnswerType> compatibleAnswerTypes = new HashSet<>();
@@ -252,7 +330,7 @@ public class OrchestrationService {
         LOGGER.info("Entities found: " + linkingResponseBean.getEntityCandidates().size());
         linkingResponseBean.getEntityCandidates().forEach(s -> LOGGER.debug(s.getCoOccurrence() + " --> " + s.getUri()));
 
-        LOGGER.debug("RAW JSON: ");
+//        LOGGER.debug("RAW JSON: ");
 //        LOGGER.debug(JSONUtils.convertToJSONString(linkingResponseBean));
 
     }

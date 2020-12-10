@@ -12,6 +12,9 @@ public class TebaqaControllerApplication {
     public static void main(String[] args) {
         LOGGER.info("Starting TeBaQA controller ...");
         SpringApplication.run(TebaqaControllerApplication.class, args);
+
+//        AblationProvider.init();
+
     }
 
 }
