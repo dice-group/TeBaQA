@@ -158,7 +158,7 @@ public class NLPAnalyzerEnglish extends NLPAnalyzerBase {
         } else if (firstThreeWords.stream().anyMatch(s -> SELECT_QUERY_INDICATORS.contains(s.toLowerCase()))) {
             return QueryType.SELECT_QUERY;
         } /*else if (firstThreeWords.parallelStream().anyMatch(s -> askIndicatorsList.contains(s.toLowerCase()))) {
-            return SPARQLUtilities.ASK_QUERY;*/ else if (ASK_QUERY_INDICATORS.contains(firstWord)) {
+            return SPARQLUtilities.ASK_QUERY;*/ else if (ASK_QUERY_INDICATORS.contains(firstWord.toLowerCase())) {
             return QueryType.ASK_QUERY;
         } else {
             return QueryType.QUERY_TYPE_UNKNOWN;
