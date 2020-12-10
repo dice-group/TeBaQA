@@ -11,6 +11,7 @@ import de.uni.leipzig.tebaqa.template.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.template.nlp.ArffGenerator;
 import de.uni.leipzig.tebaqa.template.nlp.ClassifierProvider;
 import de.uni.leipzig.tebaqa.template.nlp.analyzer.Analyzer;
+import de.uni.leipzig.tebaqa.template.util.Constants;
 import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
 import de.uni.leipzig.tebaqa.template.util.Utilities;
 import org.aksw.hawk.datastructures.HAWKQuestion;
@@ -49,10 +50,20 @@ public class WekaClassifier {
     }
 
     public static WekaClassifier getDefaultClassifier() throws IOException {
-        return getClassifierFor(DEFAULT_TRAINING_DATASET);
+        String trainingDatasetName = PropertyUtils.getProperty(Constants.DEFAULT_TRAINING_DATASET);
+        Dataset trainingDataset = DEFAULT_TRAINING_DATASET;
+        for(Dataset d : Dataset.values()) {
+            if(d.name().equalsIgnoreCase(trainingDatasetName)) {
+                LOGGER.info("Training dataset found in properties file: " + trainingDatasetName);
+                trainingDataset = d;
+                break;
+            }
+        }
+        return getClassifierFor(trainingDataset);
     }
 
     public static WekaClassifier getClassifierFor(Dataset dataset) throws IOException {
+        LOGGER.info("Preparing classifier for dataset: " + dataset.name());
         WekaClassifier classifierInstance = classifierInstances.get(dataset);
         if (classifierInstance == null) {
             classifierInstance = new WekaClassifier(dataset);

@@ -176,6 +176,7 @@ public class QueryTemplateMapping {
             return getSingletonSetIfNotNull(superlativeDescTemplate);
         else if (QueryType.SELECT_COUNT_QUERY.equals(queryType)) return getSingletonSetIfNotNull(countTemplates);
         else return getAllAvailableTemplates();
+//        else return Collections.emptySet();
     }
     
     private Set<String> getSingletonSetIfNotNull(String template) {
