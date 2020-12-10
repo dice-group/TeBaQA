@@ -3,10 +3,7 @@ package de.uni.leipzig.tebaqa.entitylinking.service;
 import de.uni.leipzig.tebaqa.entitylinking.nlp.StopWordsUtil;
 import de.uni.leipzig.tebaqa.entitylinking.util.PropertyUtil;
 import de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch.SearchService;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.ClassCandidate;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.RestServiceConfiguration;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
@@ -15,6 +12,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ResourceLinker {
 
@@ -119,20 +117,12 @@ public class ResourceLinker {
             Set<EntityCandidate> matchedEntities = searchService.searchEntities(coOccurrence);
             if (matchedEntities.size() > 0 && matchedEntities.size() <= 20) {
                 entityCandidates.addAll(matchedEntities);
-                matchedEntities.forEach(cand -> {
-                    propertyUris.addAll(cand.getConnectedPropertiesSubject());
-                    propertyUris.addAll(cand.getConnectedPropertiesObject());
-                });
             } else if (matchedEntities.size() > 20) {
                 ambiguousEntityCandidates.put(coOccurrence, matchedEntities);
             }
             //search for Countries
             Set<EntityCandidate> countryEntities = searchService.searchEntitiesOfType(coOccurrence, "http://dbpedia.org/ontology/Country");
             if (countryEntities.size() < 100) {
-                countryEntities.forEach(cand -> {
-                    propertyUris.addAll(cand.getConnectedPropertiesSubject());
-                    propertyUris.addAll(cand.getConnectedPropertiesObject());
-                });
                 entityCandidates.addAll(countryEntities);
             }
 
@@ -158,8 +148,8 @@ public class ResourceLinker {
 
         Set<EntityCandidate> disambiguatedEntities = this.disambiguationService.disambiguateEntities(ambiguousEntityCandidates, this.entityCandidates, this.propertyCandidates, Optional.empty());
         entityCandidates.addAll(disambiguatedEntities);
-        disambiguatedEntities.forEach(cand -> propertyUris.addAll(cand.getConnectedPropertiesSubject()));
-        disambiguatedEntities.forEach(cand -> propertyUris.addAll(cand.getConnectedPropertiesObject()));
+
+        this.removeDuplicates();
 
         LOGGER.info("EntityExtraction finished");
     }
@@ -169,6 +159,51 @@ public class ResourceLinker {
         question = question.replace("(", "");
         question = question.replace(")", "");
         return question;
+    }
+
+    private void removeDuplicates() {
+        Map<String, List<EntityCandidate>> entitiesByUri = this.entityCandidates.stream().collect(Collectors.groupingBy(EntityCandidate::getUri));
+        Set<EntityCandidate> uniqueEntityCandidates = entitiesByUri.keySet().stream().map(
+                uri -> {
+                    double bestScore = entitiesByUri.get(uri).stream().mapToDouble(ResourceCandidate::getDistanceScore).min().getAsDouble();
+                    EntityCandidate bestForThisUri = entitiesByUri.get(uri).stream()
+                            .filter(entityCandidate -> entityCandidate.getDistanceScore() == bestScore)
+                            .max(Comparator.comparingInt(value -> value.getCoOccurrence().length())).get();
+                    return bestForThisUri;
+                })
+                .collect(Collectors.toSet());
+        this.entityCandidates.clear();
+        this.entityCandidates.addAll(uniqueEntityCandidates);
+        this.entityCandidates.forEach(entityCandidate -> {
+            propertyUris.addAll(entityCandidate.getConnectedPropertiesSubject());
+            propertyUris.addAll(entityCandidate.getConnectedPropertiesObject());
+        });
+
+        Map<String, List<PropertyCandidate>> propertiesByUri = this.propertyCandidates.stream().collect(Collectors.groupingBy(PropertyCandidate::getUri));
+        Set<PropertyCandidate> uniquePropertyCandidates = propertiesByUri.keySet().stream().map(
+                uri -> {
+                    double bestScore = propertiesByUri.get(uri).stream().mapToDouble(ResourceCandidate::getDistanceScore).min().getAsDouble();
+                    PropertyCandidate bestForThisUri = propertiesByUri.get(uri).stream()
+                            .filter(candidate -> candidate.getDistanceScore() == bestScore)
+                            .max(Comparator.comparingInt(value -> value.getCoOccurrence().length())).get();
+                    return bestForThisUri;
+                })
+                .collect(Collectors.toSet());
+        this.propertyCandidates.clear();
+        this.propertyCandidates.addAll(uniquePropertyCandidates);
+
+        Map<String, List<ClassCandidate>> classesByUri = this.classCandidates.stream().collect(Collectors.groupingBy(ClassCandidate::getUri));
+        Set<ClassCandidate> uniqueClassCandidates = classesByUri.keySet().stream().map(
+                uri -> {
+                    double bestScore = classesByUri.get(uri).stream().mapToDouble(ResourceCandidate::getDistanceScore).min().getAsDouble();
+                    ClassCandidate bestForThisUri = classesByUri.get(uri).stream()
+                            .filter(candidate -> candidate.getDistanceScore() == bestScore)
+                            .max(Comparator.comparingInt(value -> value.getCoOccurrence().length())).get();
+                    return bestForThisUri;
+                })
+                .collect(Collectors.toSet());
+        this.classCandidates.clear();
+        this.classCandidates.addAll(uniqueClassCandidates);
     }
 
     public void printInfos() {

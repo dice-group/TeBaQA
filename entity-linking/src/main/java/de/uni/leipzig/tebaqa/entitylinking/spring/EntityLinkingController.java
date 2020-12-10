@@ -47,13 +47,13 @@ public class EntityLinkingController {
     private static void printInfos(EntityLinkingResponseBean linkedResources) {
         LOGGER.info("Entity linking finished");
         LOGGER.info("Classes found: " + linkedResources.getClassCandidates().size());
-        linkedResources.getClassCandidates().forEach(s -> LOGGER.debug(s.getCoOccurrence() + " --> " + s.getUri()));
+        linkedResources.getClassCandidates().forEach(s -> LOGGER.info(s.getCoOccurrence() + " --> " + s.getUri()));
 
         LOGGER.info("Properties found: " + linkedResources.getPropertyCandidates().size());
-        linkedResources.getPropertyCandidates().forEach(s -> LOGGER.debug(s.getCoOccurrence() + " --> " + s.getUri()));
+        linkedResources.getPropertyCandidates().forEach(s -> LOGGER.info(s.getCoOccurrence() + " --> " + s.getUri()));
 
         LOGGER.info("Entities found: " + linkedResources.getEntityCandidates().size());
-        linkedResources.getEntityCandidates().forEach(s -> LOGGER.debug(s.getCoOccurrence() + " --> " + s.getUri()));
+        linkedResources.getEntityCandidates().forEach(s -> LOGGER.info(s.getCoOccurrence() + " --> " + s.getUri()));
     }
 
 
