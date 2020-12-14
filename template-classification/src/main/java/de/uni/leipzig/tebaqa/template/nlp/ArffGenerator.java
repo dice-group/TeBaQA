@@ -50,10 +50,15 @@ public class ArffGenerator {
         //Create instance and set the class attribute missing for testing
         //Create instance with the class attribute for training
         trainQuestions.forEach(question -> {
-            //Create instance with the class attribute for training
-            Instance trainInstance = analyzer.analyze(question.getQuestionText());
-            trainInstance.setValue(classAttribute, question.getGraph());
-            trainingSet.add(trainInstance);
+            try {
+                //Create instance with the class attribute for training
+                Instance trainInstance = analyzer.analyze(question.getQuestionText());
+                trainInstance.setValue(classAttribute, question.getGraph());
+                trainingSet.add(trainInstance);
+            } catch (Exception e) {
+                log.warn("Training error: " + question.getQuestionText());
+                log.warn("Training error: " + e.getMessage());
+            }
         });
 
         String arffTrainFileAbsolutePath = PropertyUtils.getArffTrainFileAbsolutePath(datasetName);

@@ -40,8 +40,8 @@ public class ResourceLinker {
         this.entityCandidates = new HashSet<>();
         this.propertyCandidates = new HashSet<>();
         this.classCandidates = new HashSet<>();
-        this.semanticAnalysisHelper = language.getSemanticAnalysisHelper();
-//        this.semanticAnalysisHelper = new SemanticAnalysisHelper(new RestServiceConfiguration("http", "tebaqa.cs.upb.de", "8085"), language);
+//        this.semanticAnalysisHelper = language.getSemanticAnalysisHelper();
+        this.semanticAnalysisHelper = new SemanticAnalysisHelper(new RestServiceConfiguration("http", "tebaqa.cs.upb.de", "8085"), language);
         this.searchService = new SearchService(PropertyUtil.getElasticSearchConnectionProperties());
         this.disambiguationService = new DisambiguationService(this.searchService);
     }
@@ -107,7 +107,9 @@ public class ResourceLinker {
         }
         coOccurrenceList = filteredCoOccurrences;
 
+
         coOccurrenceList.sort((s1, s2) -> -(s1.length() - s2.length()));
+        coOccurrenceList = coOccurrenceList.stream().filter(s -> s.split("\\s+").length < 7).collect(Collectors.toList());
         this.coOccurrences.addAll(coOccurrenceList);
 
         HashMap<String, Set<EntityCandidate>> ambiguousEntityCandidates = new HashMap<>();

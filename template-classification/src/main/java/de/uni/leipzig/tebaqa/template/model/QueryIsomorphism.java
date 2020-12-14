@@ -1,7 +1,5 @@
 package de.uni.leipzig.tebaqa.template.model;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import de.uni.leipzig.tebaqa.template.util.TextUtils;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
@@ -24,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 
@@ -39,8 +38,8 @@ public class QueryIsomorphism {
         //HashMap<String,Set<String>>predicateToSubjectType=commonPredicates[0];
         //HashMap<String,Set<String>>predicateToObjectType=commonPredicates[1];
         LOGGER.debug("Generating SPARQL Query graphs...");
-        BiMap<String, String> inverseQueryMap = HashBiMap.create(queries).inverse();
-        clusters = new ArrayList<>(new ArrayList<>());
+//        BiMap<String, String> inverseQueryMap = HashBiMap.create(queries).inverse();
+        clusters = new ArrayList<>();
         HashMap<Graph, Integer> graphs = new HashMap<>();
         HashMap<String, List<String>> graphsWithQuestion = new HashMap<>();
         Map<String, Query> parsedQueries = new HashMap<>();
@@ -52,12 +51,8 @@ public class QueryIsomorphism {
 
             try {
                 ParameterizedSparqlString pss = new ParameterizedSparqlString();
+                pss.setNsPrefixes(TextUtils.getWikiDataPrefixes());
                 pss.append(s);
-                pss.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
-                pss.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-                pss.setNsPrefix("xsd", "http://www.w3.org/2001/XMLSchema#");
-                pss.setNsPrefix("dbo", "http://dbpedia.org/ontology/");
-                pss.setNsPrefix("yago", "http://dbpedia.org/class/yago/");
                 query = pss.asQuery();
             } catch (QueryParseException e) {
                 LOGGER.warn("Query: " + s);
@@ -152,8 +147,12 @@ public class QueryIsomorphism {
                 //question.setSparqlQuery(inverseQueryMap.get(s));
                 cluster.addQuestion(question);
             }
-            if (cluster.getQuestions().size() >= 10)
+            if (cluster.getQuestions().size() >= 100) {
+                List<CustomQuestion> truncated = cluster.getQuestions().stream().limit(150).collect(Collectors.toList());
+                cluster.getQuestions().clear();
+                cluster.getQuestions().addAll(truncated);
                 clusters.add(cluster);
+            }
         }
     }
 

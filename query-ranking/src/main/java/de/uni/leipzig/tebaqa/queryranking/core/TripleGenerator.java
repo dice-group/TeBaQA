@@ -76,7 +76,7 @@ public class TripleGenerator {
     private Set<Triple> generateRDFTypeTriples() {
         Set<Triple> triples = new HashSet<>();
         for (ClassCandidate candidate : classCandidates) {
-            Triple triple = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, "a", candidate.getUri());
+            Triple triple = new Triple(TripleTemplate.VARIABLE_PLACEHOLDER, Constants.INSTANCE_OF, candidate.getUri());
             triple.multiplyRating(candidate.getSimilarityScore()); // TODO verify rating
             triple.addUsedClass(candidate);
             triples.add(triple);
@@ -207,7 +207,8 @@ public class TripleGenerator {
             Set<Triple> compoundCandidates;
 
             if (TripleTemplate.Pattern.V_R_V.sameAs(templateWith1Res.getPatternString()) &&
-                    (candidate.getPredicate().equalsIgnoreCase("a") || candidate.getPredicate().equalsIgnoreCase(RDF.type.getURI())))
+//                    (candidate.getPredicate().equalsIgnoreCase("a") || candidate.getPredicate().equalsIgnoreCase(RDF.type.getURI())))
+                    (candidate.getPredicate().equalsIgnoreCase(Constants.INSTANCE_OF)))
                 compoundCandidates = generateTypePropertyTriples(candidate, templateWith1Res);
             else
                 compoundCandidates = generateTuplesWithTwoVariables(candidate, templateWith1Res);

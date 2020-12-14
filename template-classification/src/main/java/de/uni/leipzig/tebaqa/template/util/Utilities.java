@@ -224,7 +224,8 @@ public class Utilities {
             //}
 
             //add graph <-> query template mapping entry
-            mappings.put(graph, mapping);
+            if(!mapping.getAllAvailableTemplates().isEmpty())
+                mappings.put(graph, mapping);
         }
         return mappings;
     }

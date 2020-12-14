@@ -35,6 +35,7 @@ public class ElasticSearchClient {
     private static final String CONNECTED_RESOURCE_OBJECT = "connected_resource_object";
     private static final String CONNECTED_PROPERTY_SUBJECT = "connected_property_subject";
     private static final String CONNECTED_PROPERTY_OBJECT = "connected_property_object";
+    private static final String WIKIDATA_TYPE_PROP = "http://www.wikidata.org/prop/direct/P31";
     private String entityIndex;
     private String propertyIndex;
     private String classIndex;
@@ -264,7 +265,12 @@ public class ElasticSearchClient {
     }
 
     public Set<ClassCandidate> searchClass(String coOccurrence, int maxNumberOfResults) throws IOException {
-        QueryBuilder queryBuilder = new MatchQueryBuilder(LABEL, coOccurrence).operator(Operator.AND).fuzziness(Fuzziness.AUTO).prefixLength(0).maxExpansions(2).fuzzyTranspositions(true);
+        BoolQueryBuilder queryBuilder = new BoolQueryBuilder();
+        queryBuilder.must(termQuery(CONNECTED_PROPERTY_OBJECT, WIKIDATA_TYPE_PROP));
+
+        QueryBuilder labelQueryBuilder = new MatchQueryBuilder(LABEL, coOccurrence).operator(Operator.AND).fuzziness(Fuzziness.AUTO).prefixLength(0).maxExpansions(2).fuzzyTranspositions(true);
+        queryBuilder.should(labelQueryBuilder);
+
         Set<ClassCandidate> classCandidates = this.queryClassIndex(queryBuilder, maxNumberOfResults);
         classCandidates.forEach(classCandidate -> classCandidate.setCoOccurrenceAndScore(coOccurrence));
         return classCandidates;
@@ -279,7 +285,11 @@ public class ElasticSearchClient {
         for (SearchHit hit : topHits.getHits().getHits()) {
             Map<String, Object> sources = hit.getSourceAsMap();
             Set<String> labels = prepareSetFromSource(sources.get(LABEL));
-            classCandidates.add(new ClassCandidate(sources.get(URI).toString(), labels));
+            String uri = hit.getId();
+
+            if(labels != null && !labels.isEmpty() && uri != null && !uri.isEmpty()) {
+                classCandidates.add(new ClassCandidate(uri, labels));
+            }
         }
 
         return classCandidates;
