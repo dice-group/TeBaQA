@@ -347,9 +347,4 @@ public class WekaClassifier {
     public Collection<QueryTemplateMapping> getAllQueryTemplates() {
         return this.graphToQueryTemplateMappings.values();
     }
-
-    public static void main(String[] args) {
-        WekaClassifier w = new WekaClassifier(Dataset.LCQUAD);
-        w.trainClassifier();
-    }
 }
