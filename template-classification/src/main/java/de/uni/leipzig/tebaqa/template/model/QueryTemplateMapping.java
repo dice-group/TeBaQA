@@ -117,14 +117,14 @@ public class QueryTemplateMapping {
         if (this.selectTemplate == null)
             this.selectTemplate = template;
 
-        this.selectQueries.add(originalQuery);
+//        this.selectQueries.add(originalQuery);
     }
 
     public void setSelectSuperlativeAscTemplate(String template, String originalQuery) {
         if (this.superlativeAscTemplate == null)
             this.superlativeAscTemplate = template;
 
-        this.superlativeAscQueries.add(originalQuery);
+//        this.superlativeAscQueries.add(originalQuery);
     }
 
     public void setCountTemplate(String template, String originalQuery) {
@@ -138,14 +138,14 @@ public class QueryTemplateMapping {
         if (this.superlativeDescTemplate == null)
             this.superlativeDescTemplate = template;
 
-        this.superlativeDescQueries.add(originalQuery);
+//        this.superlativeDescQueries.add(originalQuery);
     }
 
     public void setAskTemplate(String template, String originalQuery) {
         if (this.askTemplate == null)
             this.askTemplate = template;
 
-        this.askQueries.add(originalQuery);
+//        this.askQueries.add(originalQuery);
     }
 
     public List<Integer> getNumberOfClasses() {

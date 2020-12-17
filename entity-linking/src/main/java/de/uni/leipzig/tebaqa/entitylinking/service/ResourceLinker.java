@@ -107,7 +107,9 @@ public class ResourceLinker {
         }
         coOccurrenceList = filteredCoOccurrences;
 
+
         coOccurrenceList.sort((s1, s2) -> -(s1.length() - s2.length()));
+        coOccurrenceList = coOccurrenceList.stream().filter(s -> s.split("\\s+").length < 7).collect(Collectors.toList());
         this.coOccurrences.addAll(coOccurrenceList);
 
         HashMap<String, Set<EntityCandidate>> ambiguousEntityCandidates = new HashMap<>();
