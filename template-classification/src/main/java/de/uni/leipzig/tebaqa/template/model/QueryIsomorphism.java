@@ -46,12 +46,18 @@ public class QueryIsomorphism {
         for (String s : queries.keySet()) {
             //build the graph associated to the query
             final Graph g = GraphFactory.createDefaultGraph();
-            Query query = new Query();
+//            Query query = new Query();
+            Query query = null;
 
             try {
                 ParameterizedSparqlString pss = new ParameterizedSparqlString();
                 pss.setNsPrefixes(TextUtils.getWikiDataPrefixes());
                 pss.append(s);
+//                pss.setNsPrefix("rdfs", "http://www.w3.org/2000/01/rdf-schema#");
+//                pss.setNsPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+//                pss.setNsPrefix("xsd", "http://www.w3.org/2001/XMLSchema#");
+//                pss.setNsPrefix("dbo", "http://dbpedia.org/ontology/");
+//                pss.setNsPrefix("yago", "http://dbpedia.org/class/yago/");
                 query = pss.asQuery();
             } catch (QueryParseException e) {
                 LOGGER.warn("Query: " + s);

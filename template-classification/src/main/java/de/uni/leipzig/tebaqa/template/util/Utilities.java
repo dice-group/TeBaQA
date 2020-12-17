@@ -21,6 +21,7 @@ public class Utilities {
 
     public static Pattern BETWEEN_CURLY_BRACES = Pattern.compile("\\{(.*?)\\}");
     public static Pattern ARGUMENTS_BETWEEN_SPACES = Pattern.compile("\\S+");
+    public static Pattern COUNT_REGEX = Pattern.compile("select\\s+.*count\\s*\\(\\?\\w+\\).*where.*");
 
     public static List<String> extractTriples(String query) {
         List<String> triples = new ArrayList<>();
@@ -127,6 +128,7 @@ public class Utilities {
                 //QueryMappingFactoryLabels queryMappingFactory = new QueryMappingFactoryLabels(question.getQuestionText(), query,this);
                 String queryPattern = SPARQLUtilities.resolveNamespaces(query);
                 queryPattern = queryPattern.replace(" a ", " <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ");
+                queryPattern = queryPattern.replaceAll("\\s+", " ");
                 int i = 0;
                 String regex = "<(.+?)>";
                 Pattern pattern = Pattern.compile(regex);
@@ -153,7 +155,8 @@ public class Utilities {
                 } else if ((queryPattern.toLowerCase().contains("order by asc") || queryPattern.toLowerCase().contains("order by ")) && queryPattern.toLowerCase().contains("limit 1")) {
                     isSuperlativeAsc = true;
                 }
-                if (queryPattern.trim().toLowerCase().startsWith("select count(") || queryPattern.trim().toLowerCase().startsWith("select (count(")) {
+//                if (queryPattern.trim().toLowerCase().startsWith("select count(?") || queryPattern.trim().toLowerCase().startsWith("select (count(")) {
+                if (COUNT_REGEX.matcher(queryPattern.trim().toLowerCase()).find()) {
                     isCountQuery = true;
                 }
 

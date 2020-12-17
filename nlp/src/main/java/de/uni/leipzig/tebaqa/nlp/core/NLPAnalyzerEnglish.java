@@ -237,9 +237,9 @@ public class NLPAnalyzerEnglish extends NLPAnalyzerBase {
     }
 
     public static void main(String[] args) {
-        Sentence sentence = new Sentence("Marie was born in Paris.");
-        System.out.println(sentence.words());
-        System.out.println(sentence.lemmas());
+        NLPAnalyzer a = new NLPAnalyzerEnglish();
+        QuestionAnswerType questionAnswerType = a.detectQuestionAnswerType("What is the river whose source is Cowombat  Flat and has it's mouth located in Murray Mouth?");
+        System.out.println(questionAnswerType);
 
     }
 }
