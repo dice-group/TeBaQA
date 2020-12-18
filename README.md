@@ -36,6 +36,18 @@ It will be available under localhost:8187
   - `lang`: The language of the question (default:`en`) *Note: Other languages than English haven't been implemented yet.*
 - An example request could look like this: 
   - `http://localhost:8181/qa?query=What is the original title of the interpretation of dreams?&lang=en`
-  
+## Evaluation
+- QALD-8: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012090005
+- QALD-9: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012050000
+- LC-QUAD v1: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012160002
+### Ablation study
+- perfect Classification: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012070002
+- perfect Classification and Entity Linking: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012090000
+- perfect Classification and Ranking: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012090001
+- perfect Entity Linking: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012070004
+- perfect Entity Linking and Ranking: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012080001
+- perfect Ranking: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012080000
+- perfect Entity Classification,Entity Linking and Ranking: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012080002
+
 ## Credit
 - [DBpedia Chatbot](https://github.com/dbpedia/chatbot): Styling of the result cards.
