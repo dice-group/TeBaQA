@@ -30,7 +30,7 @@ public class QueryGenerator {
             ratedQueries.forEach(ratedQuery -> ratedQuery.setQueryTemplate(queryTemplate));
             generatedQueries.addAll(ratedQueries);
         }
-
+        minifyResponse(generatedQueries);
         return new QueryRankingResponseBean(generatedQueries);
     }
 
@@ -82,7 +82,6 @@ public class QueryGenerator {
             }
         }
 
-        minifyResponse(queries);
         return queries;
     }
 
@@ -90,20 +89,28 @@ public class QueryGenerator {
      * This is useful because type:Country entities have large number of connected resources which increases the
      * response size*/
     private static void minifyResponse(Set<RatedQuery> queries) {
+//        queries.forEach(ratedQuery -> {
+//            Set<EntityCandidate> usedEntities = ratedQuery.getUsedEntities();
+//            Set<EntityCandidate> minifiedUsedEntities = new HashSet<>(usedEntities.size());
+//            usedEntities.forEach(entity -> {
+//                EntityCandidate copy = JSONUtils.safeDeepCopy(entity, EntityCandidate.class);
+//                if (copy != null) {
+//                    copy.getConnectedPropertiesObject().clear();
+//                    copy.getConnectedPropertiesSubject().clear();
+//                    copy.getConnectedResourcesObject().clear();
+//                    copy.getConnectedResourcesSubject().clear();
+//                    minifiedUsedEntities.add(copy);
+//                }
+//            });
+//            ratedQuery.setUsedEntities(minifiedUsedEntities);
+//        });
         queries.forEach(ratedQuery -> {
-            Set<EntityCandidate> usedEntities = ratedQuery.getUsedEntities();
-            Set<EntityCandidate> minifiedUsedEntities = new HashSet<>(usedEntities.size());
-            usedEntities.forEach(entity -> {
-                EntityCandidate copy = JSONUtils.safeDeepCopy(entity, EntityCandidate.class);
-                if (copy != null) {
-                    copy.getConnectedPropertiesObject().clear();
-                    copy.getConnectedPropertiesSubject().clear();
-                    copy.getConnectedResourcesObject().clear();
-                    copy.getConnectedResourcesSubject().clear();
-                    minifiedUsedEntities.add(copy);
-                }
+            ratedQuery.getUsedEntities().forEach(entity -> {
+                entity.getConnectedPropertiesObject().clear();
+                entity.getConnectedPropertiesSubject().clear();
+                entity.getConnectedResourcesObject().clear();
+                entity.getConnectedResourcesSubject().clear();
             });
-            ratedQuery.setUsedEntities(minifiedUsedEntities);
         });
     }
 

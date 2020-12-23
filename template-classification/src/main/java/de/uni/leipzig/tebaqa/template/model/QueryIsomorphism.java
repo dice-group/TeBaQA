@@ -38,7 +38,6 @@ public class QueryIsomorphism {
         //HashMap<String,Set<String>>predicateToSubjectType=commonPredicates[0];
         //HashMap<String,Set<String>>predicateToObjectType=commonPredicates[1];
         LOGGER.debug("Generating SPARQL Query graphs...");
-//        BiMap<String, String> inverseQueryMap = HashBiMap.create(queries).inverse();
         clusters = new ArrayList<>();
         HashMap<Graph, Integer> graphs = new HashMap<>();
         HashMap<String, List<String>> graphsWithQuestion = new HashMap<>();

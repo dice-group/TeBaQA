@@ -55,9 +55,10 @@ public class OrchestrationService {
 
         // Try all query templates if an answer is not yet found
         if(!allTemplatesTried && resultsetBinding.getResult().isEmpty()) {
-            LOGGER.info("None of the queries worked, trying all templates");
+            LOGGER.info("None of the queries worked, trying all other templates");
             QueryTemplateResponseBean allQueryTemplates = templateClassificationService.getAllQueryTemplates(question, lang);
-            printClassificationInfos(matchingQueryTemplates);
+            allQueryTemplates.getTemplates().removeAll(matchingQueryTemplates.getTemplates());
+            printClassificationInfos(allQueryTemplates);
 
             // 3. Query ranking
             queryRankingResponse = queryRankingService.generateQueries(question, lang, allQueryTemplates, entityLinkingResponse);

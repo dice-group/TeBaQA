@@ -229,7 +229,11 @@ public class NLPAnalyzerEnglish extends NLPAnalyzerBase {
     }
 
     private boolean hasCountAggregation(String sentence) {
-        return sentence.toLowerCase().trim().startsWith("how many");
+        String trim = sentence.toLowerCase().trim();
+        return trim.contains("how many") || trim.startsWith("count ")
+                || trim.contains("give me the number") || trim.contains("give me a number")
+                || trim.contains("give me the total number") || trim.contains("give me a total number")
+                || trim.contains("give me the count") || trim.contains("give me a count");
     }
 
     public static void main(String[] args) {

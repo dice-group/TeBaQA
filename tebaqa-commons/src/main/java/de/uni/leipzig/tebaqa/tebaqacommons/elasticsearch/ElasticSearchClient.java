@@ -166,8 +166,10 @@ public class ElasticSearchClient {
                 }
                 label.addAll(surnames);
             }*/
-            EntityCandidate candidate = new EntityCandidate(name, label, connectedPropertiesSubject, connectedPropertiesObject, connectedResourcesSubject, connectedResourcesObject, types);
-            candidates.add(candidate);
+            if(!label.isEmpty()) {
+                EntityCandidate candidate = new EntityCandidate(name, label, connectedPropertiesSubject, connectedPropertiesObject, connectedResourcesSubject, connectedResourcesObject, types);
+                candidates.add(candidate);
+            }
         }
 
         return candidates;
@@ -192,6 +194,9 @@ public class ElasticSearchClient {
 
     private Set<String> prepareSetFromSource(Object source) {
         Set<String> target = new HashSet<>();
+        if(source == null)
+            return target;
+
         if (source instanceof Collection)
             target.addAll((ArrayList<String>) source);
         else if (source instanceof String)
@@ -254,7 +259,9 @@ public class ElasticSearchClient {
             if (searchSynonyms) {
                 labels.addAll(prepareSetFromSource(sources.get(SYNONYMS)));
             }
-            candidates.add(new PropertyCandidate(sources.get(URI).toString(), labels));
+
+            if(!labels.isEmpty())
+                candidates.add(new PropertyCandidate(sources.get(URI).toString(), labels));
         }
 
         return candidates;
