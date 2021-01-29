@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class OrchestrationService {
 
     private static final Logger LOGGER = Logger.getLogger(OrchestrationService.class);
+    private static final String SKOS_CONCEPT = "http://www.w3.org/2004/02/skos/core#Concept";
 
     private final TemplateClassificationServiceConnector templateClassificationService;
     private final EntityLinkingServiceConnector entityLinkingService;
@@ -215,6 +216,23 @@ public class OrchestrationService {
 ////                    resultsetBinding.setRating(resultsetBinding.getRating() / resultsetBinding.getResult().size());
 ////                });
 //            }
+
+            matchingResults.forEach(resultsetBinding -> {
+                RatedQuery ratedQuery = resultsetBinding.getRatedQuery();
+
+                // Queries like ?var a <class>, too generic.
+                if(ratedQuery.getUsedClasses().size() == 1 && ratedQuery.getUsedEntities().size() == 0) {
+                    ratedQuery.setRating(ratedQuery.getRating() / 2);
+                }
+
+                // Similar as above but with dc_subject and "category:" resources
+                if(ratedQuery.getUsedProperties().size() == 0 &&
+                        ratedQuery.getUsedEntities().size() == 1 &&
+                        ratedQuery.getUsedEntities().stream().findFirst().get().getTypes().contains(SKOS_CONCEPT)) {
+                    ratedQuery.setRating(ratedQuery.getRating() / 2);
+                }
+            });
+
             Map<Double, List<ResultsetBinding>> resultByRating = matchingResults.stream().collect(Collectors.groupingBy(ResultsetBinding::getRating));
             Double maxRating = resultByRating.keySet().stream().max(Double::compareTo).get();
             List<ResultsetBinding> bestResults = resultByRating.get(maxRating);
