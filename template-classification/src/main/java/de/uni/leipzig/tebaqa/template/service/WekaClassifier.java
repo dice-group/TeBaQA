@@ -347,4 +347,21 @@ public class WekaClassifier {
     public Collection<QueryTemplateMapping> getAllQueryTemplates() {
         return this.graphToQueryTemplateMappings.values();
     }
+
+    public static void main(String[] args) {
+        StanfordPipelineProvider.getSingletonPipelineInstance(Lang.EN);
+        String question = "In what year did the population of Amazonas reach 4063614?";
+
+        List<Attribute> attributes = new ArrayList<>();
+
+        // Add all occurring graphs(=class attribute) as possible attribute values
+        //Set<String> graphs = trainQuestions.parallelStream().map(CustomQuestion::getGraph).collect(Collectors.toSet());
+        Attribute classAttribute = new Attribute("class", Lists.newArrayList("some graph"));
+        attributes.add(classAttribute);
+        Analyzer analyzer = new Analyzer(attributes);
+
+        Instance instance = analyzer.analyze(question);
+        System.out.println(instance);
+
+    }
 }
