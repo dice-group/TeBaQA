@@ -131,7 +131,7 @@ public class QueryTemplateMapping {
         if (this.countTemplates == null)
             this.countTemplates = template;
 
-        this.countQueries.add(originalQuery);
+//        this.countQueries.add(originalQuery);
     }
 
     public void setSelectSuperlativeDescTemplate(String template, String originalQuery) {
