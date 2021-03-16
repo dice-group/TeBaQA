@@ -27,6 +27,10 @@ sudo docker run -d -p 8187:8080 -t tebaqa --restart always
 ```
 It will be available under localhost:8187
 
+## Citation
+
+Vollmers, D., Jalota, R., Moussallem, D., Topiwala, H., Ngomo, A. C. N., & Usbeck, R. (2021). Knowledge Graph Question Answering using Graph-Pattern Isomorphism. arXiv preprint arXiv:2103.06752. https://arxiv.org/abs/2103.06752
+
 ## Question Answering
 - To answer a question simply execute a HTTP POST request to
   - ```http://localhost:8181/qa``` for the answer which follows the W3C Query Results JSON Format (see https://www.w3.org/TR/sparql11-results-json/).
