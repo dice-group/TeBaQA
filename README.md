@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/dice-group/TeBaQA.svg?branch=master)](https://travis-ci.org/dice-group/TeBaQA)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/d0441bf0c82e47d6a3f2b23f11b223e6)](https://www.codacy.com/app/pnancke/TeBaQA?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pnancke/TeBaQA&amp;utm_campaign=Badge_Grade)
 ## Preview
-- A running example of this application is at http://139.18.2.39:8187/
+- A running example of this application is at https://tebaqa.demos.dice-research.org/
 ## Execution
 - Checkout the project
 - Execute the following command in the root directory to start the server: `mvn spring-boot:run`
@@ -44,6 +44,7 @@ Vollmers, D., Jalota, R., Moussallem, D., Topiwala, H., Ngomo, A. C. N., & Usbec
 - QALD-8: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012090005
 - QALD-9: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012050000
 - LC-QUAD v1: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012160002
+- LC-QUAD v2: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202103220000
 ### Ablation study
 - perfect Classification: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012070002
 - perfect Classification and Entity Linking: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012090000
