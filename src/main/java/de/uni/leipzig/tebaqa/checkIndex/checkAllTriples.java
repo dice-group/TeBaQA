@@ -4,8 +4,6 @@ import de.uni.leipzig.tebaqa.helper.WordsGenerator;
 import de.uni.leipzig.tebaqa.model.EntityCandidate;
 import de.uni.leipzig.tebaqa.model.ResourceCandidate;
 import de.uni.leipzig.tebaqa.model.Triple;
-import org.aksw.hawk.datastructures.HAWKQuestion;
-import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;

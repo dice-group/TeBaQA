@@ -37,7 +37,7 @@ import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.log4j.Logger;
 import org.apache.lucene.search.spans.SpanQuery;
-import sun.awt.SunHints;
+//import sun.awt.SunHints;
 import weka.classifiers.Classifier;
 import weka.core.Instance;
 

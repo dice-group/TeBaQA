@@ -12,8 +12,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.simple.Sentence;
 import edu.stanford.nlp.util.CoreMap;
 import joptsimple.internal.Strings;
-import org.aksw.hawk.index.DBOIndex;
-import org.aksw.hawk.index.Patty_relations;
+
 import org.aksw.qa.annotation.index.IndexDBO_classes;
 import org.aksw.qa.annotation.index.IndexDBO_properties;
 import org.aksw.qa.commons.datastructure.Entity;
@@ -79,7 +78,7 @@ public class QueryMappingFactory {
     private Set<String> ontologyURIs;
     //private Configuration pattyPhrases;
     private PersistentCacheManager cacheManager;
-    private Patty_relations patty_relations;
+    //private Patty_relations patty_relations;
     SemanticAnalysisHelper semanticAnalysisHelper;
     public QueryMappingFactory(String question, String sparqlQuery, List<RDFNode> ontologyNodes, List<String> properties, SemanticAnalysisHelper semanticAnalysisHelper) {
         this.ontologyNodes = ontologyNodes;
@@ -94,7 +93,7 @@ public class QueryMappingFactory {
         this.entitiyToQuestionMappingWithSynonymsWasSet = false;
         //this.pattyPhrases = PattyPhrasesProvider.getPattyPhrases();
         //this.patty_relations = new Patty_relations();
-        this.patty_relations=null;
+        //this.patty_relations=null;
         this.question = question;
 
         String queryString = SPARQLUtilities.resolveNamespaces(sparqlQuery);
@@ -242,7 +241,7 @@ public class QueryMappingFactory {
             entitiyToQuestionMapping.putAll(extractEntities(question));
             this.entitiyToQuestionMappingWasSet = true;
         } else if (useSynonyms && !this.entitiyToQuestionMappingWithSynonymsWasSet) {
-            entitiyToQuestionMappingWithSynonyms.putAll(extractEntitiesUsingSynonyms(question));
+            //entitiyToQuestionMappingWithSynonyms.putAll(extractEntitiesUsingSynonyms(question));
             this.entitiyToQuestionMappingWithSynonymsWasSet = true;
         }
 
@@ -385,7 +384,7 @@ public class QueryMappingFactory {
         return entitiyToQuestionMapping;
     }
 
-    Map<String, String> extractEntitiesUsingSynonyms(String question) {
+    /*Map<String, String> extractEntitiesUsingSynonyms(String question) {
         question = semanticAnalysisHelper.removeQuestionWords(question);
         String[] wordsFromQuestion = question.split(NON_WORD_CHARACTERS_REGEX);
 
@@ -402,7 +401,7 @@ public class QueryMappingFactory {
         }
 
         return findResourcesBySynonyms(question);
-    }
+    }*/
 
     Set<String> findResourcesInFullText(String s) {
         List<String> questionWords = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which|is|are|did|was|does|a".split("\\|"));
@@ -440,7 +439,7 @@ public class QueryMappingFactory {
         return Boolean.valueOf(sparqlResultSets.get(0).getResultSet().get(0));
     }
 
-    private Map<String, String> findResourcesBySynonyms(String question) {
+    /*private Map<String, String> findResourcesBySynonyms(String question) {
         Map<String, String> rdfResources = new HashMap<>();
 
         List<String> coOccurrences = getNeighborCoOccurrencePermutations(Arrays.asList(question.split(NON_WORD_CHARACTERS_REGEX)));
@@ -466,7 +465,7 @@ public class QueryMappingFactory {
             }
         });
         return rdfResources;
-    }
+    }*/
 
     private boolean isResource(String s) {
         return SPARQLUtilities.isResource(s);
@@ -476,7 +475,7 @@ public class QueryMappingFactory {
         return s.startsWith("http://dbpedia.org/ontology/") || s.startsWith("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") || s.startsWith("http://dbpedia.org/datatype/");
     }
 
-    private Set<String> searchInDBOIndex(String coOccurrence) {
+    /*private Set<String> searchInDBOIndex(String coOccurrence) {
         DBOIndex dboIndex = new DBOIndex();
         //The DBOIndex Class throws a NullPointerException when you search for a number
         if (StringUtils.isNumeric(coOccurrence)) {
@@ -514,7 +513,7 @@ public class QueryMappingFactory {
             resultsInDBOIndex.addAll(resultsInDBOIndexProperty);
             return resultsInDBOIndex;
         }
-    }
+    }*/
 
     private Set<String> getResultsInDBOIndexFilteredByRatio(String coOccurrence, List<String> indexDBO_classesSearch) {
         return indexDBO_classesSearch.parallelStream()

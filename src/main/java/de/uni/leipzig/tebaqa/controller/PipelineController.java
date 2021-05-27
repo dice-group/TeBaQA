@@ -4,9 +4,9 @@ import com.google.common.collect.Lists;
 import de.uni.leipzig.tebaqa.helper.*;
 import de.uni.leipzig.tebaqa.model.*;
 import edu.cmu.lti.jawjaw.pobj.POS;
-import org.aksw.hawk.datastructures.HAWKQuestion;
-import org.aksw.hawk.datastructures.HAWKQuestionFactory;
+
 import org.aksw.qa.commons.datastructure.IQuestion;
+import org.aksw.qa.commons.datastructure.Question;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
 import org.aksw.qa.commons.load.json.EJQuestionFactory;
@@ -47,8 +47,8 @@ public class PipelineController {
         semanticAnalysisHelper = new SemanticAnalysisHelperGerman();
         trainDatasets.forEach(this::addTrainDataset);
         log.info("Starting controller...");
-        //run();
-        runLimbo();
+        run();
+
     }
     public PipelineController(List<Dataset> trainDatasets,List<Dataset> testDatasets) {
         log.info("Configuring controller");
@@ -59,8 +59,8 @@ public class PipelineController {
         recalculateWekaMaodel=true;
         evaluateWekaAlgorithms=true;
         log.info("Starting controller...");
-        //run();
-        runLimbo();
+        run();
+        //runLimbo();
     }
     public static List<IQuestion> readJson(File data) {
         List<IQuestion> out = null;
@@ -75,19 +75,19 @@ public class PipelineController {
         return out;
     }
     private void run() {
-        List<HAWKQuestion> trainQuestions = new ArrayList<>();
+        List<Question> trainQuestions = new ArrayList<>();
         for (Dataset d : trainDatasets) {
             //Remove all trainQuestions without SPARQL query
             List<IQuestion> load = LoaderController.load(d);
             List<IQuestion> result = load.parallelStream()
                     .filter(question -> question.getSparqlQuery() != null)
                     .collect(Collectors.toList());
-            trainQuestions.addAll(HAWKQuestionFactory.createInstances(result));
+            trainQuestions.addAll(QuestionFactory.createInstances(result));
         }
-        trainQuestions.addAll(HAWKQuestionFactory.createInstances(loadQuald9()));
+        trainQuestions.addAll(QuestionFactory.createInstances(loadQuald9()));
 
         Map<String, String> trainQuestionsWithQuery = new HashMap<>();
-        for (HAWKQuestion q : trainQuestions) {
+        for (Question q : trainQuestions) {
             //only use unique trainQuestions in case multiple datasets are used
             String questionText = q.getLanguageToQuestion().get("en");
             if (!semanticAnalysisHelper.containsQuestionText(trainQuestionsWithQuery, questionText)) {
@@ -139,12 +139,12 @@ public class PipelineController {
 //        testQuestions.parallelStream().forEach(q -> answerQuestion(graphs, q));
     }
     private void runLimbo() {
-        List<HAWKQuestion> trainQuestions = new ArrayList<>();
+        List<Question> trainQuestions = new ArrayList<>();
 
-        trainQuestions.addAll(HAWKQuestionFactory.createInstances(loadLimbo()));
+        trainQuestions.addAll(QuestionFactory.createInstances(loadLimbo()));
 
         Map<String, String> trainQuestionsWithQuery = new HashMap<>();
-        for (HAWKQuestion q : trainQuestions) {
+        for (Question q : trainQuestions) {
             //only use unique trainQuestions in case multiple datasets are used
             String questionText = q.getLanguageToQuestion().get("de");
             if (!semanticAnalysisHelper.containsQuestionText(trainQuestionsWithQuery, questionText)) {

@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.template.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.QuestionFactory;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
@@ -13,9 +14,10 @@ import de.uni.leipzig.tebaqa.template.nlp.ClassifierProvider;
 import de.uni.leipzig.tebaqa.template.nlp.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
 import de.uni.leipzig.tebaqa.template.util.Utilities;
-import org.aksw.hawk.datastructures.HAWKQuestion;
-import org.aksw.hawk.datastructures.HAWKQuestionFactory;
+//import org.aksw.hawk.datastructures.HAWKQuestion;
+//import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.commons.datastructure.IQuestion;
+import org.aksw.qa.commons.datastructure.Question;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
 import org.aksw.qa.commons.load.json.EJQuestionFactory;
@@ -117,7 +119,7 @@ public class WekaClassifier {
 
     private static List<Cluster> clusterQueries(Dataset dataset) {
 //        List<HAWKQuestion> trainQuestions = loadTrainingQuestions(dataset);
-        List<HAWKQuestion> trainQuestions = dataset == Dataset.QALD9_Train_Multilingual ? loadQALD9Training() : loadTrainingQuestions(dataset);
+        List<Question> trainQuestions = dataset == Dataset.QALD9_Train_Multilingual ? loadQALD9Training() : loadTrainingQuestions(dataset);
 
         Map<String, String> trainQuestionsWithQuery = new HashMap<>();
         trainQuestions.forEach(trainQuestion -> trainQuestionsWithQuery.put(trainQuestion.getSparqlQuery(), trainQuestion.getLanguageToQuestion().get("en")));
@@ -141,16 +143,16 @@ public class WekaClassifier {
         return queryClusters;
     }
 
-    private static List<HAWKQuestion> loadTrainingQuestions(Dataset dataset) {
+    private static List<Question> loadTrainingQuestions(Dataset dataset) {
         //Remove all trainQuestions without SPARQL query
         List<IQuestion> load = LoaderController.load(dataset);
         List<IQuestion> result = load.parallelStream()
                 .filter(question -> question.getSparqlQuery() != null)
                 .collect(Collectors.toList());
-        return HAWKQuestionFactory.createInstances(result);
+        return QuestionFactory.createInstances(result);
     }
 
-    public static List<HAWKQuestion> loadQALD9Training() {
+    public static List<Question> loadQALD9Training() {
         QaldJson json = null;
         List<IQuestion> out = null;
         String deriveUri = null;
@@ -161,7 +163,7 @@ public class WekaClassifier {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return HAWKQuestionFactory.createInstances(out);
+        return QuestionFactory.createInstances(out);
     }
 
 

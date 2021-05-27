@@ -7,8 +7,7 @@ import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.model.*;
 import edu.stanford.nlp.simple.Sentence;
 import joptsimple.internal.Strings;
-import org.aksw.hawk.index.DBOIndex;
-import org.aksw.hawk.index.Patty_relations;
+
 import org.aksw.qa.annotation.index.IndexDBO_classes;
 import org.aksw.qa.annotation.index.IndexDBO_properties;
 import org.aksw.qa.commons.datastructure.Entity;
@@ -70,7 +69,7 @@ public class QueryMappingFactoryLabels {
     private Set<String> ontologyURIs;
     //private Configuration pattyPhrases;
     private PersistentCacheManager cacheManager;
-    private Patty_relations patty_relations;
+    //private Patty_relations patty_relations;
     private ElasticSearchEntityIndex entityIndex;
     ResourceLinker resourceLinker;
     WordsGenerator wordsGenerator;
@@ -90,7 +89,7 @@ public class QueryMappingFactoryLabels {
         this.entitiyToQuestionMappingWithSynonyms = new HashMap<>();
         this.entitiyToQuestionMappingWithSynonymsWasSet = false;
         //this.pattyPhrases = PattyPhrasesProvider.getPattyPhrases();
-        this.patty_relations = null;
+        //this.patty_relations = null;
 
         this.question = question;
         String queryString = SPARQLUtilities.resolveNamespaces(sparqlQuery);
@@ -638,24 +637,7 @@ public class QueryMappingFactoryLabels {
         return entityToQuestionMapping;
     }
 
-    Map<String, String> extractEntitiesUsingSynonyms(String question) {
-        question = semanticAnalysisHelper.removeQuestionWords(question);
-        String[] wordsFromQuestion = question.split(NON_WORD_CHARACTERS_REGEX);
 
-        for (String word : wordsFromQuestion) {
-            Map<String, String> lemmas = semanticAnalysisHelper.getLemmas(word);
-            Set<String> ontologiesFromMapping = new HashSet<>();
-            Map<String, Set<String>> ontologyMapping = OntologyMappingProvider.getOntologyMapping();
-            if (ontologyMapping != null) {
-                ontologiesFromMapping = ontologyMapping.getOrDefault(lemmas.getOrDefault(word, "").toLowerCase(), new HashSet<>());
-            }
-            if (!ontologiesFromMapping.isEmpty()) {
-                ontologiesFromMapping.forEach(s -> this.entitiyToQuestionMappingWithSynonyms.put(s, word));
-            }
-        }
-
-        return findResourcesBySynonyms(question);
-    }
 
     Set<String> findResourcesInFullText(String s) {
         List<String> questionWords = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which|is|are|did|was|does|a".split("\\|"));
@@ -693,7 +675,7 @@ public class QueryMappingFactoryLabels {
         return Boolean.valueOf(sparqlResultSets.get(0).getResultSet().get(0));
     }
 
-    private Map<String, String> findResourcesBySynonyms(String question) {
+    /*private Map<String, String> findResourcesBySynonyms(String question) {
         Map<String, String> rdfResources = new HashMap<>();
 
         List<String> coOccurrences = getNeighborCoOccurrencePermutations(Arrays.asList(question.split(NON_WORD_CHARACTERS_REGEX)));
@@ -718,7 +700,7 @@ public class QueryMappingFactoryLabels {
             }
         });
         return rdfResources;
-    }
+    }*/
 
     private boolean isResource(String s) {
         return SPARQLUtilities.isResource(s);
@@ -728,7 +710,7 @@ public class QueryMappingFactoryLabels {
         return s.startsWith("http://dbpedia.org/ontology/") || s.startsWith("http://www.w3.org/1999/02/22-rdf-syntax-ns#type") || s.startsWith("http://dbpedia.org/datatype/");
     }
 
-    private Set<String> searchInDBOIndex(String coOccurrence) {
+    /*private Set<String> searchInDBOIndex(String coOccurrence) {
         DBOIndex dboIndex = new DBOIndex();
         //The DBOIndex Class throws a NullPointerException when you search for a number
         if (StringUtils.isNumeric(coOccurrence)) {
@@ -766,7 +748,7 @@ public class QueryMappingFactoryLabels {
             resultsInDBOIndex.addAll(resultsInDBOIndexProperty);
             return resultsInDBOIndex;
         }
-    }
+    }*/
 
     private Set<String> getResultsInDBOIndexFilteredByRatio(String coOccurrence, List<String> indexDBO_classesSearch) {
         return indexDBO_classesSearch.parallelStream()

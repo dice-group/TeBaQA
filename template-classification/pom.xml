@@ -105,12 +105,12 @@
             <version>0.4.22</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>org.aksw.qa</groupId>
             <artifactId>hawk</artifactId>
             <version>0.3.2</version>
             <scope>compile</scope>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>org.apache.jena</groupId>
