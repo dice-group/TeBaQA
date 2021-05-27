@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.tebaqacontroller.utils;
 
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -12,6 +13,7 @@ public class ControllerPropertyUtils {
     private static final Logger LOGGER = Logger.getLogger(ControllerPropertyUtils.class.getName());
     private static Properties ALL_PROPERTIES;
     private static String CLASSIFICATION_SERVICE_URL = null;
+    private static String ALL_TEMPLATES_SERVICE_URL = null;
     private static String LINKING_SERVICE_URL = null;
     private static String RANKING_SERVICE_URL = null;
 
@@ -23,7 +25,11 @@ public class ControllerPropertyUtils {
         ALL_PROPERTIES = getAllProperties();
     }
 
-    private static Properties getAllProperties() {
+    public static String getProperty(@Nonnull String key) {
+        return ALL_PROPERTIES.getProperty(key);
+    }
+
+    public static Properties getAllProperties() {
 
         Properties prop = new Properties();
         InputStream input;
@@ -34,6 +40,18 @@ public class ControllerPropertyUtils {
             LOGGER.error(e.getMessage());
         }
         return prop;
+    }
+
+    public static String getAllTemplatesServiceUrl() {
+        if (ALL_TEMPLATES_SERVICE_URL == null) {
+
+            String host = ALL_PROPERTIES.getProperty("template.classification.host");
+            String port = ALL_PROPERTIES.getProperty("template.classification.port");
+            String endpoint = ALL_PROPERTIES.getProperty("template.classification.endpoint.all-templates");
+
+            ALL_TEMPLATES_SERVICE_URL = String.format("%s:%s/%s", host, port, endpoint);
+        }
+        return ALL_TEMPLATES_SERVICE_URL;
     }
 
     public static String getClassificationServiceUrl() {
@@ -70,5 +88,17 @@ public class ControllerPropertyUtils {
             RANKING_SERVICE_URL = String.format("%s:%s/%s", host, port, endpoint);
         }
         return RANKING_SERVICE_URL;
+    }
+
+    public static boolean ablationClassification() {
+        return "true".equalsIgnoreCase(ALL_PROPERTIES.getProperty("ablation.tc"));
+    }
+
+    public static boolean ablationEL() {
+        return "true".equalsIgnoreCase(ALL_PROPERTIES.getProperty("ablation.el"));
+    }
+
+    public static boolean ablationQueryRanking() {
+        return "true".equalsIgnoreCase(ALL_PROPERTIES.getProperty("ablation.qr"));
     }
 }

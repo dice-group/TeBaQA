@@ -9,10 +9,12 @@ public class Constants {
     public static final String DEFAULT_SERIALIZED_ARFF_TRAIN_FILENAME = "Train_%s.arff";
     public static final String DEFAULT_SERIALIZED_ARFF_TEST_FILENAME = "Test_%s.arff";
 
-    // Keys in template-classification.properties file
+    // Keys in properties file
+    public static final String DEFAULT_TRAINING_DATASET = "classifier.training.dataset";
     public static final String SERIALIZED_CLASSIFIER_FILE = "classifier.model.file";
     public static final String SERIALIZED_GRAPHS_FILE = "classifier.graphs.file";
     public static final String SERIALIZED_MAPPINGS_FILE = "classifier.mappings.file";
     public static final String SERIALIZED_ARFF_TRAIN_FILE = "classifier.arff.train.file";
     public static final String SERIALIZED_ARFF_TEST_FILE = "classifier.arff.test.file";
+    public static final String FORCE_CLASSIFICATION_RESPONSE = "classifier.forceResponse";
 }

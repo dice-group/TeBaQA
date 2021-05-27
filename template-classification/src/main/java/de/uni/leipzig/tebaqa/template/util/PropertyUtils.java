@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.template.util;
 
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -37,6 +38,9 @@ public class PropertyUtils {
         return prop;
     }
 
+    public static String getProperty(@Nonnull String key) {
+        return ALL_PROPERTIES.getProperty(key);
+    }
 
     private static String getFromProperties(String key, String defaultValue) {
         String value = ALL_PROPERTIES.getProperty(key);

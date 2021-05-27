@@ -14,9 +14,14 @@ public class SearchService {
     private static final Logger LOGGER = Logger.getLogger(SearchService.class);
 
     // TODO Externalize?
-    public static final double MATCHING_THRESHOLD_ENTITY = 0.1;
-    public static final double MATCHING_THRESHOLD_CLASS = 0.2;
-    public static final double MATCHING_THRESHOLD_PROPERTY = 0.32;
+//    public static final double MATCHING_THRESHOLD_ENTITY = 0.1;
+//    public static final double MATCHING_THRESHOLD_CLASS = 0.2;
+//    public static final double MATCHING_THRESHOLD_PROPERTY = 0.32;
+//    public static final double MATCHING_THRESHOLD_PROPERTY_DISAMBIGUATION = 0.15;
+//    public static final double MATCHING_SCORE_WITH_NUMBERS = 0.05;
+    public static final double MATCHING_THRESHOLD_ENTITY = 0.20;
+    public static final double MATCHING_THRESHOLD_CLASS = 0.25;
+    public static final double MATCHING_THRESHOLD_PROPERTY = 0.25;
     public static final double MATCHING_THRESHOLD_PROPERTY_DISAMBIGUATION = 0.15;
     public static final double MATCHING_SCORE_WITH_NUMBERS = 0.05;
 //    private static final double MIN_SCORE_NORMAL = 0.32;

@@ -30,6 +30,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SPARQLUtilities {
+
+    public final static String SPARQL_ENDPOINT = ControllerPropertyUtils.getProperty("sparql.endpoint");
+
     public final static String LABEL_SPARQL = "SELECT ?label  WHERE { <%1$s> <http://www.w3.org/2000/01/rdf-schema#label> ?label . FILTER(lang(?label) = \"en\")}";
     public final static String IMAGE_SPARQL = "SELECT ?thumbnail WHERE { <%1$s> <http://dbpedia.org/ontology/thumbnail> ?thumbnail . }";
     public final static String WIKI_LINK_SPARQL = "SELECT ?primaryTopic WHERE { <%1$s> <http://xmlns.com/foaf/0.1/isPrimaryTopicOf> ?primaryTopic  . }";
@@ -81,7 +84,7 @@ public class SPARQLUtilities {
                 return results;
             }
 //            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            QueryExecution qe = QueryExecutionFactory.sparqlService(SPARQL_ENDPOINT, query);
             qe.setTimeout(10000, 10000);
             boolean isAskType = query.isAskType();
             boolean isSelectType = query.isSelectType();
@@ -227,7 +230,7 @@ public class SPARQLUtilities {
     public static ResultsetBinding executeQuery(String queryString) {
         Query query = QueryFactory.create(queryString);
 //        QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
-        QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+        QueryExecution qe = QueryExecutionFactory.sparqlService(SPARQL_ENDPOINT, query);
         ResultsetBinding b = new ResultsetBinding();
         if (query.isSelectType()) {
 
@@ -270,7 +273,7 @@ public class SPARQLUtilities {
             isAskType = QueryFactory.create(queryWithValues).isAskType();
             boolean isCountQuery = isCountQuery(queryWithValues);
             boolean isLiteralResult = false;
-            QueryExecution qe = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
+            QueryExecution qe = QueryExecutionFactory.sparqlService(SPARQL_ENDPOINT, query);
 //            QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
             qe.setTimeout(10000, 10000);
             if (query.isSelectType()) {

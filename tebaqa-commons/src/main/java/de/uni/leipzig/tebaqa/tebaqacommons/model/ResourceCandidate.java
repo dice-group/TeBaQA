@@ -3,6 +3,7 @@ package de.uni.leipzig.tebaqa.tebaqacommons.model;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public abstract class ResourceCandidate implements IResourceCandidate {
 
@@ -30,7 +31,7 @@ public abstract class ResourceCandidate implements IResourceCandidate {
         this.coOccurrence = coOccurrence;
         double bestScore = 1;
         String bestScoreLabel = null;
-        for (String label : this.getResourceLabels()) {
+        for (String label : this.getResourceLabelsWithoutLanguageTag()) {
             double levensteinScore = TextUtilities.getDistanceScore(coOccurrence, label);
             if (levensteinScore < bestScore) {
                 bestScore = levensteinScore;
@@ -44,6 +45,10 @@ public abstract class ResourceCandidate implements IResourceCandidate {
     @Override
     public Set<String> getResourceLabels() {
         return resourceLabels;
+    }
+
+    public Set<String> getResourceLabelsWithoutLanguageTag() {
+        return resourceLabels.stream().map(s -> s.matches(".+@[a-zA-Z]{2}") ? s.substring(0, s.lastIndexOf("@")) : s).collect(Collectors.toSet());
     }
 
     @Override
@@ -112,7 +117,7 @@ public abstract class ResourceCandidate implements IResourceCandidate {
     @Override
     public double getDistanceScoreFor(String coOccurrence) {
         double bestScore = 1;
-        for (String label : this.getResourceLabels()) {
+        for (String label : this.getResourceLabelsWithoutLanguageTag()) {
             double levensteinScore = TextUtilities.getDistanceScore(coOccurrence, label);
             if (levensteinScore < bestScore) {
                 bestScore = levensteinScore;
@@ -125,7 +130,7 @@ public abstract class ResourceCandidate implements IResourceCandidate {
     public String getBestLabelFor(String coOccurrence) {
         double bestScore = 1;
         String bestScoreLabel = null;
-        for (String label : this.getResourceLabels()) {
+        for (String label : this.getResourceLabelsWithoutLanguageTag()) {
             double levensteinScore = TextUtilities.getDistanceScore(coOccurrence, label);
             if (levensteinScore < bestScore) {
                 bestScore = levensteinScore;

@@ -7,9 +7,10 @@ import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.template.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.template.service.WekaClassifier;
+import de.uni.leipzig.tebaqa.template.util.Constants;
+import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
 import org.apache.log4j.Logger;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,9 +51,17 @@ public class TemplateClassificationController {
         classifier = weka;
     }
 
-    @RequestMapping(method = RequestMethod.GET, path = "/test-tc")
-    public String testGet(HttpServletResponse response) {
-        return ResponseEntity.status(HttpStatus.OK).body("GET for /test-tc success").toString();
+    @RequestMapping(method = {RequestMethod.GET, RequestMethod.POST}, path = "/templates")
+    public Set<String> getAllTemplates(@RequestParam String question,
+                                       @RequestParam(required = false, defaultValue = "en") String lang,
+                                       HttpServletResponse response) {
+        LOGGER.info("GET for /templates");
+
+        QueryType queryType = semanticAnalysisHelper.mapQuestionToQueryType(question);
+        LOGGER.info(String.format("Query Type: %s", queryType.name()));
+        Set<String> allTemplates = classifier.getAllQueryTemplates().stream().flatMap(queryTemplateMapping -> queryTemplateMapping.getTemplatesFor(queryType).stream()).collect(Collectors.toSet());
+
+        return allTemplates;
     }
 
 
@@ -78,15 +88,31 @@ public class TemplateClassificationController {
         LOGGER.info(String.format("Query Type: %s", queryType.name()));
 
         Set<String> templates;
-        if (templateMapping == null)
+        boolean forceResult = "true".equalsIgnoreCase(PropertyUtils.getProperty(Constants.FORCE_CLASSIFICATION_RESPONSE));
+        if (templateMapping == null) {
             // In case QueryTemplateMapping cannot be found for the classified graph then,
             // from all QueryTemplateMapping, get the templates of the given queryType.
-            templates = classifier.getAllQueryTemplates().stream().flatMap(queryTemplateMapping -> queryTemplateMapping.getTemplatesFor(queryType).stream()).collect(Collectors.toSet());
-        else
+            LOGGER.info("Template mapping not found");
+            if (forceResult) {
+                templates = classifier.getAllQueryTemplates().stream().flatMap(queryTemplateMapping -> queryTemplateMapping.getTemplatesFor(queryType).stream()).collect(Collectors.toSet());
+            } else {
+                templates = Collections.emptySet();
+            }
+        }
+        else {
             // If the QueryTemplateMapping is found for the classified graph,
             // then get the templates from that single QueryTemplateMapping
-            templates = templateMapping.getTemplatesFor(queryType);
-
+            if(forceResult)
+                templates = templateMapping.getTemplatesFor(queryType); // Gets all available template in case query type is unknown
+            else {
+                if(queryType == QueryType.QUERY_TYPE_UNKNOWN)
+                    templates = Collections.emptySet();
+                else
+                    templates = templateMapping.getTemplatesFor(queryType);
+            }
+        }
+        LOGGER.info("Force response: " + forceResult);
+        LOGGER.info("Total templates: " + templates.size());
         templateResponseBean.setTemplates(new ArrayList<>(templates));
 
 //        return ResponseEntity.status(HttpStatus.OK).body(JSONUtils.convertToJSONString(templateResponseBean)).toString();

@@ -117,35 +117,35 @@ public class QueryTemplateMapping {
         if (this.selectTemplate == null)
             this.selectTemplate = template;
 
-        this.selectQueries.add(originalQuery);
+//        this.selectQueries.add(originalQuery);
     }
 
     public void setSelectSuperlativeAscTemplate(String template, String originalQuery) {
         if (this.superlativeAscTemplate == null)
             this.superlativeAscTemplate = template;
 
-        this.superlativeAscQueries.add(originalQuery);
+//        this.superlativeAscQueries.add(originalQuery);
     }
 
     public void setCountTemplate(String template, String originalQuery) {
         if (this.countTemplates == null)
             this.countTemplates = template;
 
-        this.countQueries.add(originalQuery);
+//        this.countQueries.add(originalQuery);
     }
 
     public void setSelectSuperlativeDescTemplate(String template, String originalQuery) {
         if (this.superlativeDescTemplate == null)
             this.superlativeDescTemplate = template;
 
-        this.superlativeDescQueries.add(originalQuery);
+//        this.superlativeDescQueries.add(originalQuery);
     }
 
     public void setAskTemplate(String template, String originalQuery) {
         if (this.askTemplate == null)
             this.askTemplate = template;
 
-        this.askQueries.add(originalQuery);
+//        this.askQueries.add(originalQuery);
     }
 
     public List<Integer> getNumberOfClasses() {
@@ -176,6 +176,7 @@ public class QueryTemplateMapping {
             return getSingletonSetIfNotNull(superlativeDescTemplate);
         else if (QueryType.SELECT_COUNT_QUERY.equals(queryType)) return getSingletonSetIfNotNull(countTemplates);
         else return getAllAvailableTemplates();
+//        else return Collections.emptySet();
     }
     
     private Set<String> getSingletonSetIfNotNull(String template) {
