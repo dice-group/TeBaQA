@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.template.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.QuestionFactory;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
@@ -11,12 +12,12 @@ import de.uni.leipzig.tebaqa.template.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.template.nlp.ArffGenerator;
 import de.uni.leipzig.tebaqa.template.nlp.ClassifierProvider;
 import de.uni.leipzig.tebaqa.template.nlp.analyzer.Analyzer;
-import de.uni.leipzig.tebaqa.template.util.Constants;
 import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
 import de.uni.leipzig.tebaqa.template.util.Utilities;
-import org.aksw.hawk.datastructures.HAWKQuestion;
-import org.aksw.hawk.datastructures.HAWKQuestionFactory;
+//import org.aksw.hawk.datastructures.HAWKQuestion;
+//import org.aksw.hawk.datastructures.HAWKQuestionFactory;
 import org.aksw.qa.commons.datastructure.IQuestion;
+import org.aksw.qa.commons.datastructure.Question;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
 import org.aksw.qa.commons.load.json.EJQuestionFactory;
@@ -50,20 +51,10 @@ public class WekaClassifier {
     }
 
     public static WekaClassifier getDefaultClassifier() throws IOException {
-        String trainingDatasetName = PropertyUtils.getProperty(Constants.DEFAULT_TRAINING_DATASET);
-        Dataset trainingDataset = DEFAULT_TRAINING_DATASET;
-        for(Dataset d : Dataset.values()) {
-            if(d.name().equalsIgnoreCase(trainingDatasetName)) {
-                LOGGER.info("Training dataset found in properties file: " + trainingDatasetName);
-                trainingDataset = d;
-                break;
-            }
-        }
-        return getClassifierFor(trainingDataset);
+        return getClassifierFor(DEFAULT_TRAINING_DATASET);
     }
 
     public static WekaClassifier getClassifierFor(Dataset dataset) throws IOException {
-        LOGGER.info("Preparing classifier for dataset: " + dataset.name());
         WekaClassifier classifierInstance = classifierInstances.get(dataset);
         if (classifierInstance == null) {
             classifierInstance = new WekaClassifier(dataset);
@@ -100,24 +91,23 @@ public class WekaClassifier {
         List<Cluster> queryClusters = clusterQueries(trainDataset);
         LOGGER.info(queryClusters.size() + " clusters created.");
 
+        // 2. Extract and save graphs
+        LOGGER.info("Extracting graphs ...");
+        this.graphs = new ArrayList<>();
+        queryClusters.forEach(cluster -> graphs.add(cluster.getGraph()));
+        saveGraphs(graphs);
+        LOGGER.info("Graphs saved to file.");
+
         // 3. Extract and save (graph<->query templates) mappings
         LOGGER.info("Extracting query templates ...");
         this.graphToQueryTemplateMappings = Utilities.mapGraphToTemplates(queryClusters);
         saveMappings(graphToQueryTemplateMappings);
         LOGGER.info("Mappings saved to file.");
 
-        // 2. Extract and save graphs
-        LOGGER.info("Extracting graphs ...");
-        this.graphs = new ArrayList<>();
-        graphs.addAll(graphToQueryTemplateMappings.keySet());
-        saveGraphs(graphs);
-        LOGGER.info("Graphs saved to file.");
-
         // 4. Train classifier
         LOGGER.info("Training classifier...");
         List<CustomQuestion> trainSet = new ArrayList<>();
         queryClusters.forEach(c -> trainSet.addAll(c.getQuestions()));
-        LOGGER.info("Total question: " + trainSet.size());
 //        List<CustomQuestion> testSet = new ArrayList<>();
 //        queryClusters.forEach(c -> testSet.addAll(c.getQuestions()));
         LOGGER.info("Instantiating ArffGenerator...");
@@ -129,7 +119,7 @@ public class WekaClassifier {
 
     private static List<Cluster> clusterQueries(Dataset dataset) {
 //        List<HAWKQuestion> trainQuestions = loadTrainingQuestions(dataset);
-        List<HAWKQuestion> trainQuestions = loadTrainingQuestions(dataset);
+        List<Question> trainQuestions = dataset == Dataset.QALD9_Train_Multilingual ? loadQALD9Training() : loadTrainingQuestions(dataset);
 
         Map<String, String> trainQuestionsWithQuery = new HashMap<>();
         trainQuestions.forEach(trainQuestion -> trainQuestionsWithQuery.put(trainQuestion.getSparqlQuery(), trainQuestion.getLanguageToQuestion().get("en")));
@@ -153,35 +143,16 @@ public class WekaClassifier {
         return queryClusters;
     }
 
-    private static List<HAWKQuestion> loadLCQuadTrainingQuestions() {
-        QaldJson json;
-        List<IQuestion> out = null;
-        try {
-            json = (QaldJson) ExtendedQALDJSONLoader.readJson(new FileInputStream(new File(PropertyUtils.getProperty("files.lcquad.train"))), QaldJson.class);
-            out = EJQuestionFactory.getQuestionsFromQaldJson(json);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return HAWKQuestionFactory.createInstances(out);
+    private static List<Question> loadTrainingQuestions(Dataset dataset) {
+        //Remove all trainQuestions without SPARQL query
+        List<IQuestion> load = LoaderController.load(dataset);
+        List<IQuestion> result = load.parallelStream()
+                .filter(question -> question.getSparqlQuery() != null)
+                .collect(Collectors.toList());
+        return QuestionFactory.createInstances(result);
     }
 
-    private static List<HAWKQuestion> loadTrainingQuestions(Dataset dataset) {
-        if(dataset == Dataset.LCQUAD) {
-            return loadLCQuadTrainingQuestions();
-        } else if(dataset == Dataset.QALD9_Train_Multilingual) {
-            return loadQALD9Training();
-        } else {
-            //Remove all trainQuestions without SPARQL query
-            List<IQuestion> load = LoaderController.load(dataset);
-            List<IQuestion> result = load.parallelStream()
-                    .filter(question -> question.getSparqlQuery() != null)
-                    .collect(Collectors.toList());
-            return HAWKQuestionFactory.createInstances(result);
-        }
-    }
-
-    public static List<HAWKQuestion> loadQALD9Training() {
+    public static List<Question> loadQALD9Training() {
         QaldJson json = null;
         List<IQuestion> out = null;
         String deriveUri = null;
@@ -192,7 +163,7 @@ public class WekaClassifier {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return HAWKQuestionFactory.createInstances(out);
+        return QuestionFactory.createInstances(out);
     }
 
 
@@ -343,10 +314,5 @@ public class WekaClassifier {
 
     public Collection<QueryTemplateMapping> getAllQueryTemplates() {
         return this.graphToQueryTemplateMappings.values();
-    }
-
-    public static void main(String[] args) {
-        WekaClassifier w = new WekaClassifier(Dataset.LCQUAD);
-        w.trainClassifier();
     }
 }

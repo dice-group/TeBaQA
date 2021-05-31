@@ -6,9 +6,9 @@ import de.uni.leipzig.tebaqa.helper.*;
 import de.uni.leipzig.tebaqa.model.*;
 import edu.cmu.lti.jawjaw.pobj.POS;
 import moa.recommender.rc.utils.Hash;
-import org.aksw.hawk.datastructures.HAWKQuestion;
-import org.aksw.hawk.datastructures.HAWKQuestionFactory;
+
 import org.aksw.qa.commons.datastructure.IQuestion;
+import org.aksw.qa.commons.datastructure.Question;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
 import org.aksw.qa.commons.load.json.EJQuestionFactory;
@@ -81,19 +81,19 @@ public class PipelineControllerTripleTemplates {
         classAttribute = new Attribute("class", Arrays.asList(new String[]{"true","false"}));
         analyzer=ArffGeneratorTriples.getAnayzer(classAttribute);
         if(recalculateWekaMaodel) {
-        List<HAWKQuestion> trainQuestions = new ArrayList<>();
+        List<Question> trainQuestions = new ArrayList<>();
         for (Dataset d : trainDatasets) {
             //Remove all trainQuestions without SPARQL query
             List<IQuestion> load = LoaderController.load(d);
             List<IQuestion> result = load.parallelStream()
                     .filter(question -> question.getSparqlQuery() != null)
                     .collect(Collectors.toList());
-            trainQuestions.addAll(HAWKQuestionFactory.createInstances(result));
+            trainQuestions.addAll(QuestionFactory.createInstances(result));
         }
-        trainQuestions.addAll(HAWKQuestionFactory.createInstances(loadQuald9()));
+        trainQuestions.addAll(QuestionFactory.createInstances(loadQuald9()));
 
         Map<String, String> trainQuestionsWithQuery = new HashMap<>();
-        for (HAWKQuestion q : trainQuestions) {
+        for (Question q : trainQuestions) {
             //only use unique trainQuestions in case multiple datasets are used
             String questionText = q.getLanguageToQuestion().get("en");
             if (!semanticAnalysisHelper.containsQuestionText(trainQuestionsWithQuery, questionText)) {

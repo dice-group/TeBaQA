@@ -1126,7 +1126,7 @@ public class QueryMappingFactoryTestIT {
         assertFalse(actual.keySet().contains("http://dbpedia.org/resource/The_The"));
     }
 
-    @Test
+    /*@Test
     public void testExtractResourcesWontUseBeWithSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "What is Batman's real name?";
@@ -1135,9 +1135,9 @@ public class QueryMappingFactoryTestIT {
         List<String> properties = DBpediaPropertiesProvider.getDBpediaProperties();
         QueryMappingFactory queryMappingFactory = new QueryMappingFactory(question, query, nodes, properties, new SemanticAnalysisHelper());
 
-        Map<String, String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
-        assertFalse(actual.keySet().contains("http://dbpedia.org/property/be"));
-    }
+        //Map<String, String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
+        assertFalse(Fa));
+    }*/
 
     @Test
     public void testExtractResourcesWontUseCost() {
@@ -1152,7 +1152,7 @@ public class QueryMappingFactoryTestIT {
         assertFalse(actual.keySet().contains("http://dbpedia.org/ontology/cost"));
     }
 
-    @Test
+    /*@Test
     public void testExtractResourcesWontUseCostWithSynonyms() {
         String query = "PREFIX res: <http://dbpedia.org/resource/> PREFIX dbo: <http://dbpedia.org/ontology/> SELECT DISTINCT ?uri WHERE {res:Douglas_Hofstadter dbo:award ?uri .}";
         String question = "Who was Vincent van Gogh inspired by?";
@@ -1229,7 +1229,7 @@ public class QueryMappingFactoryTestIT {
 
         Map<String, String> actual = queryMappingFactory.extractEntitiesUsingSynonyms(question);
         assertTrue(actual.keySet().contains("http://dbpedia.org/ontology/spouse"));
-    }
+    }*/
 /*
     @Test
     public void testGenerateQueries() {
