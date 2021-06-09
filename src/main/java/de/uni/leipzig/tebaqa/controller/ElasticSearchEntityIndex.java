@@ -7,9 +7,7 @@ import de.uni.leipzig.tebaqa.model.*;
 import meka.core.A;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpHost;
-import org.apache.jena.query.Query;
-import org.apache.lucene.index.Terms;
-import org.apache.stanbol.enhancer.engines.dbpspotlight.model.CandidateResource;
+
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;

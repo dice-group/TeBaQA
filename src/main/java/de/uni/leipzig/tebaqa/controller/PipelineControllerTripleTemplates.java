@@ -5,7 +5,7 @@ import de.uni.leipzig.tebaqa.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.helper.*;
 import de.uni.leipzig.tebaqa.model.*;
 import edu.cmu.lti.jawjaw.pobj.POS;
-import moa.recommender.rc.utils.Hash;
+//import moa.recommender.rc.utils.Hash;
 
 import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.datastructure.Question;

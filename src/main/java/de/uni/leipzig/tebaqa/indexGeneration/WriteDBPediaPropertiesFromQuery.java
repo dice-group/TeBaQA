@@ -2,7 +2,7 @@ package de.uni.leipzig.tebaqa.indexGeneration;
 
 import com.google.common.collect.Lists;
 import de.uni.leipzig.tebaqa.helper.DBpediaPropertiesProvider;
-import moa.recommender.rc.utils.Hash;
+
 import org.apache.jena.rdf.model.Resource;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;

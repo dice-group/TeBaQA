@@ -2,7 +2,6 @@ package de.uni.leipzig.tebaqa.spring;
 
 import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.helper.FillTemplatePatternsWithResources;
-import moa.recommender.rc.utils.Hash;
 import org.aksw.qa.commons.datastructure.IQuestion;
 
 import java.util.ArrayList;

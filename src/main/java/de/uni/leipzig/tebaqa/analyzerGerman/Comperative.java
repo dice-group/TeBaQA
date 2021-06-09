@@ -17,7 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class Comperative implements IAnalyzer {
-    static Logger log = LoggerFactory.getLogger(org.aksw.mlqa.analyzer.comperative.Comperative.class);
+    //static Logger log = LoggerFactory.getLogger(org.aksw.mlqa.analyzer.comparative.Comparative.class);
     private Attribute attribute = null;
     private StanfordCoreNLP pipeline;
 

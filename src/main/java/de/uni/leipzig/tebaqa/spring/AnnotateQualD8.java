@@ -1,31 +1,22 @@
 package de.uni.leipzig.tebaqa.spring;
 
 import de.uni.leipzig.tebaqa.controller.PipelineController;
-import de.uni.leipzig.tebaqa.controller.PipelineControllerTripleTemplates;
-import de.uni.leipzig.tebaqa.controller.SemanticAnalysisHelper;
-import de.uni.leipzig.tebaqa.helper.FillTemplatePatternsWithResources;
-import de.uni.leipzig.tebaqa.helper.ResourceLinker;
+
 import de.uni.leipzig.tebaqa.model.AnswerToQuestion;
-import moa.recommender.rc.utils.Hash;
+
 import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.load.Dataset;
-import org.aksw.qa.commons.load.LoaderController;
+
 import org.aksw.qa.commons.load.json.EJQuestionFactory;
 import org.aksw.qa.commons.load.json.ExtendedQALDJSONLoader;
 import org.aksw.qa.commons.load.json.QaldJson;
-import org.aksw.qa.commons.utils.SPARQLExecutor;
-import org.apache.jena.rdf.model.Literal;
-import org.apache.jena.rdf.model.RDFNode;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 
 import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipeline;
-import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipelineTripleTemplates;
-import static de.uni.leipzig.tebaqa.helper.PipelineProvider.getQAPipelinecalculateModelPipeline;
 
 public class AnnotateQualD8 {
 

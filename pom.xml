@@ -131,11 +131,11 @@
         <dependency>
             <groupId>org.aksw.qa</groupId>
             <artifactId>commons</artifactId>
-            <version>0.4.22</version>
+            <version>0.4.14</version>
             <exclusions>
-                <exclusion>  <!-- declare the exclusion here -->
+                <exclusion>
                     <groupId>org.dllearner</groupId>
-                    <artifactId>*</artifactId>
+                    <artifactId>components-core</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -149,9 +149,9 @@
             <artifactId>annotation</artifactId>
             <version>0.3.1</version>
             <exclusions>
-                <exclusion>  <!-- declare the exclusion here -->
+                <exclusion>
                     <groupId>org.dllearner</groupId>
-                    <artifactId>*</artifactId>
+                    <artifactId>components-core</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -214,11 +214,12 @@
             <artifactId>qa.ml</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <exclusions>
-                <exclusion>  <!-- declare the exclusion here -->
+                <exclusion>
                     <groupId>org.dllearner</groupId>
-                    <artifactId>*</artifactId>
+                    <artifactId>components-core</artifactId>
                 </exclusion>
             </exclusions>
+
         </dependency>
         <dependency>
             <groupId>edu.mit</groupId>

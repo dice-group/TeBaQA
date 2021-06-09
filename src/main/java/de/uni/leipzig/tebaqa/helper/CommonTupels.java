@@ -1,18 +1,14 @@
 package de.uni.leipzig.tebaqa.helper;
 
 import com.google.common.collect.Sets;
-import de.uni.leipzig.tebaqa.model.ResultsetBinding;
-import de.uni.leipzig.tebaqa.model.SPTupel;
-import moa.recommender.rc.utils.Hash;
+
 import org.aksw.qa.commons.datastructure.IQuestion;
 import org.aksw.qa.commons.load.Dataset;
 import org.aksw.qa.commons.load.LoaderController;
 import org.apache.jena.graph.Node;
-import org.apache.jena.graph.NodeFactory;
-import org.apache.jena.graph.Triple;
+
 import org.apache.jena.query.*;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.StmtIterator;
+
 import org.apache.jena.sparql.core.TriplePath;
 import org.apache.jena.sparql.syntax.ElementPathBlock;
 import org.apache.jena.sparql.syntax.ElementTriplesBlock;

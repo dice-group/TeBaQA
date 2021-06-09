@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Properties;
 
 public class EntityPerson implements IAnalyzer {
-    static Logger log = LoggerFactory.getLogger(org.aksw.mlqa.analyzer.entityType.EntityPerson.class);
+    //static Logger log = LoggerFactory.getLogger(org.aksw.mlqa.analyzer.entityType.EntityPerson.class);
     private Attribute attribute = null;
     private StanfordCoreNLP pipeline;
 
