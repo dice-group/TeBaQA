@@ -85,7 +85,7 @@ public class TeBaQAIndexer {
 
             TeBaQAIndexer runner = new TeBaQAIndexer(esProps);
 
-            boolean indexOntologyFlag = "true".equalsIgnoreCase(prop.getProperty("source.ontology.flag"));
+            boolean indexOntologyFlag = "true".equalsIgnoreCase(prop.getProperty("index.ontology.flag"));
             if (indexOntologyFlag) {
                 String propertyIndex = esProps.getPropertyIndex();
                 LOGGER.info("The Property index will be here: " + propertyIndex);
@@ -106,7 +106,7 @@ public class TeBaQAIndexer {
                 runner.indexOntologyFiles(ontologyFiles);
             }
 
-            boolean indexDataFlag = "true".equalsIgnoreCase(prop.getProperty("source.data.flag"));
+            boolean indexDataFlag = "true".equalsIgnoreCase(prop.getProperty("index.data.flag"));
             if (indexDataFlag) {
                 String entityIndex = esProps.getEntityIndex();
                 LOGGER.info("The resource index will be here: " + entityIndex);
