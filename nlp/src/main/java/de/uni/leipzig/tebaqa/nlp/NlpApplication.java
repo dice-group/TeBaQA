@@ -14,7 +14,7 @@ public class NlpApplication {
 		rootLogger.info("Starting NPL application ...");
 
 		// init
-		StanfordPipelineProvider.getSingletonPipelineInstance(NLPLang.EN);
+//		StanfordPipelineProvider.getSingletonPipelineInstance(NLPLang.EN);
 
 		SpringApplication.run(NlpApplication.class, args);
 	}

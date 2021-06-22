@@ -1,7 +1,8 @@
 package de.uni.leipzig.tebaqa.entitylinking.util;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.ESConnectionProperties;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.util.Properties;
 
 public class PropertyUtil {
 
-    private static final Logger LOGGER = Logger.getLogger(PropertyUtil.class);
+    private static final Logger LOGGER = LogManager.getLogger(PropertyUtil.class);
 
     private static ESConnectionProperties ES_CONNECTION_PROPERTIES = null;
 

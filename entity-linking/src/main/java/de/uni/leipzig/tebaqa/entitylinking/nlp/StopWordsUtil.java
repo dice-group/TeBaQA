@@ -1,7 +1,8 @@
 package de.uni.leipzig.tebaqa.entitylinking.nlp;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -12,7 +13,7 @@ import java.util.*;
 
 public class StopWordsUtil {
 
-    private static final Logger LOGGER = Logger.getLogger(StopWordsUtil.class);
+    private static final Logger LOGGER = LogManager.getLogger(StopWordsUtil.class);
     private static final Map<String, Set<String>> STOP_WORD_MAP = new HashMap<>();
 
     static {

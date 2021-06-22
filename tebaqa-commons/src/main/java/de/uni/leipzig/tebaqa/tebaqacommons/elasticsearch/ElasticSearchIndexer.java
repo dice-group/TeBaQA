@@ -2,7 +2,8 @@ package de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.ESConnectionProperties;
 import org.apache.http.HttpHost;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
@@ -32,7 +33,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ElasticSearchIndexer {
 
-    private static final Logger LOGGER = Logger.getLogger(ElasticSearchIndexer.class);
+    private static final Logger LOGGER = LogManager.getLogger(ElasticSearchIndexer.class);
 
     // Constants
     final String URI = "uri";

@@ -2,7 +2,8 @@ package de.uni.leipzig.tebaqa.template.nlp.analyzer;
 
 import org.aksw.mlqa.analyzer.IAnalyzer;
 import org.aksw.mlqa.analyzer.numberoftoken.NumberOfToken;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Analyzer {
-    private static Logger log = Logger.getLogger(Analyzer.class);
+    private static Logger log = LogManager.getLogger(Analyzer.class);
     public ArrayList<Attribute> fvWekaAttributes = new ArrayList<>();
     private ArrayList<IAnalyzer> analyzers;
 

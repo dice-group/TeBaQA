@@ -23,7 +23,8 @@ import org.aksw.qa.commons.load.LoaderController;
 import org.aksw.qa.commons.load.json.EJQuestionFactory;
 import org.aksw.qa.commons.load.json.ExtendedQALDJSONLoader;
 import org.aksw.qa.commons.load.json.QaldJson;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import weka.classifiers.Classifier;
 import weka.core.Instance;
 
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
 
 public class WekaClassifier {
 
-    private static final Logger LOGGER = Logger.getLogger(WekaClassifier.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(WekaClassifier.class.getName());
     private static final Dataset DEFAULT_TRAINING_DATASET = Dataset.QALD9_Train_Multilingual;
 
     private static final Map<Dataset, WekaClassifier> classifierInstances = new HashMap<>(1);

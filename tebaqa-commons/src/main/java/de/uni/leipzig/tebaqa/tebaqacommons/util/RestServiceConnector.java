@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -11,7 +12,7 @@ import org.springframework.web.client.RestTemplate;
 
 public class RestServiceConnector {
 
-    private static final Logger LOGGER = Logger.getLogger(RestServiceConnector.class);
+    private static final Logger LOGGER = LogManager.getLogger(RestServiceConnector.class);
 
     public static <T> ResponseEntity<T> postParam(String serviceUrl, MultiValueMap<String, String> params, Class<T> clazz) {
         RestTemplate restTemplate = new RestTemplate();

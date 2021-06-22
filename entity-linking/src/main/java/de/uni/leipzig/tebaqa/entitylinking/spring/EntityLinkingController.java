@@ -3,7 +3,8 @@ package de.uni.leipzig.tebaqa.entitylinking.spring;
 import de.uni.leipzig.tebaqa.entitylinking.service.EntityLinkingService;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityLinkingResponseBean;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -17,7 +18,7 @@ import java.io.IOException;
 @RestController
 public class EntityLinkingController {
 
-    private static final Logger LOGGER = Logger.getLogger(EntityLinkingController.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(EntityLinkingController.class.getName());
     private static final EntityLinkingService linkingService = new EntityLinkingService();
 
     @RequestMapping(method = RequestMethod.POST, path = "/entity-linking")

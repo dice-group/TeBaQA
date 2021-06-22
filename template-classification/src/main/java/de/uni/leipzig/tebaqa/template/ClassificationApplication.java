@@ -3,7 +3,8 @@ package de.uni.leipzig.tebaqa.template;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.StanfordPipelineProvider;
 import de.uni.leipzig.tebaqa.template.service.WekaClassifier;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.io.ClassPathResource;
@@ -14,7 +15,7 @@ import java.util.Properties;
 @SpringBootApplication
 public class ClassificationApplication {
 
-    public static Logger LOGGER = Logger.getRootLogger();
+    public static Logger LOGGER = LogManager.getRootLogger();
 
 
     public static void main(String[] args) throws IOException {

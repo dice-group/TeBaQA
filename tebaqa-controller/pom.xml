@@ -138,6 +138,10 @@
 					<groupId>ch.qos.logback</groupId>
 					<artifactId>logback-core</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>org.dllearner</groupId>
+					<artifactId>components-core</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
@@ -153,6 +157,10 @@
 				<exclusion>
 					<groupId>ch.qos.logback</groupId>
 					<artifactId>logback-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.dllearner</groupId>
+					<artifactId>components-core</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>

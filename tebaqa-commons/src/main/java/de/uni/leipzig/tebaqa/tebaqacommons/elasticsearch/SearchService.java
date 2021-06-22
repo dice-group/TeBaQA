@@ -3,7 +3,8 @@ package de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
 import org.apache.jena.ext.com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.util.*;
 
 public class SearchService {
 
-    private static final Logger LOGGER = Logger.getLogger(SearchService.class);
+    private static final Logger LOGGER = LogManager.getLogger(SearchService.class);
 
     // TODO Externalize?
 //    public static final double MATCHING_THRESHOLD_ENTITY = 0.1;

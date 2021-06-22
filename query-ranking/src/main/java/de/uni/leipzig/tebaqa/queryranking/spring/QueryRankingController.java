@@ -6,7 +6,8 @@ import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityLinkingResponseBean;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryRankingRequestBody;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryRankingResponseBean;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,7 +20,7 @@ import java.util.Set;
 @RestController
 public class QueryRankingController {
 
-    private static final Logger LOGGER = Logger.getLogger(QueryRankingController.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(QueryRankingController.class.getName());
 
     @PostMapping(
             value = "/generate-queries",

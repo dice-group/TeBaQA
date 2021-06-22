@@ -6,7 +6,8 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
@@ -21,7 +22,7 @@ import java.util.*;
 
 public class TeBaQAIndexer {
 
-    private static final Logger LOGGER = Logger.getLogger(TeBaQAIndexer.class);
+    private static final Logger LOGGER = LogManager.getLogger(TeBaQAIndexer.class);
     private static final String DEFAULT_PROPERTIES = "src/main/resources/indexing.properties";
 
     // Constants

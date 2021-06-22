@@ -8,7 +8,8 @@ import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
 import edu.stanford.nlp.semgraph.SemanticGraph;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.*;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class ResourceLinker {
 
-    private static final Logger LOGGER = Logger.getLogger(ResourceLinker.class);
+    private static final Logger LOGGER = LogManager.getLogger(ResourceLinker.class);
 
     private String question;
     private final Lang language;
