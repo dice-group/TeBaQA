@@ -12,6 +12,7 @@ import de.uni.leipzig.tebaqa.template.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.template.nlp.ArffGenerator;
 import de.uni.leipzig.tebaqa.template.nlp.ClassifierProvider;
 import de.uni.leipzig.tebaqa.template.nlp.analyzer.Analyzer;
+import de.uni.leipzig.tebaqa.template.util.Constants;
 import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
 import de.uni.leipzig.tebaqa.template.util.Utilities;
 //import org.aksw.hawk.datastructures.HAWKQuestion;
@@ -35,10 +36,13 @@ import java.util.stream.Collectors;
 public class WekaClassifier {
 
     private static final Logger LOGGER = LogManager.getLogger(WekaClassifier.class.getName());
-    private static final Dataset DEFAULT_TRAINING_DATASET = Dataset.QALD9_Train_Multilingual;
+//    private static final Dataset DEFAULT_TRAINING_DATASET = Dataset.QALD9_Train_Multilingual;
 
-    private static final Map<Dataset, WekaClassifier> classifierInstances = new HashMap<>(1);
-    private final Dataset trainDataset;
+    private static final Map<String, WekaClassifier> classifierInstances = new HashMap<>(1);
+    private final String effectiveName;
+    private Dataset trainDataset;
+    private String trainingFilePath;
+    private boolean fileBasedTraining = false;
     private SemanticAnalysisHelper semanticAnalysisHelper;
     private Map<String, QueryTemplateMapping> graphToQueryTemplateMappings;
     private List<String> graphs;
@@ -49,18 +53,51 @@ public class WekaClassifier {
 
     private WekaClassifier(Dataset dataset) {
         this.trainDataset = dataset;
+        this.effectiveName = dataset.name();
+    }
+
+    private WekaClassifier(String datasetFilePath) {
+        this.fileBasedTraining = true;
+        this.trainDataset = null;
+        this.trainingFilePath = datasetFilePath;
+        this.effectiveName = new File(datasetFilePath).getName();
     }
 
     public static WekaClassifier getDefaultClassifier() throws IOException {
-        return getClassifierFor(DEFAULT_TRAINING_DATASET);
+        Properties properties = System.getProperties();
+        boolean trainFromFile = Boolean.parseBoolean(properties.getProperty(Constants.FILE_BASED_TRAINING_FLAG));
+
+        if(trainFromFile)
+            return getClassifierFor(properties.getProperty(Constants.TRAINING_FILEPATH));
+        else {
+            String trainingDataset = properties.getProperty(Constants.DEFAULT_TRAINING_DATASET);
+            return getClassifierFor(Dataset.valueOf(trainingDataset));
+        }
     }
 
     public static WekaClassifier getClassifierFor(Dataset dataset) throws IOException {
-        WekaClassifier classifierInstance = classifierInstances.get(dataset);
+        WekaClassifier classifierInstance = classifierInstances.get(dataset.name());
         if (classifierInstance == null) {
             classifierInstance = new WekaClassifier(dataset);
             classifierInstance.initClassifier();
-            classifierInstances.put(dataset, classifierInstance);
+            classifierInstances.put(dataset.name(), classifierInstance);
+        }
+        return classifierInstance;
+    }
+
+    public static WekaClassifier getClassifierFor(String datasetFilePath) throws IOException {
+        File datasetFile = new File(datasetFilePath);
+        if (!datasetFile.exists() || !datasetFile.isFile()) {
+            throw new IOException("Dataset file " + datasetFilePath + " cannot be read");
+        }
+
+        // Use filename as the dataset name
+        String datasetName = datasetFile.getName();
+        WekaClassifier classifierInstance = classifierInstances.get(datasetName);
+        if (classifierInstance == null) {
+            classifierInstance = new WekaClassifier(datasetFilePath);
+            classifierInstance.initClassifier();
+            classifierInstances.put(datasetName, classifierInstance);
         }
         return classifierInstance;
     }
@@ -75,21 +112,21 @@ public class WekaClassifier {
 
         if (this.graphs == null || this.graphToQueryTemplateMappings == null ||
                 !this.isClassifierFilePresent()) {
-            LOGGER.info("Training classifier model using " + this.trainDataset.name());
+            LOGGER.info("Training classifier model using " + this.effectiveName);
             this.trainClassifier();
             LOGGER.info("Training done");
         }
-        ClassifierProvider.init(this.trainDataset.name(), this.graphs);
+        ClassifierProvider.init(this.effectiveName, this.graphs);
     }
 
     private boolean isClassifierFilePresent() {
-        return new File(PropertyUtils.getClassifierFileAbsolutePath(trainDataset.name())).exists();
+        return new File(PropertyUtils.getClassifierFileAbsolutePath(this.effectiveName)).exists();
     }
 
-    private void trainClassifier() {
+    private void trainClassifier() throws IOException {
         // 1. Create clusters from questions
         LOGGER.info("Clustering questions ...");
-        List<Cluster> queryClusters = clusterQueries(trainDataset);
+        List<Cluster> queryClusters = this.clusterQueries();
         LOGGER.info(queryClusters.size() + " clusters created.");
 
         // 2. Extract and save graphs
@@ -112,24 +149,23 @@ public class WekaClassifier {
 //        List<CustomQuestion> testSet = new ArrayList<>();
 //        queryClusters.forEach(c -> testSet.addAll(c.getQuestions()));
         LOGGER.info("Instantiating ArffGenerator...");
-        new ArffGenerator(trainDataset.name(), this.graphs, trainSet);
+        new ArffGenerator(this.effectiveName, this.graphs, trainSet);
         LOGGER.info("Instantiating ArffGenerator done!");
 
-        ClassifierProvider.init(trainDataset.name(), graphs);
+        ClassifierProvider.init(this.effectiveName, graphs);
     }
 
-    private static List<Cluster> clusterQueries(Dataset dataset) {
-//        List<HAWKQuestion> trainQuestions = loadTrainingQuestions(dataset);
-        List<Question> trainQuestions = dataset == Dataset.QALD9_Train_Multilingual ? loadQALD9Training() : loadTrainingQuestions(dataset);
+    private List<Cluster> clusterQueries() throws IOException {
+        List<Question> trainQuestions;
+        if (fileBasedTraining) {
+            trainQuestions = loadTrainingQuestionFromFile(this.trainingFilePath);
+        } else {
+            trainQuestions = this.trainDataset == Dataset.QALD9_Train_Multilingual ? loadQALD9Training() : loadTrainingQuestions(this.trainDataset);
+        }
 
         Map<String, String> trainQuestionsWithQuery = new HashMap<>();
         trainQuestions.forEach(trainQuestion -> trainQuestionsWithQuery.put(trainQuestion.getSparqlQuery(), trainQuestion.getLanguageToQuestion().get("en")));
 
-        //log.info("Generating ontology mapping...");
-        //createOntologyMapping(trainQuestionsWithQuery);
-        //log.info("Ontology Mapping: " + OntologyMappingProvider.getOntologyMapping());
-
-        //List<CustomQuestion> queryClusters;
         List<Cluster> queryClusters;
         LOGGER.info("Building query clusters...");
 
@@ -144,6 +180,17 @@ public class WekaClassifier {
         return queryClusters;
     }
 
+    private static List<Question> loadTrainingQuestionFromFile(String trainingFilePath) throws IOException {
+        QaldJson json;
+        List<IQuestion> out = null;
+        json = (QaldJson) ExtendedQALDJSONLoader.readJson(new FileInputStream(trainingFilePath), QaldJson.class);
+        out = EJQuestionFactory.getQuestionsFromQaldJson(json);
+        out = out.parallelStream()
+                .filter(question -> question.getSparqlQuery() != null)
+                .collect(Collectors.toList());
+        return QuestionFactory.createInstances(out);
+    }
+
     private static List<Question> loadTrainingQuestions(Dataset dataset) {
         //Remove all trainQuestions without SPARQL query
         List<IQuestion> load = LoaderController.load(dataset);
@@ -153,23 +200,13 @@ public class WekaClassifier {
         return QuestionFactory.createInstances(result);
     }
 
-    public static List<Question> loadQALD9Training() {
-        QaldJson json = null;
-        List<IQuestion> out = null;
-        String deriveUri = null;
-        try {
-            json = (QaldJson) ExtendedQALDJSONLoader.readJson(new FileInputStream(new File("qald-9-train-multilingual.json")), QaldJson.class);
-            out = EJQuestionFactory.getQuestionsFromQaldJson(json);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return QuestionFactory.createInstances(out);
+    public static List<Question> loadQALD9Training() throws IOException {
+        return loadTrainingQuestionFromFile("qald-9-train-multilingual.json");
     }
 
 
     private void saveGraphs(List<String> graphs) {
-        String graphsFilePath = PropertyUtils.getGraphsFileAbsolutePath(this.trainDataset.name());
+        String graphsFilePath = PropertyUtils.getGraphsFileAbsolutePath(this.effectiveName);
         LOGGER.info("Saving graphs in " + graphsFilePath);
 
         try {
@@ -197,7 +234,7 @@ public class WekaClassifier {
     private void loadGraphs() {
         List<String> graphsFromFile = new ArrayList<>();
 
-        String graphsFilePath = PropertyUtils.getGraphsFileAbsolutePath(this.trainDataset.name());
+        String graphsFilePath = PropertyUtils.getGraphsFileAbsolutePath(this.effectiveName);
         File graphsFile = new File(graphsFilePath);
 
         if (!graphsFile.exists()) {
@@ -222,7 +259,7 @@ public class WekaClassifier {
     }
 
     private void saveMappings(Map<String, QueryTemplateMapping> graphToQueryTemplateMappings) {
-        String mappingsFilePath = PropertyUtils.getMappingsFileAbsolutePath(this.trainDataset.name());
+        String mappingsFilePath = PropertyUtils.getMappingsFileAbsolutePath(this.effectiveName);
         LOGGER.info("Saving mappings in " + mappingsFilePath);
 
         try {
@@ -250,7 +287,7 @@ public class WekaClassifier {
 
     private void loadMappings() {
         Map<String, QueryTemplateMapping> mappingsFromFile = new HashMap<>();
-        String mappingsFilePath = PropertyUtils.getMappingsFileAbsolutePath(this.trainDataset.name());
+        String mappingsFilePath = PropertyUtils.getMappingsFileAbsolutePath(this.effectiveName);
 
         File mappingsFile = new File(mappingsFilePath);
         if (!mappingsFile.exists()) {
