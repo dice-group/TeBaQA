@@ -10,7 +10,7 @@
     </parent>
     <groupId>de.uni.leipzig.tebaqa</groupId>
     <artifactId>entity-linking</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0</version>
     <name>entity-linking</name>
     <description>Entity linking to link Class, Properties and Resource recognition from raw question</description>
 
@@ -76,7 +76,7 @@
         <dependency>
             <groupId>de.uni.leipzig.tebaqa</groupId>
             <artifactId>tebaqa-commons</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>1.0</version>
             <scope>compile</scope>
         </dependency>
 

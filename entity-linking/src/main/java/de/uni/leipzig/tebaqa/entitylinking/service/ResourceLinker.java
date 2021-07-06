@@ -41,10 +41,13 @@ public class ResourceLinker {
         this.entityCandidates = new HashSet<>();
         this.propertyCandidates = new HashSet<>();
         this.classCandidates = new HashSet<>();
-        this.semanticAnalysisHelper = language.getSemanticAnalysisHelper();
-//        this.semanticAnalysisHelper = new SemanticAnalysisHelper(new RestServiceConfiguration("http", "tebaqa.cs.upb.de", "8085"), language);
         this.searchService = new SearchService(PropertyUtil.getElasticSearchConnectionProperties());
         this.disambiguationService = new DisambiguationService(this.searchService);
+        RestServiceConfiguration nlpServiceProps = PropertyUtil.getNLPServiceConnectionProperties();
+        if(nlpServiceProps == null)
+            this.semanticAnalysisHelper = language.getSemanticAnalysisHelper();
+        else
+            this.semanticAnalysisHelper = new SemanticAnalysisHelper(nlpServiceProps, language);
     }
 
     public String getQuestion() {

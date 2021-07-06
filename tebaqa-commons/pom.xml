@@ -10,7 +10,7 @@
 	<!--	</parent>-->
 	<groupId>de.uni.leipzig.tebaqa</groupId>
 	<artifactId>tebaqa-commons</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0</version>
 
 	<name>tebaqa-commons</name>
 	<description>Common POJOs and Util classes</description>
@@ -31,7 +31,7 @@
 		</repository>
 		<repository>
 			<id>aksw-snapshots</id>
-			<url>http://maven.aksw.org/repository/snapshots/</url>
+			<url>https://maven.aksw.org/repository/snapshots/</url>
 			<releases>
 				<enabled>true</enabled>
 			</releases>
@@ -187,10 +187,10 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
-			<!--			<plugin>-->
-			<!--				<groupId>org.springframework.boot</groupId>-->
-			<!--				<artifactId>spring-boot-maven-plugin</artifactId>-->
-			<!--			</plugin>-->
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
 		</plugins>
 	</build>
 

@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>de.uni.leipzig.tebaqa</groupId>
 	<artifactId>tebaqa-controller</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0</version>
 	<name>tebaqa-controller</name>
 	<description>Central controller for QA requests</description>
 
@@ -31,7 +31,7 @@
 		</repository>
 		<repository>
 			<id>aksw-snapshots</id>
-			<url>http://maven.aksw.org/repository/snapshots/</url>
+			<url>https://maven.aksw.org/repository/snapshots/</url>
 			<releases>
 				<enabled>true</enabled>
 			</releases>
@@ -119,7 +119,7 @@
 		<dependency>
 			<groupId>de.uni.leipzig.tebaqa</groupId>
 			<artifactId>tebaqa-commons</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>1.0</version>
 			<scope>compile</scope>
 		</dependency>
 

@@ -4,7 +4,8 @@ import edu.stanford.nlp.io.IOUtils;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.PropertiesUtils;
 import edu.stanford.nlp.util.logging.RedwoodConfiguration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -55,7 +56,7 @@ public enum NLPLang {
         }
     };
 
-    private static final Logger LOGGER = Logger.getLogger(StanfordPipelineProvider.class);
+    private static final Logger LOGGER = LogManager.getLogger(StanfordPipelineProvider.class);
     private final String languageCode;
 
     NLPLang(String languageCode) {

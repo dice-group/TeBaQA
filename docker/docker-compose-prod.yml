@@ -1,0 +1,41 @@
+version: "3"
+
+services:
+  nlp:
+    image: nlp:latest
+    ports:
+      - 8085:8085
+    networks:
+      - tebaqa-net
+
+  template-classification:
+    image: template-classification:latest
+      ports:
+        - 8081:8081
+      networks:
+        - tebaqa-net
+
+  entity-linking:
+    image: entity-linking:latest
+    ports:
+      - 8082:8082
+    networks:
+      - tebaqa-net
+
+  query-ranking:
+    image: query-ranking:latest
+    ports:
+      - 8083:8083
+    networks:
+      - tebaqa-net
+
+  controller:
+    image: tebaqa-controller:latest
+    ports:
+      - 8080:8080
+      - 80:8080
+    networks:
+      - tebaqa-net
+
+networks:
+  tebaqa-net:
