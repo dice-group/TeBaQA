@@ -17,7 +17,7 @@ Additionally, Entity Linking requires Elasticsearch indices for data and ontolog
 Check [this file](https://github.com/dice-group/TeBaQA/blob/development-modular/tebaqa-commons/src/main/resources/indexing.properties) for more information on creating your own indices.
 
 
-### There are two ways to run TeBaQA
+#### There are two ways to run TeBaQA
 #### 1. Run locally
 - Checkout the project
 - Build all modules
