@@ -5,7 +5,7 @@
 # tebaqa-commons/src/main/resources/indexing.properties.
 # 2. Run this script from the root folder.
 # 3. Default settings assume that ES and all the individual services are running on the localhost.
-# If that is not the case, don't forget to change the hostnames in properties file of relevant modules.
+# If that is not the case, don't forget to change the hostnames/ports in properties file of relevant modules.
 
 
 # Start each service in background, save output to nohop.out.

@@ -1,45 +1,59 @@
-# Template-Based Question Answering
+# Template-Based Question Answering (TeBaQA)
 [![Build Status](https://travis-ci.org/dice-group/TeBaQA.svg?branch=master)](https://travis-ci.org/dice-group/TeBaQA)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/d0441bf0c82e47d6a3f2b23f11b223e6)](https://www.codacy.com/app/pnancke/TeBaQA?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=pnancke/TeBaQA&amp;utm_campaign=Badge_Grade)
-## Preview
-- A running example of this application is at https://tebaqa.demos.dice-research.org/
+
+TeBaQA is available at https://tebaqa.demos.dice-research.org/
 ## Execution
+
+TeBaQA implements microservices architecture. The application comprises following 5 modules:
+
+- Template Classification :- to classify query templates (localhost:8081)
+- Entity Linking :- finding and linking entities and relations (localhost:8082)
+- Query Ranking :- candidate query execution, ranking (localhost:8083)
+- TeBaQA Controller :- central controller, frontend application (localhost:8080)
+- NLP Server :- CoreNLP Server endpoint (localhost:8085)
+
+Additionally, Entity Linking requires Elasticsearch indices for data and ontology of the knowledge base.
+Check [this file](https://github.com/dice-group/TeBaQA/blob/development-modular/tebaqa-commons/src/main/resources/indexing.properties) for more information on creating your own indices.
+
+
+###There are two ways to run TeBaQA
+####1. Run locally
 - Checkout the project
-- Execute the following command in the root directory to start the server: `mvn spring-boot:run`
+- Build all modules
+  
+  `./build-script.sh`
+- Run all modules
+  
+  `./run-script.sh`
 
-### Docker
-First install docker in your system. For ubuntu you may refer to below link. [https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04]
+####2. Run as Docker ([installation guide](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-20-04), Ubuntu 20.04) containers
+- Checkout the project
+- Build docker images for each module
+  
+  `./docker/build-images.sh`
+- To run all containers
 
-For windows users [https://docs.docker.com/toolbox/toolbox_install_windows/#step-1-check-your-version]
+  `./docker/run-containers.sh`
+- To stop all containers
+  
+  `./docker/stop-containers.sh`
 
-Move to the parent directory of project and execute the below commands
-```
-mvn clean
-mvn package
-```
-Now to build your image, type the below command.
-```
-sudo docker build -f Dockerfile -t tebaqa .
-```
-To run your image, type the below command.
-```
-sudo docker run -d -p 8187:8080 -t tebaqa --restart always
-```
-It will be available under localhost:8187
 
 ## Citation
 
 Vollmers, D., Jalota, R., Moussallem, D., Topiwala, H., Ngomo, A. C. N., & Usbeck, R. (2021). Knowledge Graph Question Answering using Graph-Pattern Isomorphism. arXiv preprint arXiv:2103.06752. https://arxiv.org/abs/2103.06752
 
 ## Question Answering
-- To answer a question simply execute a HTTP POST request to
-  - ```http://localhost:8181/qa``` for the answer which follows the W3C Query Results JSON Format (see https://www.w3.org/TR/sparql11-results-json/).
-  - ```http://localhost:8181/qa-simple``` for a simple JSON with only the answer.
+- To answer a question, simply execute an HTTP POST request to
+  - ```http://localhost:8080/qa``` for the answer which follows the W3C Query Results JSON Format (see https://www.w3.org/TR/sparql11-results-json/).
+  - ```http://localhost:8080/qa-simple``` for a simple JSON with only the answer.
 - Parameters:
   - `query`: A string which contains a question (required).
   - `lang`: The language of the question (default:`en`) *Note: Other languages than English haven't been implemented yet.*
 - An example request could look like this: 
   - `http://localhost:8181/qa?query=What is the original title of the interpretation of dreams?&lang=en`
+
 ## Evaluation
 - QALD-8: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012090005
 - QALD-9: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012050000
