@@ -17,8 +17,8 @@ Additionally, Entity Linking requires Elasticsearch indices for data and ontolog
 Check [this file](https://github.com/dice-group/TeBaQA/blob/development-modular/tebaqa-commons/src/main/resources/indexing.properties) for more information on creating your own indices.
 
 
-###There are two ways to run TeBaQA
-####1. Run locally
+### There are two ways to run TeBaQA
+#### 1. Run locally
 - Checkout the project
 - Build all modules
   
@@ -27,7 +27,7 @@ Check [this file](https://github.com/dice-group/TeBaQA/blob/development-modular/
   
   `./run-script.sh`
 
-####2. Run as Docker ([installation guide](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-20-04), Ubuntu 20.04) containers
+#### 2. Run as Docker ([installation guide](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-20-04), Ubuntu 20.04) containers
 - Checkout the project
 - Build docker images for each module
   
