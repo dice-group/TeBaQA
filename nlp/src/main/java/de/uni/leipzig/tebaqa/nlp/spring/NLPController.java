@@ -6,7 +6,8 @@ import de.uni.leipzig.tebaqa.nlp.model.NLPRequestBody;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.JSONOutputter;
 import edu.stanford.nlp.pipeline.ProtobufAnnotationSerializer;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,7 +22,7 @@ import java.util.Map;
 @RestController
 public class NLPController {
 
-    private static final Logger LOGGER = Logger.getLogger(NLPController.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(NLPController.class.getName());
     private static final Map<NLPLang, NLPAnalyzer> instances = new HashMap<>();
     private static final JSONOutputter JSON_OUTPUTTER = new JSONOutputter();
     ProtobufAnnotationSerializer serializer = new ProtobufAnnotationSerializer();

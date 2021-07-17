@@ -1,0 +1,375 @@
+package de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch;
+
+import com.google.common.collect.Lists;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.ESConnectionProperties;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.jena.graph.Triple;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.RDFParseException;
+import org.openrdf.rio.RDFParser;
+import org.openrdf.rio.ntriples.NTriplesParser;
+import org.openrdf.rio.turtle.TurtleParser;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+
+public class TeBaQAIndexer {
+
+    private static final Logger LOGGER = LogManager.getLogger(TeBaQAIndexer.class);
+    private static final String DEFAULT_PROPERTIES = "src/main/resources/indexing.properties";
+
+    // Constants
+    private static final String TTL = "ttl";
+    private static final String NT = "nt";
+    private static final String OWL = "owl";
+    private static final String BZ2 = ".bz2";
+
+    public static final String TYPE_PREDICATE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".toLowerCase();
+    public static final List<String> CLASS_TYPES = Lists.newArrayList(
+            "http://www.w3.org/2002/07/owl#Class".toLowerCase(),
+            "http://www.w3.org/2000/01/rdf-schema#Class".toLowerCase());
+    public static final List<String> PROPERTY_TYPES = Lists.newArrayList(
+            "http://www.w3.org/2002/07/owl#ObjectProperty".toLowerCase(),
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property".toLowerCase(),
+            "http://www.w3.org/2002/07/owl#DatatypeProperty".toLowerCase()
+    );
+    public static final List<String> LABEL_PREDICATES = Lists.newArrayList(
+            "http://www.w3.org/2004/02/skos/core#prefLabel".toLowerCase(),
+            "http://www.w3.org/2000/01/rdf-schema#label".toLowerCase(),
+            "http://schema.org/name".toLowerCase(),
+            "http://www.w3.org/2004/02/skos/core#altLabel".toLowerCase(),
+            "http://xmlns.com/foaf/0.1/name".toLowerCase(),
+            "http://dbpedia.org/ontology/abbreviation".toLowerCase(),
+            "http://dbpedia.org/ontology/demonym".toLowerCase(),
+            "http://xmlns.com/foaf/0.1/nick".toLowerCase(),
+            "http://dbpedia.org/ontology/synonym".toLowerCase(),
+            //"http://xmlns.com/foaf/0.1/givenName".toLowerCase()
+            "http://xmlns.com/foaf/0.1/surname".toLowerCase(),
+            "http://dbpedia.org/ontology/alternativeName".toLowerCase()
+    );
+
+    private final ESConnectionProperties esConnectionProperties;
+
+    public TeBaQAIndexer(ESConnectionProperties esProps) {
+        this.esConnectionProperties = esProps;
+    }
+
+
+    public static void main(String[] args) {
+        String indexingProperties = DEFAULT_PROPERTIES;
+        if (args.length > 0) {
+            LOGGER.info("Property file specified as argument: " + args[0]);
+            if (Files.notExists(Paths.get(args[0]))) {
+                LOGGER.error("Specified property file does not exist or cannot be opened.. exiting!");
+                return;
+            }
+            indexingProperties = args[0];
+        }
+        try {
+            Properties prop = new Properties();
+            InputStream input = new FileInputStream(indexingProperties);
+            prop.load(input);
+
+            LOGGER.info(prop);
+
+            ESConnectionProperties esProps = new ESConnectionProperties(prop.getProperty("target.host.scheme"),
+                    prop.getProperty("target.host.name"), prop.getProperty("target.host.port"),
+                    prop.getProperty("target.index.entity.name"), prop.getProperty("target.index.class.name"),
+                    prop.getProperty("target.index.property.name"), prop.getProperty("target.index.literal.name"));
+
+            TeBaQAIndexer runner = new TeBaQAIndexer(esProps);
+
+            boolean indexOntologyFlag = "true".equalsIgnoreCase(prop.getProperty("index.ontology.flag"));
+            if (indexOntologyFlag) {
+                String propertyIndex = esProps.getPropertyIndex();
+                LOGGER.info("The Property index will be here: " + propertyIndex);
+
+                String classIndex = esProps.getClassIndex();
+                LOGGER.info("The resource index will be here: " + classIndex);
+
+                List<File> ontologyFiles = new ArrayList<>();
+                String sourceOntologyFolder = prop.getProperty("source.ontology.folder");
+                for (File file : Objects.requireNonNull(new File(sourceOntologyFolder).listFiles())) {
+                    if (file.getName().endsWith("ttl") || file.getName().endsWith("nt") || file.getName().endsWith("owl")) {
+                        ontologyFiles.add(file);
+                    }
+                }
+                LOGGER.info("Reading " + ontologyFiles.size() + " ontology files from " + sourceOntologyFolder);
+
+                // Index ontology
+                runner.indexOntologyFiles(ontologyFiles);
+            }
+
+            boolean indexDataFlag = "true".equalsIgnoreCase(prop.getProperty("index.data.flag"));
+            if (indexDataFlag) {
+                String entityIndex = esProps.getEntityIndex();
+                LOGGER.info("The resource index will be here: " + entityIndex);
+
+                List<File> dataFiles = new ArrayList<>();
+                String sourceDataFolder = prop.getProperty("source.data.folder");
+
+                for (File file : Objects.requireNonNull(new File(sourceDataFolder).listFiles())) {
+                    if (file.getName().endsWith("ttl") || file.getName().endsWith("nt") || file.getName().endsWith("owl")) {
+                        dataFiles.add(file);
+                    }
+                }
+                LOGGER.info("Reading " + dataFiles.size() + " data files from " + sourceDataFolder);
+
+                String excludedPredicatesFile = prop.getProperty("source.data.exclude.file");
+                Set<String> excludedPredicates;
+                if (excludedPredicatesFile != null && !excludedPredicatesFile.isEmpty() && Files.exists(Paths.get(excludedPredicatesFile))) {
+                    BufferedReader bufferedReader = new BufferedReader(new FileReader(excludedPredicatesFile));
+                    String line = bufferedReader.readLine();
+
+                    excludedPredicates = new HashSet<>();
+                    while (line != null) {
+                        excludedPredicates.add(line.toLowerCase()); // Add in lowercase for comparison later
+                        line = bufferedReader.readLine();
+                    }
+
+                } else {
+                    LOGGER.error("Predicate exclusion file does not exist or cannot be opened: " + excludedPredicatesFile);
+                    excludedPredicates = Collections.emptySet();
+                }
+
+                runner.indexDataFiles(dataFiles, excludedPredicates);
+            }
+
+        } catch (IOException e) {
+            LOGGER.error("Error while creating index. Maybe the index is corrupt now.", e);
+        }
+    }
+
+
+    public void indexOntologyFiles(List<File> files) {
+
+        try {
+            ElasticSearchIndexer indexer = new ElasticSearchIndexer(esConnectionProperties);
+            indexer.createOntologyIndexes();
+            indexer.createBulkProcessor();
+
+            Set<String> foundClasses = new HashSet<>();
+            Set<String> foundPredicates = new HashSet<>();
+            Map<String, List<String>> subjectUriToLabels = new HashMap<>();
+
+            // Find classes and properties from each vocabulary file
+            for (File file : files) {
+                populateClassesAndProperties(file, foundClasses, foundPredicates, subjectUriToLabels);
+            }
+
+            // Index classes and properties found above
+            for (String cl : foundClasses) {
+                if (subjectUriToLabels.containsKey(cl))
+                    indexer.indexClass(cl, subjectUriToLabels.get(cl));
+            }
+            for (String cl : foundPredicates) {
+                if (subjectUriToLabels.containsKey(cl))
+                    indexer.indexProperty(cl, subjectUriToLabels.get(cl));
+            }
+
+            indexer.commit();
+            indexer.close();
+
+        } catch (Exception e) {
+            LOGGER.error("Error while creating ontology indexes: " + e.getMessage());
+            LOGGER.error(e);
+        }
+    }
+
+    private void populateClassesAndProperties(File file, Set<String> foundClasses, Set<String> foundPredicates, Map<String, List<String>> subjectUriToLabels) throws FileNotFoundException {
+        LOGGER.info("Start parsing: " + file);
+
+        Lang lang;
+        if (file.getName().endsWith(TTL)) {
+            lang = Lang.TTL;
+        } else {
+            lang = Lang.NTRIPLES;
+        }
+
+        Iterator<Triple> tripleIterator = RDFDataMgr.createIteratorTriples(new FileInputStream(file.getAbsolutePath()), lang, "");
+        tripleIterator.forEachRemaining(triple -> {
+            String subject = triple.getSubject().toString();
+            String predicate = triple.getPredicate().toString();
+            String object = triple.getObject().toString();
+
+            if (CLASS_TYPES.contains(object.toLowerCase()))
+                foundClasses.add(subject);
+            else if (PROPERTY_TYPES.contains(object.toLowerCase()))
+                foundPredicates.add(subject);
+
+            if (LABEL_PREDICATES.contains(predicate)) {
+//                Literal l = (Literal) triple.getObject().getLiteralValue();
+                String label = triple.getObject().getLiteral().getLexicalForm();
+//                String lang = l.getLanguage();
+//                if (lang != null && lang.equals("de")) {
+                if (!subjectUriToLabels.containsKey(subject))
+                    subjectUriToLabels.put(subject, new ArrayList<>());
+                subjectUriToLabels.get(subject).add(label);
+
+//                }
+            }
+        });
+
+        LOGGER.info("Finished parsing: " + file);
+    }
+
+    private void indexDataFiles(List<File> dataFiles, Set<String> excludedPredicates) {
+        try {
+            ElasticSearchIndexer indexer = new ElasticSearchIndexer(esConnectionProperties);
+            indexer.createEntityIndex();
+//            indexer.setLiteralIndexes();
+            indexer.createBulkProcessor();
+
+            for (File file : dataFiles) {
+                indexDataFile(indexer, file, excludedPredicates);
+            }
+            indexer.commit();
+            indexer.close();
+        } catch (Exception e) {
+            LOGGER.error("Error while creating TripleIndex.", e);
+        }
+
+
+    }
+
+    private void indexDataFile(ElasticSearchIndexer indexer, File file, Collection<String> excludedPredicates) throws RDFParseException, RDFHandlerException, IOException {
+        LOGGER.info("Start parsing: " + file);
+
+        // Set the parser based on the triple language used in file
+        String fileName = file.getName().toLowerCase();
+        RDFParser parser;
+        if (fileName.endsWith(TTL) || fileName.endsWith(TTL + ".bz2")) {
+            parser = new TurtleParser();
+        } else {
+            parser = new NTriplesParser();
+        }
+        TripleStatementHandler statementHandler = new TripleStatementHandler(indexer, excludedPredicates);
+        parser.setRDFHandler(statementHandler);
+        parser.setStopAtFirstError(false);
+
+        // Set the input stream based on file type
+        if (fileName.endsWith(".bz2")) {
+            parser.parse(new BZip2CompressorInputStream(new FileInputStream(file)), "");
+        } else {
+            parser.parse(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8), "");
+        }
+
+        // Flush out remaining bulk
+        statementHandler.index();
+
+        LOGGER.info("Finished parsing: " + file);
+    }
+
+//    private static SearchResponse queryIndex(QueryBuilder queryBuilder, int maxNumberOfResults, String indexName) throws IOException {
+//        SearchRequest searchRequest = new SearchRequest();
+//        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+//        searchSourceBuilder.query(queryBuilder);
+//        TopHitsAggregationBuilder aggregationBuilder = AggregationBuilders.topHits("top").size(maxNumberOfResults);
+//        searchSourceBuilder.aggregation(aggregationBuilder);
+//
+//        searchSourceBuilder.size(maxNumberOfResults);
+//        searchRequest.source(searchSourceBuilder);
+//        searchRequest.indices(indexName);
+//        return client.search(searchRequest, RequestOptions.DEFAULT);
+//    }
+
+//    public static Set<String> readClasses() {
+//        Charset charset = StandardCharsets.UTF_8;
+//        Set<String> uris = new HashSet<>(74000);
+//        try (BufferedReader reader = new BufferedReader(Files.newBufferedReader(Paths.get("all_classes_wiki.txt"), charset))) {
+//
+//            String classUri = reader.readLine();
+//            while (classUri != null) {
+//                uris.add(classUri);
+//                classUri = reader.readLine();
+//            }
+//
+//        } catch (IOException x) {
+//            System.err.format("IOException: %s%n", x);
+//        }
+//
+//        System.out.println("read classes: " + uris.size());
+//        return uris;
+//    }
+//
+//    public static void writeClasses() {
+//        Charset charset = StandardCharsets.UTF_8;
+//        try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(Paths.get("all_classes_wiki.txt"), charset))) {
+//            for (String content : allClassUris) {
+//                writer.println(content);
+//            }
+//        } catch (IOException x) {
+//            System.err.format("IOException: %s%n", x);
+//        }
+//    }
+//
+//    private static void readTriplesAndIndex() throws IOException {
+//        final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(30L));
+//        SearchRequest searchRequest = new SearchRequest(wikidata_triples_index);
+//        searchRequest.scroll(scroll);
+//        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+//        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+//        searchSourceBuilder.size(100000);
+//        searchSourceBuilder.sort("_doc");
+//
+//        searchRequest.source(searchSourceBuilder);
+//
+//        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+//        String scrollId = searchResponse.getScrollId();
+//        SearchHit[] searchHits = searchResponse.getHits().getHits();
+//
+//        System.out.println("Took: " + searchResponse.getTook().getMillis());
+//
+//        int readDocs = 0;
+//        while (searchHits != null && searchHits.length > 0) {
+//            readDocs += searchHits.length;
+//            if (readDocs % 5000000 == 0)
+//                System.out.println("Took: " + searchResponse.getTook().getMillis());
+//
+//
+//            wikidataResourceIndexing(searchHits);
+//
+//            SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+//            scrollRequest.scroll(scroll);
+//
+//            try {
+//                searchResponse = getFromScroll(scrollRequest);
+//
+//                scrollId = searchResponse.getScrollId();
+//                searchHits = searchResponse.getHits().getHits();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//
+//                System.out.println("RETRYING ...");
+//                try {
+//                    searchResponse = getFromScroll(scrollRequest);
+//
+//                    scrollId = searchResponse.getScrollId();
+//                    searchHits = searchResponse.getHits().getHits();
+//                } catch (Exception e1) {
+//                    e1.printStackTrace();
+//                    searchHits = null;
+//                }
+//            }
+//        }
+//
+//        ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+//        clearScrollRequest.addScrollId(scrollId);
+//        ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+//        boolean succeeded = clearScrollResponse.isSucceeded();
+//        System.out.println(succeeded);
+//    }
+//
+//    private static SearchResponse getFromScroll(SearchScrollRequest scrollRequest) throws IOException {
+//        return client.scroll(scrollRequest, RequestOptions.DEFAULT);
+//    }
+//
+
+}

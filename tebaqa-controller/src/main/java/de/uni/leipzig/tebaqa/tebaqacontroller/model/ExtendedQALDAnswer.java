@@ -28,7 +28,10 @@ public class ExtendedQALDAnswer {
                                                 .add("vars", Json.createArrayBuilder().add("x")))
                                         .add("results", Json.createObjectBuilder()
                                                 .add("bindings", resultBindings)).build().toString()
-                                ))));
+                                ))
+                        .add("query", Json.createObjectBuilder()
+                                .add("sparql", answer.getSparqlQuery()))
+                ));
 
         this.result = questions.build().toString();
     }

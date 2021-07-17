@@ -8,7 +8,8 @@ import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.semgraph.SemanticGraph;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -17,7 +18,7 @@ import java.util.regex.Pattern;
 // TODO partial implementation. finish complete implementation helper for Deutsch.
 public class NLPAnalyzerGerman extends NLPAnalyzerBase {
 
-    private static final Logger LOGGER = Logger.getLogger(NLPAnalyzerGerman.class);
+    private static final Logger LOGGER = LogManager.getLogger(NLPAnalyzerGerman.class);
 
     private static final List<String> QUESTION_WORDS = Arrays.asList("liste|gib|zeig mir|wer|wo|wann|was|warum|wessen|wie|welche|welches|welcher|ist|sind|hat|war".split("\\|"));
     private static final List<String> SELECT_INDICATORS = Arrays.asList("welche|liste|wie|wo|wann|warum|wessen|gib|in".split("\\|"));

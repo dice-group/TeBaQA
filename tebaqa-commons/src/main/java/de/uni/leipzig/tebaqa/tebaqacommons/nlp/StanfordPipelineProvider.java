@@ -3,13 +3,14 @@ package de.uni.leipzig.tebaqa.tebaqacommons.nlp;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.PropertiesUtils;
 import edu.stanford.nlp.util.logging.RedwoodConfiguration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class StanfordPipelineProvider {
-    private static final Logger LOGGER = Logger.getLogger(StanfordPipelineProvider.class);
+    private static final Logger LOGGER = LogManager.getLogger(StanfordPipelineProvider.class);
     private static final Map<Lang, StanfordCoreNLP> pipelineInstances = new HashMap<>(Lang.values().length);
 
     //do not instantiate

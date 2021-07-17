@@ -14,7 +14,8 @@ import org.apache.jena.sparql.graph.GraphFactory;
 import org.apache.jena.sparql.syntax.ElementPathBlock;
 import org.apache.jena.sparql.syntax.ElementVisitorBase;
 import org.apache.jena.sparql.syntax.ElementWalker;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +30,7 @@ import static java.util.Collections.emptyList;
  * Source: https://github.com/AKSW/NLIWOD/blob/master/qa.hawk/src/main/java/org/aksw/hawk/experiment/QueryIsomorphism.java
  */
 public class QueryIsomorphism {
-    private static final Logger LOGGER = Logger.getLogger(QueryIsomorphism.class);
+    private static final Logger LOGGER = LogManager.getLogger(QueryIsomorphism.class);
 
     private final List<Cluster> clusters;
 

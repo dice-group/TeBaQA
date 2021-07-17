@@ -11,6 +11,8 @@ public class Constants {
 
     // Keys in properties file
     public static final String DEFAULT_TRAINING_DATASET = "classifier.training.dataset";
+    public static final String FILE_BASED_TRAINING_FLAG = "classifier.training.filebased";
+    public static final String TRAINING_FILEPATH = "classifier.training.filepath";
     public static final String SERIALIZED_CLASSIFIER_FILE = "classifier.model.file";
     public static final String SERIALIZED_GRAPHS_FILE = "classifier.graphs.file";
     public static final String SERIALIZED_MAPPINGS_FILE = "classifier.mappings.file";

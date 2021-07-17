@@ -5,7 +5,8 @@ import de.uni.leipzig.tebaqa.template.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.template.nlp.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.template.service.WekaWrapper;
 import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.core.io.ClassPathResource;
 import weka.classifiers.AbstractClassifier;
 import weka.classifiers.bayes.BayesNet;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ArffGenerator {
-    private static Logger log = Logger.getLogger(ArffGenerator.class);
+    private static Logger log = LogManager.getLogger(ArffGenerator.class);
 
     public ArffGenerator(String datasetName, List<String> graphs, List<CustomQuestion> trainQuestions) {
         log.info("Calculate the features per question and cluster");

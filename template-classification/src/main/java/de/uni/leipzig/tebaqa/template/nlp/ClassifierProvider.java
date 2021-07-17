@@ -2,7 +2,8 @@ package de.uni.leipzig.tebaqa.template.nlp;
 
 import de.uni.leipzig.tebaqa.template.nlp.analyzer.Analyzer;
 import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import weka.classifiers.Classifier;
 import weka.core.Attribute;
 import weka.core.Instances;
@@ -20,7 +21,7 @@ public class ClassifierProvider {
     private static Analyzer analyzer;
     private static Instances dataset;
     private static Attribute classAttribute;
-    private static Logger log = Logger.getLogger(ClassifierProvider.class);
+    private static Logger log = LogManager.getLogger(ClassifierProvider.class);
 
 
     //do not instantiate

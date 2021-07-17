@@ -9,7 +9,8 @@ import de.uni.leipzig.tebaqa.template.model.QueryTemplateMapping;
 import de.uni.leipzig.tebaqa.template.service.WekaClassifier;
 import de.uni.leipzig.tebaqa.template.util.Constants;
 import de.uni.leipzig.tebaqa.template.util.PropertyUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 @RestController
 public class TemplateClassificationController {
 
-    private static final Logger LOGGER = Logger.getLogger(TemplateClassificationController.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(TemplateClassificationController.class.getName());
     private static final WekaClassifier classifier;
     private static final SemanticAnalysisHelper semanticAnalysisHelper;
 

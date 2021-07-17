@@ -5,7 +5,8 @@ import de.uni.leipzig.tebaqa.template.model.CustomQuestion;
 import de.uni.leipzig.tebaqa.template.model.QueryTemplateMapping;
 import org.aksw.qa.commons.nlp.nerd.Spotlight;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ import java.util.regex.Pattern;
 
 public class Utilities {
 
-    private static final Logger log = Logger.getLogger(Utilities.class);
+    private static final Logger log = LogManager.getLogger(Utilities.class);
 
     public static Pattern BETWEEN_CURLY_BRACES = Pattern.compile("\\{(.*?)\\}");
     public static Pattern ARGUMENTS_BETWEEN_SPACES = Pattern.compile("\\S+");

@@ -10,7 +10,7 @@
     </parent>
     <groupId>de.uni.leipzig.tebaqa</groupId>
     <artifactId>template-classification</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0</version>
     <name>template-classification</name>
     <description>Template Classification For TeBaQA</description>
 
@@ -31,7 +31,7 @@
         </repository>
         <repository>
             <id>aksw-snapshots</id>
-            <url>http://maven.aksw.org/repository/snapshots/</url>
+            <url>https://maven.aksw.org/repository/snapshots/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -72,20 +72,23 @@
                     <groupId>org.junit.vintage</groupId>
                     <artifactId>junit-vintage-engine</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-            <scope>compile</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
         </dependency>
 
         <!-- Tebaqa commons dependency-->
         <dependency>
             <groupId>de.uni.leipzig.tebaqa</groupId>
             <artifactId>tebaqa-commons</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>1.0</version>
             <scope>compile</scope>
         </dependency>
 
@@ -98,12 +101,40 @@
             <groupId>org.aksw.qa</groupId>
             <artifactId>qa.ml</artifactId>
             <version>0.0.1-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.dllearner</groupId>
+                    <artifactId>components-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.aksw.qa</groupId>
             <artifactId>commons</artifactId>
             <version>0.4.22</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.dllearner</groupId>
+                    <artifactId>components-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!--<dependency>
             <groupId>org.aksw.qa</groupId>

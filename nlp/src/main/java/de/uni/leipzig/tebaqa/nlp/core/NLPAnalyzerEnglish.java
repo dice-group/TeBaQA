@@ -12,7 +12,8 @@ import edu.stanford.nlp.semgraph.SemanticGraph;
 import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations;
 import edu.stanford.nlp.simple.Sentence;
 import edu.stanford.nlp.util.CoreMap;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -20,7 +21,7 @@ import java.util.regex.Pattern;
 
 public class NLPAnalyzerEnglish extends NLPAnalyzerBase {
 
-    private static final Logger LOGGER = Logger.getLogger(NLPAnalyzerEnglish.class);
+    private static final Logger LOGGER = LogManager.getLogger(NLPAnalyzerEnglish.class);
 
     private static final String[] QUESTION_WORDS = "how many|how much|give me|list|give|show me|show|who|whom|when|were|what|why|whose|how|where|which|is|are|did|was|does".split("\\|");
     private static final List<String> SELECT_QUERY_INDICATORS = Arrays.asList("list|give|show|who|when|were|what|why|whose|how|where|which".split("\\|"));
