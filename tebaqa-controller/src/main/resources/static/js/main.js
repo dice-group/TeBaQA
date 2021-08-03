@@ -144,7 +144,7 @@ function submitForm(s) {
 function initExamples() {
     $('#example-1').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('What is the highest mountain in the Bavarian Alps?');
+        $('#search-bar').val('What is the position of Toni Kroos?');
         return false;
     });
     $('#example-2').click(function (e) {
@@ -159,7 +159,7 @@ function initExamples() {
     });
     $('#example-4').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('Where is the birthplace of Goethe?');
+        $('#search-bar').val('Where is the birthplace of Angela Merkel?');
         return false;
     });
     $('#example-5').click(function (e) {
@@ -174,7 +174,7 @@ function initExamples() {
     });
     $('#example-7').click(function (e) {
         e.preventDefault();
-        $('#search-bar').val('What were the main interests of Adorno?');
+        $('#search-bar').val('What was the budget of movie Forrest Gump?');
         return false;
     });
     $('#example-8').click(function (e) {
