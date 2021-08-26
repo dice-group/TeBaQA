@@ -116,7 +116,7 @@ public class TeBaQAIndexer {
                 String sourceDataFolder = prop.getProperty("source.data.folder");
 
                 for (File file : Objects.requireNonNull(new File(sourceDataFolder).listFiles())) {
-                    if (file.getName().endsWith("ttl") || file.getName().endsWith("nt") || file.getName().endsWith("owl")) {
+                    if (file.getName().endsWith("bz2") || file.getName().endsWith("ttl") || file.getName().endsWith("nt") || file.getName().endsWith("owl")) {
                         dataFiles.add(file);
                     }
                 }
