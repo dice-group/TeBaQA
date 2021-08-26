@@ -59,10 +59,10 @@ public class TripleStatementHandler extends RDFHandlerBase {
             else
                 nameToProperties_subject.put(subject, nameToProperties_subject.get(subject).append(",,").append(predicate));
 
-            if (!nameToProperties_object.containsKey(subject))
+            if (!nameToProperties_object.containsKey(object))
                 nameToProperties_object.put(object, new StringBuilder(predicate));
             else
-                nameToProperties_object.put(subject, nameToProperties_object.get(object).append(",,").append(predicate));
+                nameToProperties_object.put(object, nameToProperties_object.get(object).append(",,").append(predicate));
 
         } else if (!LABEL_PREDICATES.contains(predicate)) { // Make sure that statement does not define a label
             if (!nameToProperties_subject.containsKey(subject))

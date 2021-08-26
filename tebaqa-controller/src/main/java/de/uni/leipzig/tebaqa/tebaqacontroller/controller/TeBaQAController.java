@@ -71,9 +71,35 @@ public class TeBaQAController {
             String result;
             try {
                 AnswerToQuestion answer = qaService.answerQuestion(query, language);
-                result = new ExtendedQALDAnswer(answer).getResult();
+                result = new ExtendedQALDAnswer(answer, false).getResult();
             } catch (Exception e) {
-                result = new ExtendedQALDAnswer(new AnswerToQuestion(new ResultsetBinding(), new HashMap<>())).getResult();
+                result = new ExtendedQALDAnswer(new AnswerToQuestion(new ResultsetBinding(), new HashMap<>()), false).getResult();
+                LOGGER.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);
+            }
+            LOGGER.info("Answer: " + result);
+            return result;
+
+        } else {
+            LOGGER.error("Received request with empty question parameter!");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter question cannot be empty!").toString();
+        }
+
+    }
+
+    @RequestMapping(method = RequestMethod.POST, path = "/qa-porque")
+    public String answerQuestionPORQUE(@RequestParam String query,
+                                 @RequestParam(required = false, defaultValue = "en") String lang,
+                                 HttpServletResponse response) {
+        LOGGER.info(String.format("/qa-porque received POST request with: question='%s' and lang='%s'", query, lang));
+
+        Lang language = Lang.getForCode(lang);
+        if (!query.isEmpty() && isValidQuestion(query) && language != null) {
+            String result;
+            try {
+                AnswerToQuestion answer = qaService.answerQuestion(query, language);
+                result = new ExtendedQALDAnswer(answer, true).getResult();
+            } catch (Exception e) {
+                result = new ExtendedQALDAnswer(new AnswerToQuestion(new ResultsetBinding(), new HashMap<>()), false).getResult();
                 LOGGER.error(String.format("Got Exception while answering='%s' with lang='%s'", query, lang), e);
             }
             LOGGER.info("Answer: " + result);

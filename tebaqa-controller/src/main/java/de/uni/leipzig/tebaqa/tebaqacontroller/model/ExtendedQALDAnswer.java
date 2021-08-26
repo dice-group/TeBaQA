@@ -8,9 +8,10 @@ import java.util.Set;
 
 public class ExtendedQALDAnswer {
 
+    private static int _id = 0;
     private final String result;
 
-    public ExtendedQALDAnswer(AnswerToQuestion answer) {
+    public ExtendedQALDAnswer(AnswerToQuestion answer, boolean includeQuery) {
         JsonArrayBuilder resultBindings = Json.createArrayBuilder();
         Set<String> answers = answer.getAnswer();
         answers.forEach(a -> {
@@ -20,18 +21,49 @@ public class ExtendedQALDAnswer {
                             .add("type", answer.getAnswerType())
                             .add("value", a)));
         });
-        JsonObjectBuilder questions = Json.createObjectBuilder()
-                .add("questions", Json.createArrayBuilder().add(Json.createObjectBuilder()
-                        .add("question", Json.createObjectBuilder()
-                                .add("answers", Json.createObjectBuilder()
-                                        .add("head", Json.createObjectBuilder()
-                                                .add("vars", Json.createArrayBuilder().add("x")))
-                                        .add("results", Json.createObjectBuilder()
-                                                .add("bindings", resultBindings)).build().toString()
-                                ))
-                        .add("query", Json.createObjectBuilder()
-                                .add("sparql", answer.getSparqlQuery()))
-                ));
+
+        JsonObjectBuilder questions;
+        if(includeQuery) {
+             questions = Json.createObjectBuilder()
+                    .add("questions", Json.createArrayBuilder().add(Json.createObjectBuilder()
+                            .add("question", Json.createObjectBuilder()
+                                    .add("answers", Json.createObjectBuilder()
+                                            .add("head", Json.createObjectBuilder()
+                                                    .add("vars", Json.createArrayBuilder().add("x")))
+                                            .add("results", Json.createObjectBuilder()
+                                                    .add("bindings", resultBindings)).build().toString()
+                                    ))
+                            .add("query", Json.createObjectBuilder()
+                                    .add("sparql", answer.getSparqlQuery()))
+                    ));
+        } else {
+            questions = Json.createObjectBuilder()
+                    .add("questions", Json.createArrayBuilder().add(Json.createObjectBuilder()
+                            .add("question", Json.createObjectBuilder()
+                                    .add("answers", Json.createObjectBuilder()
+                                            .add("head", Json.createObjectBuilder()
+                                                    .add("vars", Json.createArrayBuilder().add("x")))
+                                            .add("results", Json.createObjectBuilder()
+                                                    .add("bindings", resultBindings)).build().toString()
+                                    ))
+                    ));
+        }
+
+//        JsonObjectBuilder questions = Json.createObjectBuilder()
+//                .add("questions", Json.createArrayBuilder().add(Json.createObjectBuilder()
+////                        .add("question", Json.createArrayBuilder().add(Json.createObjectBuilder()
+////                                .add("string", "")
+////                                .add("language", "en")))
+//                        .add("answers", Json.createObjectBuilder()
+//                                .add("head", Json.createObjectBuilder()
+//                                        .add("vars", Json.createArrayBuilder().add("x")))
+//                                .add("results", Json.createObjectBuilder()
+//                                        .add("bindings", resultBindings))
+//                        )
+//                        .add("query", Json.createObjectBuilder()
+//                                .add("sparql", answer.getSparqlQuery()))
+////                        .add("id", _id++)
+//                ));
 
         this.result = questions.build().toString();
     }
@@ -85,3 +117,4 @@ public class ExtendedQALDAnswer {
                 '}';
     }
 }
+
