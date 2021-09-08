@@ -143,7 +143,8 @@ public class ElasticSearchClient {
         Set<String> connectedResourcesSubject, connectedResourcesObject, connectedPropertiesSubject, connectedPropertiesObject, types, label;
         for (SearchHit hit : topHits.getHits()) {
             Map<String, Object> sources = hit.getSourceAsMap();
-            name = hit.getId();
+//            name = hit.getId();
+            name = sources.get(URI).toString();
             label = prepareSetFromSource(sources.get(LABEL));
             connectedPropertiesSubject = prepareSetFromSource(sources.get(CONNECTED_PROPERTY_SUBJECT));
             connectedPropertiesObject = prepareSetFromSource(sources.get(CONNECTED_PROPERTY_OBJECT));

@@ -13,8 +13,9 @@ TeBaQA implements microservices architecture. The application comprises followin
 - TeBaQA Controller :- central controller, frontend application (localhost:8080)
 - NLP Server :- CoreNLP Server endpoint (localhost:8085)
 
-Additionally, Entity Linking requires Elasticsearch indices for data and ontology of the knowledge base.
-Check [this file](https://github.com/dice-group/TeBaQA/blob/development-modular/tebaqa-commons/src/main/resources/indexing.properties) for more information on creating your own indices.
+Additionally, Entity Linking requires Elasticsearch indices for data and ontology of the knowledge base. We provide dumps of DBPedia ([2016-10 release](https://downloads.dbpedia.org/2016-10/core/)). Find the dump files along with the instructions at [Hobbit data](https://hobbitdata.informatik.uni-leipzig.de/TeBaQA/). 
+
+However, TeBaQA can also be run on your own knowledge base. Check the instruction in [this file](https://github.com/dice-group/TeBaQA/blob/development-modular/tebaqa-commons/src/main/resources/indexing.properties) for more information on creating your own Elasticsearch indices.
 
 
 #### There are two ways to run TeBaQA
@@ -52,7 +53,7 @@ Vollmers, D., Jalota, R., Moussallem, D., Topiwala, H., Ngomo, A. C. N., & Usbec
   - `query`: A string which contains a question (required).
   - `lang`: The language of the question (default:`en`) *Note: Other languages than English haven't been implemented yet.*
 - An example request could look like this: 
-  - `http://localhost:8181/qa?query=What is the original title of the interpretation of dreams?&lang=en`
+  - `http://localhost:8080/qa?query=Where is the birthplace of Angela Merkel?&lang=en`
 
 ## Evaluation
 - QALD-8: http://gerbil-qa.cs.upb.de:8080/gerbil/experiment?id=202012090005

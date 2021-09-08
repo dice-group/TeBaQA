@@ -1,17 +1,21 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch;
 
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.ESConnectionProperties;
 import org.apache.http.HttpHost;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
@@ -24,6 +28,7 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +39,9 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 public class ElasticSearchIndexer {
 
     private static final Logger LOGGER = LogManager.getLogger(ElasticSearchIndexer.class);
+
+    // Security is not needed. Only unique values need to be generated. sha1 is sufficient for that.
+    private final HashFunction hasher = Hashing.sha1();
 
     // Constants
     final String URI = "uri";
@@ -120,6 +128,9 @@ public class ElasticSearchIndexer {
                     .field("type", "keyword")
                     .endObject()
                     .startObject(TYPE)
+                    .field("type", "keyword")
+                    .endObject()
+                    .startObject(URI)
                     .field("type", "keyword")
                     .endObject()
                     .startObject(LABEL)
@@ -306,25 +317,28 @@ public class ElasticSearchIndexer {
 
         Map<String, Object> m = new HashMap<>();
 
-        String scriptString = "ctx._source." + CONNECTED_RESOURCE_SUBJECT + ".addAll(params.resourceSubject);\n";
-        scriptString += "ctx._source." + CONNECTED_RESOURCE_OBJECT + ".addAll(params.resourceObject);\n";
-        scriptString += "ctx._source." + CONNECTED_PROPERTY_SUBJECT + ".addAll(params.propertysubject);\n";
-        scriptString += "ctx._source." + CONNECTED_PROPERTY_OBJECT + ".addAll(params.propertyobject);\n";
-        scriptString += "ctx._source." + TYPE + ".addAll(params.type);\n";
-        scriptString += "ctx._source." + LABEL + ".addAll(params.label);\n";
+        String scriptString = "ctx._source." + CONNECTED_RESOURCE_SUBJECT + ".addAll(params.resourceSubject);\n" +
+                "ctx._source." + CONNECTED_RESOURCE_OBJECT + ".addAll(params.resourceObject);\n" +
+                "ctx._source." + CONNECTED_PROPERTY_SUBJECT + ".addAll(params.propertysubject);\n" +
+                "ctx._source." + CONNECTED_PROPERTY_OBJECT + ".addAll(params.propertyobject);\n" +
+                "ctx._source." + TYPE + ".addAll(params.type);\n" +
+                "ctx._source." + LABEL + ".addAll(params.label);\n" +
+                "ctx._source." + URI + " = params.uri;\n";
         m.put("resourceSubject", nameToResourceSubject.toArray());
         m.put("resourceObject", nameToResourceObject.toArray());
         m.put("propertysubject", nameToPropertiesSubject.toArray());
         m.put("propertyobject", nameToPropertiesObject.toArray());
         m.put("type", nameToTypes.toArray());
         m.put("label", nameToLabels.toArray());
+        m.put("uri", name);
 
 
         Script script = new Script(ScriptType.INLINE, "painless", scriptString, m);
+        String uriHash = hasher.hashString(name, StandardCharsets.UTF_8).toString();
         try {
             IndexRequest indexRequest;
 
-            indexRequest = new IndexRequest(entityIndex, "_doc", name)
+            indexRequest = new IndexRequest(entityIndex, "_doc", uriHash)
                     .source(jsonBuilder()
                             .startObject()
                             .array(CONNECTED_RESOURCE_SUBJECT, nameToResourceSubject.toArray())
@@ -333,10 +347,11 @@ public class ElasticSearchIndexer {
                             .array(CONNECTED_PROPERTY_OBJECT, nameToPropertiesObject.toArray())
                             .array(TYPE, nameToTypes.toArray())
                             .array(LABEL, nameToLabels.toArray())
+                            .field(URI, name)
                             .endObject()
                     );
-            indexRequest.id(name);
-            UpdateRequest updateRequest = new UpdateRequest(entityIndex, "_doc", name)
+            indexRequest.id(uriHash);
+            UpdateRequest updateRequest = new UpdateRequest(entityIndex, "_doc", uriHash)
                     .script(script)
                     .upsert(indexRequest);
 
@@ -560,4 +575,12 @@ public class ElasticSearchIndexer {
         }
     }
 
+    public void deleteIndex(String indexName) {
+        DeleteIndexRequest request = new DeleteIndexRequest(indexName);
+        try {
+            AcknowledgedResponse deleteIndexResponse = client.indices().delete(request, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

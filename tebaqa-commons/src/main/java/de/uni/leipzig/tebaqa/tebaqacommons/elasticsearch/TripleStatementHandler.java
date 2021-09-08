@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch;
 
+import org.apache.jena.graph.Triple;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.rio.helpers.RDFHandlerBase;
@@ -114,4 +115,59 @@ public class TripleStatementHandler extends RDFHandlerBase {
         subjectToTypes.clear();
         indexer.commit();
     }
+
+    // This is for parsing the file with Apache Jena library
+    public void handleStatement(Triple st) {
+        String subject = st.getSubject().getURI();
+        String predicate = st.getPredicate().getURI();
+        String object = st.getObject().isLiteral() ? st.getObject().getLiteralLexicalForm() : st.getObject().getURI();
+
+        if (this.excludedPredicates.contains(predicate.toLowerCase())) {
+            return;
+        }
+
+        names.add(subject);
+        if (!names.contains(object) && st.getObject().isURI())
+            names.add(object);
+
+
+        if (TYPE_PREDICATE.equalsIgnoreCase(predicate)) { // Statement defines rdf:type of a subject
+            if (!subjectToTypes.containsKey(subject)) subjectToTypes.put(subject, new StringBuilder(object));
+            else subjectToTypes.put(subject, subjectToTypes.get(subject).append(",,").append(object));
+
+        } else if (st.getObject().isURI()) { // Statement with a URI as object
+            if (!nameToResourceSubject.containsKey(subject))
+                nameToResourceSubject.put(subject, new StringBuilder(object));
+            else nameToResourceSubject.put(subject, nameToResourceSubject.get(subject).append(",,").append(object));
+
+            if (!nameToResourceObject.containsKey(object)) nameToResourceObject.put(object, new StringBuilder(subject));
+            else nameToResourceObject.put(object, nameToResourceObject.get(object).append(",,").append(subject));
+
+            if (!nameToProperties_subject.containsKey(subject))
+                nameToProperties_subject.put(subject, new StringBuilder(predicate));
+            else
+                nameToProperties_subject.put(subject, nameToProperties_subject.get(subject).append(",,").append(predicate));
+
+            if (!nameToProperties_object.containsKey(object))
+                nameToProperties_object.put(object, new StringBuilder(predicate));
+            else
+                nameToProperties_object.put(object, nameToProperties_object.get(object).append(",,").append(predicate));
+
+        } else if (!LABEL_PREDICATES.contains(predicate)) { // Make sure that statement does not define a label
+            if (!nameToProperties_subject.containsKey(subject))
+                nameToProperties_subject.put(subject, new StringBuilder(predicate));
+            else
+                nameToProperties_subject.put(subject, nameToProperties_subject.get(subject).append(",,").append(predicate));
+        }
+
+        if (LABEL_PREDICATES.contains(predicate.toLowerCase())) { // This is for labels
+            if (!nameToLabels.containsKey(subject)) nameToLabels.put(subject, new StringBuilder(object));
+            else nameToLabels.put(subject, nameToLabels.get(subject).append(",,").append(object));
+        }
+
+        // Index in a bulk
+        if (nameToProperties_subject.size() + nameToProperties_object.size() + nameToLabels.size() + nameToResourceSubject.size() + subjectToTypes.size() > 1000000)
+            index();
+    }
+
 }

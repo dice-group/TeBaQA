@@ -254,11 +254,16 @@ public class TeBaQAIndexer {
         parser.setRDFHandler(statementHandler);
         parser.setStopAtFirstError(false);
 
-        // Set the input stream based on file type
-        if (fileName.endsWith(".bz2")) {
-            parser.parse(new BZip2CompressorInputStream(new FileInputStream(file)), "");
-        } else {
-            parser.parse(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8), "");
+        try {
+            // Set the input stream based on file type
+            if (fileName.endsWith(".bz2")) {
+                parser.parse(new BZip2CompressorInputStream(new FileInputStream(file)), "");
+            } else {
+                parser.parse(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8), "");
+            }
+
+        } catch (RDFParseException e) {
+            LOGGER.error("Failed parsing (Malformed RDF data): " + file);
         }
 
         // Flush out remaining bulk
