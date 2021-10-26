@@ -1,3 +1,27 @@
+$(function () {
+    // Init tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+
+    // Upload type radio buttons init and onchange
+    var selectedUploadType = $('input[type=radio][name=uploadType]:checked').val();
+    changeUploadType(selectedUploadType);
+
+    $('input[type=radio][name=uploadType]').change(function() {
+        changeUploadType(this.value);
+    });
+})
+
+function changeUploadType(selectedValue) {
+    if (selectedValue == 'FILE') {
+        $("#file-upload-controls").show();
+        $("#url-upload-controls").hide();
+    }
+    else if (selectedValue == 'URL') {
+        $("#file-upload-controls").hide();
+        $("#url-upload-controls").show();
+    }
+}
+
 function showSpinner() {
     $('#loaderDiv').show();
     $('#overlay').show();
@@ -82,7 +106,7 @@ function createEmptyInfobox(title) {
 }
 
 
-function submitForm(s) {
+function submitForm(s, d) {
     $.ajax({
         beforeSend() {
             showSpinner();
@@ -92,6 +116,7 @@ function submitForm(s) {
         type: 'post',
         data: {
             'query': s,
+            'kbId': d,
             'lang': 'en'
         },
         success(msg) {
@@ -185,10 +210,10 @@ function initExamples() {
 }
 
 function init() {
-    initExamples();
+    // initExamples();
     hideSpinner();
     $('#search-form-id').submit(function () {
-        submitForm($('#search-bar').val());
+        submitForm($('#search-bar').val(), $('#kb-options').val());
         return false;
     });
 

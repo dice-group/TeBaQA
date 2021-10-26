@@ -1,3 +1,13 @@
+.pad-15 {
+    padding: 15px;
+}
+
+.mt-25 {
+    margin-top: 25px;
+}
+
+/*----*/
+
 body {
     font-family: 'Roboto', sans-serif;
     background-color: rgb(245, 241, 238);

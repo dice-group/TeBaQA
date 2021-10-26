@@ -9,7 +9,7 @@ import org.springframework.util.MultiValueMap;
 
 public class EntityLinkingServiceConnector extends AbstractServiceConnector {
 
-    public EntityLinkingResponseBean extractEntities(String question, Lang language) {
+    public EntityLinkingResponseBean extractEntities(String question, Lang language, String kbName) {
 //        if(ControllerPropertyUtils.ablationEL()) {
 //            return ablation(question);
 //        }
@@ -19,6 +19,7 @@ public class EntityLinkingServiceConnector extends AbstractServiceConnector {
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("question", question);
             params.add("lang", language.getLanguageCode());
+            params.add("kbName", kbName);
 
             ResponseEntity<EntityLinkingResponseBean> responseEntity = this.connect(serviceUrl, params, EntityLinkingResponseBean.class);
             return responseEntity.getBody();

@@ -12,6 +12,9 @@ public class PropertyUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(PropertyUtils.class.getName());
 
+    public static final String CLASS_INDEX_SUFFIX = "-class";
+    public static final String PROPERTY_INDEX_SUFFIX = "-property";
+    public static final String ENTITY_INDEX_SUFFIX = "-entity";
 
     public static Properties getAllProperties(String propertyFilePath) {
 
@@ -24,6 +27,22 @@ public class PropertyUtils {
             LOGGER.error(e.getMessage());
         }
         return prop;
+    }
+
+    public static String getESIndexNamePrefix(String input) {
+        return input.trim().toLowerCase().replaceAll("\\s+", "");
+    }
+
+    public static String getESClassIndexName(String input) {
+        return getESIndexNamePrefix(input) + CLASS_INDEX_SUFFIX;
+    }
+
+    public static String getESPropertyIndexName(String input) {
+        return getESIndexNamePrefix(input) + PROPERTY_INDEX_SUFFIX;
+    }
+
+    public static String getESEntityIndexName(String input) {
+        return getESIndexNamePrefix(input) + ENTITY_INDEX_SUFFIX;
     }
 
 }

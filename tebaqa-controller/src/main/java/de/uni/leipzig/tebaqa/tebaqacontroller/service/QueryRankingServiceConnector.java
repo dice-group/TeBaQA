@@ -11,10 +11,10 @@ import org.springframework.http.ResponseEntity;
 import java.util.HashSet;
 
 public class QueryRankingServiceConnector extends AbstractServiceConnector {
-    public QueryRankingResponseBean generateQueries(String question, Lang language, QueryTemplateResponseBean queryTemplates, EntityLinkingResponseBean linkedResources) {
+    public QueryRankingResponseBean generateQueries(String question, Lang language, QueryTemplateResponseBean queryTemplates, EntityLinkingResponseBean linkedResources, String kbName) {
         String serviceUrl = ControllerPropertyUtils.getQueryRankingServiceUrl();
 
-        QueryRankingRequestBody requestBody = new QueryRankingRequestBody(question, language.getLanguageCode(), new HashSet<>(queryTemplates.getTemplates()), linkedResources);
+        QueryRankingRequestBody requestBody = new QueryRankingRequestBody(question, language.getLanguageCode(), new HashSet<>(queryTemplates.getTemplates()), linkedResources, kbName);
 
         ResponseEntity<QueryRankingResponseBean> responseEntity = this.connectPostJson(serviceUrl, requestBody, QueryRankingResponseBean.class);
         return responseEntity.getBody();

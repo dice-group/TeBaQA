@@ -1,11 +1,12 @@
 package de.uni.leipzig.tebaqa.entitylinking.service;
 
 import de.uni.leipzig.tebaqa.entitylinking.nlp.StopWordsUtil;
-import de.uni.leipzig.tebaqa.entitylinking.util.PropertyUtil;
+import de.uni.leipzig.tebaqa.entitylinking.util.ELPropertyUtil;
 import de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch.SearchService;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
+import de.uni.leipzig.tebaqa.tebaqacommons.util.PropertyUtils;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
 import edu.stanford.nlp.semgraph.SemanticGraph;
 import org.apache.logging.log4j.LogManager;
@@ -33,7 +34,7 @@ public class ResourceLinker {
     private final SearchService searchService;
     private final DisambiguationService disambiguationService;
 
-    public ResourceLinker(String question, Lang language) throws IOException {
+    public ResourceLinker(String question, Lang language, String kbName) throws IOException {
         this.question = question;
         this.language = language;
         this.coOccurrences = new HashSet<>();
@@ -41,9 +42,16 @@ public class ResourceLinker {
         this.entityCandidates = new HashSet<>();
         this.propertyCandidates = new HashSet<>();
         this.classCandidates = new HashSet<>();
-        this.searchService = new SearchService(PropertyUtil.getElasticSearchConnectionProperties());
+        ESConnectionProperties esProperties = ELPropertyUtil.getElasticSearchConnectionProperties();
+        if(kbName != null) {
+            esProperties = esProperties.copy();
+            esProperties.setEntityIndex(PropertyUtils.getESEntityIndexName(kbName));
+            esProperties.setClassIndex(PropertyUtils.getESClassIndexName(kbName));
+            esProperties.setPropertyIndex(PropertyUtils.getESPropertyIndexName(kbName));
+        }
+        this.searchService = new SearchService(esProperties);
         this.disambiguationService = new DisambiguationService(this.searchService);
-        RestServiceConfiguration nlpServiceProps = PropertyUtil.getNLPServiceConnectionProperties();
+        RestServiceConfiguration nlpServiceProps = ELPropertyUtil.getNLPServiceConnectionProperties();
         if(nlpServiceProps == null)
             this.semanticAnalysisHelper = language.getSemanticAnalysisHelper();
         else
@@ -156,7 +164,7 @@ public class ResourceLinker {
         entityCandidates.addAll(disambiguatedEntities);
 
         this.removeDuplicates();
-
+        this.searchService.shutdown();
         LOGGER.info("EntityExtraction finished");
     }
 
@@ -223,7 +231,7 @@ public class ResourceLinker {
 
 
     public static void main(String[] args) throws IOException {
-        ResourceLinker linker = new ResourceLinker("What is the height of the Eiffel Tower?", Lang.EN);
+        ResourceLinker linker = new ResourceLinker("What is the spouse of Barack Obama?", Lang.EN, "file-testing4");
         linker.linkEntities();
         linker.printInfos();
     }

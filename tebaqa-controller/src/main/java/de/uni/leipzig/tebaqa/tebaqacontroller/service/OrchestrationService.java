@@ -8,11 +8,14 @@ import de.uni.leipzig.tebaqa.tebaqacontroller.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.ResultsetBinding;
 import de.uni.leipzig.tebaqa.tebaqacontroller.utils.SPARQLUtilities;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Component
 public class OrchestrationService {
 
     private static final Logger LOGGER = Logger.getLogger(OrchestrationService.class);
@@ -23,15 +26,18 @@ public class OrchestrationService {
     private final QueryRankingServiceConnector queryRankingService;
     private final SemanticAnalysisHelper semanticAnalysisHelper;
 
+    @Autowired
+    private KnowledgeBaseService knowledgeBaseService;
+
     public OrchestrationService() throws IOException {
         this.templateClassificationService = new TemplateClassificationServiceConnector();
         this.entityLinkingService = new EntityLinkingServiceConnector();
         this.queryRankingService = new QueryRankingServiceConnector();
         this.semanticAnalysisHelper = new SemanticAnalysisHelper(Lang.EN);
-//        this.semanticAnalysisHelper = new SemanticAnalysisHelper(new RestServiceConfiguration("http", "tebaqa.cs.upb.de", "8085"), Lang.EN);
+//        this.semanticAnalysisHelper = new SemanticAnalysisHelper(new RestServiceConfiguration("http", "suche-limbo.cs.upb.de", "8085"), Lang.EN);
     }
 
-    public AnswerToQuestion answerQuestion(String question, Lang lang) throws JsonProcessingException {
+    public AnswerToQuestion answerQuestion(String question, Lang lang, long kbId) throws JsonProcessingException {
         // 1. Template classification
         QueryTemplateResponseBean matchingQueryTemplates = templateClassificationService.getMatchingQueryTemplates(question, lang);
         printClassificationInfos(matchingQueryTemplates);
@@ -43,12 +49,14 @@ public class OrchestrationService {
             allTemplatesTried = true;
         }
 
+        String kbName = knowledgeBaseService.getById(kbId).getName();
+
         // 2. Entity linking
-        EntityLinkingResponseBean entityLinkingResponse = entityLinkingService.extractEntities(question, lang);
+        EntityLinkingResponseBean entityLinkingResponse = entityLinkingService.extractEntities(question, lang, kbName);
         printLinkingInfos(entityLinkingResponse);
 
         // 3. Query ranking
-        QueryRankingResponseBean queryRankingResponse = queryRankingService.generateQueries(question, lang, matchingQueryTemplates, entityLinkingResponse);
+        QueryRankingResponseBean queryRankingResponse = queryRankingService.generateQueries(question, lang, matchingQueryTemplates, entityLinkingResponse, kbName);
         printQueryRankingInfos(queryRankingResponse);
 
         Collection<RatedQuery> ratedQueries = queryRankingResponse.getGeneratedQueries();
@@ -62,7 +70,7 @@ public class OrchestrationService {
             printClassificationInfos(allQueryTemplates);
 
             // 3. Query ranking
-            queryRankingResponse = queryRankingService.generateQueries(question, lang, allQueryTemplates, entityLinkingResponse);
+            queryRankingResponse = queryRankingService.generateQueries(question, lang, allQueryTemplates, entityLinkingResponse, kbName);
             printQueryRankingInfos(queryRankingResponse);
 
             ratedQueries = queryRankingResponse.getGeneratedQueries();

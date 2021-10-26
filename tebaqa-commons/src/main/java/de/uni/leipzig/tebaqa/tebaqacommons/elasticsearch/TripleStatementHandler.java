@@ -34,7 +34,7 @@ public class TripleStatementHandler extends RDFHandlerBase {
         String predicate = st.getPredicate().stringValue();
         String object = st.getObject().stringValue();
 
-        if (this.excludedPredicates.contains(predicate.toLowerCase())) {
+        if (this.excludedPredicates != null && this.excludedPredicates.contains(predicate.toLowerCase())) {
             return;
         }
 

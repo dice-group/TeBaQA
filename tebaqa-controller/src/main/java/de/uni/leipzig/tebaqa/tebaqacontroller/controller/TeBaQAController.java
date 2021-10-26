@@ -4,14 +4,17 @@ import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.ExtendedQALDAnswer;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.ResultsetBinding;
+import de.uni.leipzig.tebaqa.tebaqacontroller.service.KnowledgeBaseService;
 import de.uni.leipzig.tebaqa.tebaqacontroller.service.OrchestrationService;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
@@ -23,14 +26,27 @@ import java.util.HashMap;
 public class TeBaQAController {
 
     private static final Logger LOGGER = Logger.getLogger(TeBaQAController.class.getName());
-    private static OrchestrationService qaService;
+//    private static OrchestrationService qaService;
+    @Autowired
+    private OrchestrationService qaService;
 
-    public TeBaQAController() throws IOException {
-        qaService = new OrchestrationService();
+    @Autowired
+    private KnowledgeBaseService knowledgeBaseService;
+
+//    public TeBaQAController() throws IOException {
+//        qaService = new OrchestrationService();
+//    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/")
+    public ModelAndView home() {
+        LOGGER.info("/");
+        ModelAndView modelAndView = new ModelAndView("index");
+        modelAndView.addObject("kbs", knowledgeBaseService.getAllKnowledgeBases());
+        return modelAndView;
     }
 
     @RequestMapping(method = RequestMethod.POST, path = "/qa-simple")
-    public String answerQuestionSimple(@RequestParam String query,
+    public String answerQuestionSimple(@RequestParam String query, @RequestParam long kbId,
                                        @RequestParam(required = false, defaultValue = "en") String lang,
                                        HttpServletResponse response) {
         LOGGER.info(String.format("/qa-simple received POST request with: question='%s' and lang='%s'", query, lang));
@@ -39,7 +55,7 @@ public class TeBaQAController {
         if (!query.isEmpty() && isValidQuestion(query) && language != null) {
             String result;
             try {
-                AnswerToQuestion answer = qaService.answerQuestion(query, language);
+                AnswerToQuestion answer = qaService.answerQuestion(query, language, kbId);
                 JsonArrayBuilder resultArray = Json.createArrayBuilder();
                 answer.getAnswer().forEach(a -> resultArray.add(ExtendedQALDAnswer.extractAnswerString(a)));
                 result = Json.createObjectBuilder()
@@ -61,7 +77,7 @@ public class TeBaQAController {
     }
 
     @RequestMapping(method = RequestMethod.POST, path = "/qa")
-    public String answerQuestion(@RequestParam String query,
+    public String answerQuestion(@RequestParam String query, @RequestParam long kbId,
                                  @RequestParam(required = false, defaultValue = "en") String lang,
                                  HttpServletResponse response) {
         LOGGER.info(String.format("/qa received POST request with: question='%s' and lang='%s'", query, lang));
@@ -70,7 +86,7 @@ public class TeBaQAController {
         if (!query.isEmpty() && isValidQuestion(query) && language != null) {
             String result;
             try {
-                AnswerToQuestion answer = qaService.answerQuestion(query, language);
+                AnswerToQuestion answer = qaService.answerQuestion(query, language, kbId);
                 result = new ExtendedQALDAnswer(answer, false).getResult();
             } catch (Exception e) {
                 result = new ExtendedQALDAnswer(new AnswerToQuestion(new ResultsetBinding(), new HashMap<>()), false).getResult();
@@ -87,8 +103,8 @@ public class TeBaQAController {
     }
 
     @RequestMapping(method = RequestMethod.POST, path = "/qa-porque")
-    public String answerQuestionPORQUE(@RequestParam String query,
-                                 @RequestParam(required = false, defaultValue = "en") String lang,
+    public String answerQuestionPORQUE(@RequestParam String query, @RequestParam long kbId,
+                                       @RequestParam(required = false, defaultValue = "en") String lang,
                                  HttpServletResponse response) {
         LOGGER.info(String.format("/qa-porque received POST request with: question='%s' and lang='%s'", query, lang));
 
@@ -96,7 +112,7 @@ public class TeBaQAController {
         if (!query.isEmpty() && isValidQuestion(query) && language != null) {
             String result;
             try {
-                AnswerToQuestion answer = qaService.answerQuestion(query, language);
+                AnswerToQuestion answer = qaService.answerQuestion(query, language, kbId);
                 result = new ExtendedQALDAnswer(answer, true).getResult();
             } catch (Exception e) {
                 result = new ExtendedQALDAnswer(new AnswerToQuestion(new ResultsetBinding(), new HashMap<>()), false).getResult();

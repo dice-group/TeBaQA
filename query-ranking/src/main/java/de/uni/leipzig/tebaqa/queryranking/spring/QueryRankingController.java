@@ -27,6 +27,7 @@ public class QueryRankingController {
             produces = {"application/hal+json", "application/json"}
     )
     public QueryRankingResponseBean generateQueries(@RequestBody QueryRankingRequestBody body) throws IOException {
+        String kbName = body.getKbName();
         String question = body.getQuestion();
         String lang = body.getLang();
         Set<String> queryTemplates = body.getQueryTemplates();
@@ -42,7 +43,7 @@ public class QueryRankingController {
 
 //        EntityLinkingResponseBean linkedResourcesBean = JSONUtils.JSONStringToObject(linkedResourcesJson, EntityLinkingResponseBean.class);
         EntityLinkingResult linkedEntities = new EntityLinkingResult(linkedResourcesBean);
-        QueryGenerator queryGenerator = new QueryGenerator(linkedEntities, queryTemplates);
+        QueryGenerator queryGenerator = new QueryGenerator(linkedEntities, queryTemplates, kbName);
         QueryRankingResponseBean generatedQueries = queryGenerator.generateQueries();
         printInfos(generatedQueries);
         return generatedQueries;

@@ -47,4 +47,8 @@ public class ESConnectionProperties extends RestServiceConfiguration {
     public void setLiteralIndex(String literalIndex) {
         this.literalIndex = literalIndex;
     }
+
+    public ESConnectionProperties copy() {
+        return new ESConnectionProperties(this.scheme, this.hostname, this.port, null, null, null, null);
+    }
 }

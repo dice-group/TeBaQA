@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Create Knowledge Base</title>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!--    <script th:src="@{/js/jquery-3.2.1.min.js}"></script>-->
+<!--    <script th:src="@{/js/popper.min.js}"></script>-->
+<!--    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"-->
+<!--            integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"-->
+<!--            crossorigin="anonymous"></script>-->
+<!--    <script src="https://unpkg.com/bootstrap-material-design@4.1.1/dist/js/bootstrap-material-design.js"-->
+<!--            integrity="sha384-CauSuKpEqAFajSpkdjv3z9t8E7RlpJ1UP0lKM/+NdtSarroVKu069AlsRPKkFBz9"-->
+<!--            crossorigin="anonymous"></script>-->
+
+    <link rel="stylesheet" type="text/css" th:href="@{/assets/kb.main.css}"/>
+<!--    <link rel="stylesheet"-->
+<!--          href="https://unpkg.com/bootstrap-material-design@4.1.1/dist/css/bootstrap-material-design.min.css"-->
+<!--          integrity="sha384-wXznGJNEXNG1NFsbm0ugrLFMQPWswR3lds2VeinahP8N0zJw9VWSopbjv2x7WCvX" crossorigin="anonymous">-->
+<!--    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"-->
+<!--          integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">-->
+<!--    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">-->
+<!--    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:500"/>-->
+<!--    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>-->
+
+    <!-- JQuery -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Bootstrap tooltips -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script>
+    <script th:src="@{/js/toastr.min.js}"></script>
+    <script th:src="@{/js/jquery.multifile.min.js}"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+    <!-- Bootstrap core CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Material Design Bootstrap -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/css/mdb.min.css" rel="stylesheet">
+
+
+    <!-- Application scripts -->
+    <script th:src="@{/js/main.js}"></script>
+</head>
+<body>
+<div class="container mt-20">
+    <div class="row">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/web/knowledge-base">Knowledge Bases</a></li>
+                <li class="breadcrumb-item active">Create</li>
+            </ol>
+        </nav>
+<!--        <div class="col-md-12">-->
+<!--            <a class="btn btn-outline-default btn-sm" href="/web/knowledge-base" role="button">Back</a>-->
+<!--        </div>-->
+    </div>
+<!--    <div class="row mt-15">-->
+<!--        <div class="col-md-12">-->
+<!--            <h3>Create Knowledge Base</h3>-->
+<!--        </div>-->
+<!--    </div>-->
+    <div class="row mt-15">
+        <div class="col-md-12">
+            <form action="#" th:action="@{/knowledge-base}" th:object="${knowledgeBaseForm}" method="post" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="kbName">Name</label>
+                    <input type="text" class="form-control" id="kbName" th:field="*{name}"
+                           placeholder="Unique name" >
+                </div>
+                <div class="form-group">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="uploadTypeOptions" id="uploadTypeUrl"
+                               value="URL" th:field="*{uploadType}">
+                        <label class="form-check-label" for="uploadTypeUrl">URL Upload</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="uploadTypeOptions" id="uploadTypeFile"
+                               value="FILE" th:field="*{uploadType}">
+                        <label class="form-check-label" for="uploadTypeFile">File Upload</label>
+                    </div>
+                </div>
+                <div id="url-upload-controls">
+                    <div class="form-group">
+                        <label for="kbOntoFileLinks">Ontology File Links</label>
+                        <textarea class="form-control" id="kbOntoFileLinks" rows="3" th:field="*{ontologyFileLinks}"
+                                  placeholder="One link per line"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="kbDataFileLinks">Data File Links</label>
+                        <textarea class="form-control" id="kbDataFileLinks" rows="7" th:field="*{dataFileLinks}"
+                                  placeholder="One link per line"></textarea>
+                    </div>
+                </div>
+                <div id="file-upload-controls">
+                    <div class="form-group bordered-padded">
+                        <label for="kbOntoFiles">Ontology files (Allowed: ttl | nt | owl , <50 MB in total)</label>
+                        <input id="kbOntoFiles" type="file" multiple class="multi" accept="ttl|nt|owl"
+                               data-maxsize="51200" th:field="*{ontologyFiles}"/>
+                    </div>
+                    <div class="form-group bordered-padded">
+                            <label for="kbDataFiles">Data files (Allowed: ttl | nt , <500 MB in total)</label>
+                            <input id="kbDataFiles" type="file" multiple class="multi" accept="ttl|nt"
+                                   data-maxsize="512000" th:field="*{dataFiles}"/>
+                        </div>
+                </div>
+                <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert" id="form-errors">
+                    <script>$("#form-errors").get(0).scrollIntoView();</script>
+                    <p>Please resolve below errors</p>
+                    <ul>
+                        <li th:each="error : ${#fields.errors('name')}" th:text="${error}"></li>
+                        <li th:each="error : ${#fields.errors('ontologyFileLinks')}" th:text="${error}"></li>
+                        <li th:each="error : ${#fields.errors('dataFileLinks')}" th:text="${error}"></li>
+                        <li th:each="error : ${#fields.errors('ontologyFiles')}" th:text="${error}"></li>
+                        <li th:each="error : ${#fields.errors('dataFiles')}" th:text="${error}"></li>
+                    </ul>
+                </div>
+
+                <div class="form-group">
+                    <button class="btn btn-primary btn-sm" type="submit">Create</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!--    <div class="row">-->
+    <!--        <div class="col-md-12">-->
+    <!--            <span th:if="${kb.uploadedViaLink}" class="valign-middle">Link Upload</span>-->
+    <!--            <span th:unless="${kb.uploadedViaLink}" class="valign-middle">File Upload</span>-->
+    <!--            <span th:if="${kb.kbUploadStatus}" class="material-icons valign-middle" data-toggle="tooltip" data-placement="top" title="Finished">-->
+    <!--                check_circle-->
+    <!--            </span>-->
+    <!--            <span th:unless="${kb.kbUploadStatus}" class="material-icons valign-middle"  data-toggle="tooltip" data-placement="top" title="Pending">-->
+    <!--                pending-->
+    <!--            </span>-->
+    <!--        </div>-->
+    <!--    </div>-->
+    <!--    <div class="row mt-20">-->
+    <!--        <div class="col-md-12">-->
+    <!--            <label th:if="${kb.uploadedViaLink}" for="uploaded-files" class="font-weight-bold">Links:</label>-->
+    <!--            <label th:unless="${kb.uploadedViaLink}" for="uploaded-files" class="font-weight-bold">Files:</label>-->
+    <!--            <table id="uploaded-files" class="font-weight-light">-->
+    <!--                <thead></thead>-->
+    <!--                <tbody>-->
+    <!--                    <tr th:each="file : ${kb.fileUploadStatus}">-->
+    <!--                        <td th:text="${file.getLink()}" />-->
+    <!--                        <td th:switch="${file.getStatus()}">-->
+    <!--                            <span th:case="0" class="material-icons valign-middle" data-toggle="tooltip" data-placement="top" title="Pending">pending</span>-->
+    <!--                            <span th:case="1" class="material-icons valign-middle" data-toggle="tooltip" data-placement="top" title="Finished">check_circle</span>-->
+    <!--                            <span th:case="2" class="material-icons valign-middle" data-toggle="tooltip" data-placement="top" title="Error">error</span>-->
+    <!--                        </td>-->
+    <!--                    </tr>-->
+    <!--                </tbody>-->
+    <!--            </table>-->
+    <!--        </div>-->
+    <!--    </div>-->
+</div>
+</body>

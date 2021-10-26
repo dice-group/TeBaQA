@@ -1,21 +1,20 @@
 package de.uni.leipzig.tebaqa.queryranking.core;
 
 import com.google.common.collect.Lists;
-import de.uni.leipzig.tebaqa.queryranking.elasticsearch.SearchProvider;
 import de.uni.leipzig.tebaqa.queryranking.model.CompoundTriples;
 import de.uni.leipzig.tebaqa.queryranking.model.EntityLinkingResult;
 import de.uni.leipzig.tebaqa.queryranking.model.Triple;
 import de.uni.leipzig.tebaqa.queryranking.model.TripleTemplate;
 import de.uni.leipzig.tebaqa.queryranking.util.Constants;
+import de.uni.leipzig.tebaqa.queryranking.util.QueryRankingPropertyUtils;
 import de.uni.leipzig.tebaqa.queryranking.util.QueryRankingUtils;
 import de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch.SearchService;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.ClassCandidate;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.EntityCandidate;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.PropertyCandidate;
-import de.uni.leipzig.tebaqa.tebaqacommons.model.ResourceCandidate;
+import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
+import de.uni.leipzig.tebaqa.tebaqacommons.util.PropertyUtils;
 import org.apache.jena.vocabulary.RDF;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,14 +34,21 @@ public class TripleGenerator {
     private final Set<String> propertyUris;
     private final SearchService searchService;
 
-    public TripleGenerator(EntityLinkingResult linkedEntities) {
+    public TripleGenerator(EntityLinkingResult linkedEntities, String kbName) throws IOException {
         this.coOccurrences = linkedEntities.getCoOccurrences();
         this.entityCandidates = linkedEntities.getEntityCandidates();
         this.classCandidates = linkedEntities.getClassCandidates();
         this.propertyCandidates = linkedEntities.getPropertyCandidates();
         this.literalCandidates = linkedEntities.getLiteralCandidates();
         this.propertyUris = linkedEntities.getPropertyUris();
-        this.searchService = SearchProvider.getSingletonSearchClient();
+        ESConnectionProperties esProperties = QueryRankingPropertyUtils.getElasticSearchConnectionProperties();
+        if(kbName != null) {
+            esProperties = esProperties.copy();
+            esProperties.setEntityIndex(PropertyUtils.getESEntityIndexName(kbName));
+            esProperties.setClassIndex(PropertyUtils.getESClassIndexName(kbName));
+            esProperties.setPropertyIndex(PropertyUtils.getESPropertyIndexName(kbName));
+        }
+        this.searchService = new SearchService(esProperties);
     }
 
     private Set<Triple> getCountryTriples() {
@@ -422,5 +428,9 @@ public class TripleGenerator {
             mappedCoOccurrences.add(rc.getCoOccurrence());
         }
         return true;
+    }
+
+    public void shutdown() {
+        this.searchService.shutdown();
     }
 }

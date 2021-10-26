@@ -9,6 +9,7 @@ import de.uni.leipzig.tebaqa.tebaqacommons.model.QueryRankingResponseBean;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.RatedQuery;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.JSONUtils;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -16,13 +17,15 @@ public class QueryGenerator {
 
     private final Collection<String> queryTemplates;
     private final EntityLinkingResult linkedEntities;
+    private final String kbName;
 
-    public QueryGenerator(EntityLinkingResult linkedEntities, Collection<String> queryTemplates) {
+    public QueryGenerator(EntityLinkingResult linkedEntities, Collection<String> queryTemplates, String kbName) {
         this.linkedEntities = linkedEntities;
         this.queryTemplates = queryTemplates;
+        this.kbName = kbName;
     }
 
-    public QueryRankingResponseBean generateQueries() {
+    public QueryRankingResponseBean generateQueries() throws IOException {
         Set<RatedQuery> generatedQueries = new HashSet<>();
 
         for (String queryTemplate : queryTemplates) {
@@ -34,7 +37,7 @@ public class QueryGenerator {
         return new QueryRankingResponseBean(generatedQueries);
     }
 
-    private Set<RatedQuery> fillQueryTemplate(String queryTemplate) {
+    private Set<RatedQuery> fillQueryTemplate(String queryTemplate) throws IOException {
         List<TripleTemplate> tripleTemplates = QueryRankingUtils.extractTripleTemplates(queryTemplate);
         tripleTemplates = tripleTemplates.parallelStream()
                 .filter(s -> !s.getPatternString().toLowerCase().contains("filter")
@@ -42,7 +45,7 @@ public class QueryGenerator {
                 .collect(Collectors.toList());
         int resourceCount = QueryRankingUtils.countResourcesToMatch(tripleTemplates);
 
-        List<RatedMapping> mappings = generateTripleCandidateMappings(tripleTemplates, linkedEntities);
+        List<RatedMapping> mappings = generateTripleCandidateMappings(tripleTemplates, linkedEntities, kbName);
 
         // Remove invalid mappings which use literal as a subject
 //        List<String> disallowedLiteralPlaceholders = new ArrayList<>();
@@ -114,8 +117,8 @@ public class QueryGenerator {
         });
     }
 
-    private static List<RatedMapping> generateTripleCandidateMappings(List<TripleTemplate> tripleTemplates, EntityLinkingResult linkedEntities) {
-        TripleGenerator tripleGenerator = new TripleGenerator(linkedEntities);
+    private static List<RatedMapping> generateTripleCandidateMappings(List<TripleTemplate> tripleTemplates, EntityLinkingResult linkedEntities, String kbName) throws IOException {
+        TripleGenerator tripleGenerator = new TripleGenerator(linkedEntities, kbName);
 
         // Triple with two resources calculation
         HashMap<TripleTemplate, Set<Triple>> candidatesWith2Res = new HashMap<>();
@@ -166,6 +169,8 @@ public class QueryGenerator {
             mappings.addAll(generateMappingFromSingleTriple(candidatesWith2Res.get(pat), pat));
         });
         List<RatedMapping> mergeMappings = mergeMappings(mappings);
+
+        tripleGenerator.shutdown();
         return mergeMappings;
 
     }

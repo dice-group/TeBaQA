@@ -24,6 +24,7 @@ public class EntityLinkingController {
     @RequestMapping(method = RequestMethod.POST, path = "/entity-linking")
     public EntityLinkingResponseBean entityLinking(@RequestParam String question,
                                                    @RequestParam String lang,
+                                                   @RequestParam String kbName,
                                                    HttpServletResponse servletResponse) {
         LOGGER.info(String.format("/entity-linking received POST request with: question='%s' & lang=%s", question, lang));
 
@@ -35,7 +36,7 @@ public class EntityLinkingController {
 
         EntityLinkingResponseBean linkedEntities;
         try {
-            linkedEntities = linkingService.findEntitiesFrom(question, language);
+            linkedEntities = linkingService.findEntitiesFrom(question, language, kbName);
             printInfos(linkedEntities);
             return linkedEntities;
         } catch (IOException e) {

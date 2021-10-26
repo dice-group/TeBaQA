@@ -1,6 +1,7 @@
 package de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
+import de.uni.leipzig.tebaqa.tebaqacommons.util.PropertyUtils;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
 import org.apache.jena.ext.com.google.common.collect.Lists;
 import org.apache.logging.log4j.LogManager;
@@ -298,9 +299,20 @@ public class SearchService {
 //    }
 
     public static void main(String[] args) throws IOException {
-//        SearchService s = new SearchService();
-//        Set<EntityCandidate> candidates = s.searchEntities("the Eiffel Tower");
-//        candidates.forEach(ent -> System.out.println(ent.getCoOccurrence() + "->(" + ent.getUri() + ";" + Collections.singletonList(ent.getResourceLabels()).get(0) + ")"));
+        Properties allProperties = PropertyUtils.getAllProperties("indexing.properties");
+        ESConnectionProperties esProps = new ESConnectionProperties(
+                allProperties.getProperty("target.host.scheme"),
+                allProperties.getProperty("target.host.name"),
+                allProperties.getProperty("target.host.port"),
+                allProperties.getProperty("target.index.entity.name"),
+                allProperties.getProperty("target.index.class.name"),
+                allProperties.getProperty("target.index.property.name"),
+                null
+        );
+
+        SearchService s = new SearchService(esProps);
+        Set<EntityCandidate> candidates = s.searchEntities("Barack Obama");
+        candidates.forEach(ent -> System.out.println(ent.getCoOccurrence() + "->(" + ent.getUri() + ";" + Collections.singletonList(ent.getResourceLabels()).get(0) + ")"));
 //        System.out.println(SearchService.getLevenshteinRatio("the height", "The Flight"));
 
     }

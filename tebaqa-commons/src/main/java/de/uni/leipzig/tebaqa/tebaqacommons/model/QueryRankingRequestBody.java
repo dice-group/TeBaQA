@@ -3,6 +3,7 @@ package de.uni.leipzig.tebaqa.tebaqacommons.model;
 import java.util.Set;
 
 public class QueryRankingRequestBody {
+    private String kbName;
     private String question;
     private String lang;
     private Set<String> queryTemplates;
@@ -10,7 +11,8 @@ public class QueryRankingRequestBody {
 
     public QueryRankingRequestBody() {}
 
-    public QueryRankingRequestBody(String question, String lang, Set<String> queryTemplates, EntityLinkingResponseBean linkedResourcesJson) {
+    public QueryRankingRequestBody(String question, String lang, Set<String> queryTemplates, EntityLinkingResponseBean linkedResourcesJson, String kbName) {
+        this.kbName = kbName;
         this.question = question;
         this.lang = lang;
         this.queryTemplates = queryTemplates;
@@ -47,5 +49,13 @@ public class QueryRankingRequestBody {
 
     public void setLinkedResourcesJson(EntityLinkingResponseBean linkedResourcesJson) {
         this.linkedResourcesJson = linkedResourcesJson;
+    }
+
+    public String getKbName() {
+        return kbName;
+    }
+
+    public void setKbName(String kbName) {
+        this.kbName = kbName;
     }
 }

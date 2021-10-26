@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${kb.name}"></title>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!--    <script th:src="@{/js/jquery-3.2.1.min.js}"></script>-->
+<!--    <script th:src="@{/js/popper.min.js}"></script>-->
+    <script th:src="@{/js/toastr.min.js}"></script>
+<!--    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"-->
+<!--            integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"-->
+<!--            crossorigin="anonymous"></script>-->
+<!--    <script src="https://unpkg.com/bootstrap-material-design@4.1.1/dist/js/bootstrap-material-design.js"-->
+<!--            integrity="sha384-CauSuKpEqAFajSpkdjv3z9t8E7RlpJ1UP0lKM/+NdtSarroVKu069AlsRPKkFBz9"-->
+<!--            crossorigin="anonymous"></script>-->
+
+    <link rel="stylesheet" type="text/css" th:href="@{/assets/kb.main.css}"/>
+<!--    <link rel="stylesheet"-->
+<!--          href="https://unpkg.com/bootstrap-material-design@4.1.1/dist/css/bootstrap-material-design.min.css"-->
+<!--          integrity="sha384-wXznGJNEXNG1NFsbm0ugrLFMQPWswR3lds2VeinahP8N0zJw9VWSopbjv2x7WCvX" crossorigin="anonymous">-->
+<!--    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css"-->
+<!--          integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">-->
+<!--    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">-->
+<!--    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:500"/>-->
+<!--    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>-->
+
+    <!-- JQuery -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Bootstrap tooltips -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+    <!-- Bootstrap core JavaScript -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script>
+    <script th:src="@{/js/toastr.min.js}"></script>
+
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+    <!-- Bootstrap core CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Material Design Bootstrap -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/css/mdb.min.css" rel="stylesheet">
+
+
+    <!-- Application scripts -->
+    <script th:src="@{/js/main.js}"></script>
+</head>
+<body>
+<div class="container mt-20">
+    <div class="row">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/web/knowledge-base">Knowledge Bases</a></li>
+                <li class="breadcrumb-item active" th:text="${kb.name}"></li>
+            </ol>
+        </nav>
+<!--        <div class="col-md-12">-->
+<!--            <a class="btn btn-outline-default btn-sm" href="/web/knowledge-base" role="button">Back</a>-->
+<!--        </div>-->
+    </div>
+    <div class="row mt-15">
+        <div class="col-md-12">
+        <h2 th:text="${kb.name}"></h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <span th:if="${kb.uploadedViaLink}" class="valign-middle">Link Upload</span>
+            <span th:unless="${kb.uploadedViaLink}" class="valign-middle">File Upload</span>
+            <span th:if="${kb.kbUploadStatus}" data-toggle="tooltip" data-placement="top" title="Finished">
+                <i class="far fa-check-circle"></i>
+            </span>
+            <span th:unless="${kb.kbUploadStatus}" data-toggle="tooltip" data-placement="top" title="Pending">
+                <i class="fas fa-spinner fa-pulse"></i>
+            </span>
+        </div>
+    </div>
+    <div class="row mt-20">
+        <div class="col-md-12">
+            <label th:if="${kb.uploadedViaLink}" for="uploaded-files" class="font-weight-bold">Links:</label>
+            <label th:unless="${kb.uploadedViaLink}" for="uploaded-files" class="font-weight-bold">Files:</label>
+            <table id="uploaded-files" class="font-weight-light">
+                <thead></thead>
+                <tbody>
+                    <tr th:each="file : ${kb.fileUploadStatus}">
+                        <td th:if="${kb.uploadedViaLink}" th:text="${file.getLink()}"></td>
+                        <td th:unless="${kb.uploadedViaLink}" th:text="${file.getFileName()}"></td>
+                        <td th:switch="${file.getStatus()}">
+                            <span th:case="0" data-toggle="tooltip" data-placement="top" title="Pending"><i class="fas fa-spinner fa-pulse"></i></span>
+                            <span th:case="1" data-toggle="tooltip" data-placement="top" title="Finished"><i class="far fa-check-circle"></i></span>
+                            <span th:case="2" data-toggle="tooltip" data-placement="top" title="Error"><i class="fas fa-exclamation ml-1"></i></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>

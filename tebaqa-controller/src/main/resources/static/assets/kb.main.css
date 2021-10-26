@@ -1,0 +1,32 @@
+/*body {*/
+/*    font-family: 'Roboto', sans-serif;*/
+/*    background-color: rgb(245, 241, 238);*/
+/*}*/
+.bordered-padded {
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+}
+
+.mt-15 {
+    margin-top: 15px;
+}
+.mrt-5 {
+    margin-top: 5px;
+}
+.mt-10 {
+    margin-top: 10px;
+}
+.mt-20 {
+    margin-top: 20px;
+}
+.mt-40 {
+    margin-top: 40px;
+}
+
+.valign-middle {
+    vertical-align: middle;
+}
+
+.font-smaller {
+    font-size: 0.9rem;
+}

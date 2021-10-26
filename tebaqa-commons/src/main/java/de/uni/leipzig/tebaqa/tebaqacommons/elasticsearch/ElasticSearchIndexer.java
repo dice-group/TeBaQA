@@ -155,7 +155,7 @@ public class ElasticSearchIndexer {
             //request.settings(Settings.EMPTY);
             //request.settings(settingsBuilder);
             CreateIndexResponse createIndexResponse = client.indices().create(request, RequestOptions.DEFAULT);
-            LOGGER.info("Entity index created: " + createIndexResponse);
+            LOGGER.info("Entity index created: " + this.entityIndex);
         }
 
 
@@ -202,7 +202,7 @@ public class ElasticSearchIndexer {
             //request.settings(Settings.EMPTY);
             //request.settings(settingsBuilder);
             CreateIndexResponse createIndexResponse = client.indices().create(request, RequestOptions.DEFAULT);
-            System.out.println(createIndexResponse);
+            LOGGER.info("Ontology index created: " + index);
         }
     }
 

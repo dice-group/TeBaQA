@@ -15,6 +15,8 @@ import org.openrdf.rio.ntriples.NTriplesParser;
 import org.openrdf.rio.turtle.TurtleParser;
 
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,6 +26,11 @@ public class TeBaQAIndexer {
 
     private static final Logger LOGGER = LogManager.getLogger(TeBaQAIndexer.class);
     private static final String DEFAULT_PROPERTIES = "src/main/resources/indexing.properties";
+
+    public enum InputSource {
+        URL,
+        FILE
+    }
 
     // Constants
     private static final String TTL = "ttl";
@@ -61,7 +68,6 @@ public class TeBaQAIndexer {
         this.esConnectionProperties = esProps;
     }
 
-
     public static void main(String[] args) {
         String indexingProperties = DEFAULT_PROPERTIES;
         if (args.length > 0) {
@@ -94,11 +100,11 @@ public class TeBaQAIndexer {
                 String classIndex = esProps.getClassIndex();
                 LOGGER.info("The resource index will be here: " + classIndex);
 
-                List<File> ontologyFiles = new ArrayList<>();
+                List<String> ontologyFiles = new ArrayList<>();
                 String sourceOntologyFolder = prop.getProperty("source.ontology.folder");
                 for (File file : Objects.requireNonNull(new File(sourceOntologyFolder).listFiles())) {
                     if (file.getName().endsWith("ttl") || file.getName().endsWith("nt") || file.getName().endsWith("owl")) {
-                        ontologyFiles.add(file);
+                        ontologyFiles.add(file.getAbsolutePath());
                     }
                 }
                 LOGGER.info("Reading " + ontologyFiles.size() + " ontology files from " + sourceOntologyFolder);
@@ -112,12 +118,12 @@ public class TeBaQAIndexer {
                 String entityIndex = esProps.getEntityIndex();
                 LOGGER.info("The resource index will be here: " + entityIndex);
 
-                List<File> dataFiles = new ArrayList<>();
+                List<String> dataFiles = new ArrayList<>();
                 String sourceDataFolder = prop.getProperty("source.data.folder");
 
                 for (File file : Objects.requireNonNull(new File(sourceDataFolder).listFiles())) {
                     if (file.getName().endsWith("bz2") || file.getName().endsWith("ttl") || file.getName().endsWith("nt") || file.getName().endsWith("owl")) {
-                        dataFiles.add(file);
+                        dataFiles.add(file.getAbsolutePath());
                     }
                 }
                 LOGGER.info("Reading " + dataFiles.size() + " data files from " + sourceDataFolder);
@@ -139,7 +145,7 @@ public class TeBaQAIndexer {
                     excludedPredicates = Collections.emptySet();
                 }
 
-                runner.indexDataFiles(dataFiles, excludedPredicates);
+                runner.indexDataFilesOrFailSilently(dataFiles, excludedPredicates);
             }
 
         } catch (IOException e) {
@@ -147,8 +153,15 @@ public class TeBaQAIndexer {
         }
     }
 
+    public void indexOntologyURLs(List<String> ontologyFileUrls) {
+        indexOntologyInputs(ontologyFileUrls, InputSource.URL);
+    }
 
-    public void indexOntologyFiles(List<File> files) {
+    public void indexOntologyFiles(List<String> filePaths) {
+        indexOntologyInputs(filePaths, InputSource.FILE);
+    }
+
+    private void indexOntologyInputs(List<String> inputs, InputSource inputSource) {
 
         try {
             ElasticSearchIndexer indexer = new ElasticSearchIndexer(esConnectionProperties);
@@ -160,8 +173,16 @@ public class TeBaQAIndexer {
             Map<String, List<String>> subjectUriToLabels = new HashMap<>();
 
             // Find classes and properties from each vocabulary file
-            for (File file : files) {
-                populateClassesAndProperties(file, foundClasses, foundPredicates, subjectUriToLabels);
+            for (String input : inputs) {
+
+                if (InputSource.URL.equals(inputSource)) {
+                    URL urlObj = new URL(input);
+                    populateClassesAndProperties(urlObj.openStream(), urlObj.getFile(), foundClasses, foundPredicates, subjectUriToLabels);
+                } else if (InputSource.FILE.equals(inputSource)) {
+                    File fileObj = new File(input);
+                    populateClassesAndProperties(new FileInputStream(fileObj.getAbsolutePath()), fileObj.getName(), foundClasses, foundPredicates, subjectUriToLabels);
+                }
+
             }
 
             // Index classes and properties found above
@@ -183,17 +204,17 @@ public class TeBaQAIndexer {
         }
     }
 
-    private void populateClassesAndProperties(File file, Set<String> foundClasses, Set<String> foundPredicates, Map<String, List<String>> subjectUriToLabels) throws FileNotFoundException {
-        LOGGER.info("Start parsing: " + file);
+    private void populateClassesAndProperties(InputStream inputStream, String inputName, Set<String> foundClasses, Set<String> foundPredicates, Map<String, List<String>> subjectUriToLabels) throws FileNotFoundException {
+        LOGGER.info("Start parsing: " + inputName);
 
         Lang lang;
-        if (file.getName().endsWith(TTL)) {
+        if (inputName.endsWith(TTL)) {
             lang = Lang.TTL;
         } else {
             lang = Lang.NTRIPLES;
         }
 
-        Iterator<Triple> tripleIterator = RDFDataMgr.createIteratorTriples(new FileInputStream(file.getAbsolutePath()), lang, "");
+        Iterator<Triple> tripleIterator = RDFDataMgr.createIteratorTriples(inputStream, lang, "");
         tripleIterator.forEachRemaining(triple -> {
             String subject = triple.getSubject().toString();
             String predicate = triple.getPredicate().toString();
@@ -217,60 +238,163 @@ public class TeBaQAIndexer {
             }
         });
 
-        LOGGER.info("Finished parsing: " + file);
+        LOGGER.info("Finished parsing: " + inputName);
     }
 
-    private void indexDataFiles(List<File> dataFiles, Set<String> excludedPredicates) {
+    public void indexDataFilesOrFailSilently(List<String> dataFiles, Set<String> excludedPredicates) {
+        ElasticSearchIndexer indexer = null;
         try {
-            ElasticSearchIndexer indexer = new ElasticSearchIndexer(esConnectionProperties);
+            indexer = new ElasticSearchIndexer(esConnectionProperties);
             indexer.createEntityIndex();
-//            indexer.setLiteralIndexes();
             indexer.createBulkProcessor();
 
-            for (File file : dataFiles) {
-                indexDataFile(indexer, file, excludedPredicates);
+            for (String url : dataFiles) {
+                try {
+                    indexDataInput(indexer, url, InputSource.FILE, excludedPredicates);
+                } catch (Exception e) {
+                    LOGGER.error("Failed to index input: " + url, e);
+                }
             }
             indexer.commit();
             indexer.close();
         } catch (Exception e) {
             LOGGER.error("Error while creating TripleIndex.", e);
+        } finally {
+            if (indexer != null) {
+                indexer.commit();
+                indexer.close();
+            }
         }
-
-
     }
 
-    private void indexDataFile(ElasticSearchIndexer indexer, File file, Collection<String> excludedPredicates) throws RDFParseException, RDFHandlerException, IOException {
-        LOGGER.info("Start parsing: " + file);
-
-        // Set the parser based on the triple language used in file
-        String fileName = file.getName().toLowerCase();
-        RDFParser parser;
-        if (fileName.endsWith(TTL) || fileName.endsWith(TTL + ".bz2")) {
-            parser = new TurtleParser();
-        } else {
-            parser = new NTriplesParser();
-        }
-        TripleStatementHandler statementHandler = new TripleStatementHandler(indexer, excludedPredicates);
-        parser.setRDFHandler(statementHandler);
-        parser.setStopAtFirstError(false);
-
+    public void indexDataFilesOrThrowException(List<String> dataFiles, Set<String> excludedPredicates) throws Exception {
+        ElasticSearchIndexer indexer = null;
         try {
-            // Set the input stream based on file type
-            if (fileName.endsWith(".bz2")) {
-                parser.parse(new BZip2CompressorInputStream(new FileInputStream(file)), "");
-            } else {
-                parser.parse(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8), "");
+            indexer = new ElasticSearchIndexer(esConnectionProperties);
+            indexer.createEntityIndex();
+            indexer.createBulkProcessor();
+
+            for (String url : dataFiles) {
+                try {
+                    indexDataInput(indexer, url, InputSource.FILE, excludedPredicates);
+                } catch (Exception e) {
+                    LOGGER.error("Failed to index input: " + url, e);
+                    throw e;
+                }
             }
 
-        } catch (RDFParseException e) {
-            LOGGER.error("Failed parsing (Malformed RDF data): " + file);
+        } catch (Exception e) {
+            LOGGER.error("Error while creating TripleIndex.", e);
+            throw e;
+        } finally {
+            if (indexer != null) {
+                indexer.commit();
+                indexer.close();
+            }
+        }
+    }
+
+    public void indexDataURLsOrFailSilently(List<String> dataFileUrls, Set<String> excludedPredicates) {
+        ElasticSearchIndexer indexer = null;
+        try {
+            indexer = new ElasticSearchIndexer(esConnectionProperties);
+            indexer.createEntityIndex();
+            indexer.createBulkProcessor();
+
+            for (String url : dataFileUrls) {
+                try {
+                    indexDataInput(indexer, url, InputSource.URL, excludedPredicates);
+                } catch (Exception e) {
+                    LOGGER.error("Failed to index input: " + url, e);
+                }
+            }
+            indexer.commit();
+            indexer.close();
+        } catch (Exception e) {
+            LOGGER.error("Error while creating TripleIndex.", e);
+        } finally {
+            if (indexer != null) {
+                indexer.commit();
+                indexer.close();
+            }
+        }
+    }
+
+    public void indexDataURLsOrThrowException(List<String> dataFileUrls, Set<String> excludedPredicates) throws Exception {
+        ElasticSearchIndexer indexer = null;
+        try {
+            indexer = new ElasticSearchIndexer(esConnectionProperties);
+
+            indexer.createEntityIndex();
+            indexer.createBulkProcessor();
+
+            for (String url : dataFileUrls) {
+                try {
+                    indexDataInput(indexer, url, InputSource.URL, excludedPredicates);
+                } catch (Exception e) {
+                    LOGGER.error("Error while creating TripleIndex.", e);
+                    throw e;
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Error while creating TripleIndex.", e);
+            throw e;
+        } finally {
+            if (indexer != null) {
+                indexer.commit();
+                indexer.close();
+            }
+        }
+    }
+
+    private void indexDataInput(ElasticSearchIndexer indexer, String input, InputSource inputSource, Collection<String> excludedPredicates) throws Exception {
+        if (InputSource.FILE.equals(inputSource)) {
+            indexDataInput(indexer, new FileInputStream(input), input, excludedPredicates);
+        } else if (InputSource.URL.equals(inputSource)) {
+            URL url = new URL(input);
+            String fileName = url.getFile();
+            indexDataInput(indexer, url.openStream(), fileName, excludedPredicates);
+        }
+    }
+
+    private void indexDataInput(ElasticSearchIndexer indexer, InputStream inputStream, String inputName, Collection<String> excludedPredicates) throws RDFParseException, RDFHandlerException, IOException {
+        LOGGER.info("Start parsing: " + inputName);
+
+        try {
+            // Set the parser based on the triple language used in file
+            RDFParser parser;
+            if (inputName.endsWith(TTL) || inputName.endsWith(TTL + ".bz2")) {
+                parser = new TurtleParser();
+            } else {
+                parser = new NTriplesParser();
+            }
+            TripleStatementHandler statementHandler = new TripleStatementHandler(indexer, excludedPredicates);
+            parser.setRDFHandler(statementHandler);
+            parser.setStopAtFirstError(false);
+
+
+            // Set the input stream based on file type
+//            if (fileName.endsWith(".bz2")) {
+//                parser.parse(new BZip2CompressorInputStream(url.openStream()), "");
+//            } else {
+//                parser.parse(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8), "");
+//            }
+            if (inputName.endsWith(".bz2")) {
+                parser.parse(new BZip2CompressorInputStream(inputStream), "");
+            } else {
+                parser.parse(new InputStreamReader(inputStream, StandardCharsets.UTF_8), "");
+            }
+
+            // Flush out remaining bulk
+            statementHandler.index();
+        } catch (RDFParseException | MalformedURLException e) {
+            LOGGER.error("Failed parsing (Malformed RDF data): " + inputName);
         }
 
-        // Flush out remaining bulk
-        statementHandler.index();
-
-        LOGGER.info("Finished parsing: " + file);
+        LOGGER.info("Finished parsing: " + inputName);
     }
+
 
 //    private static SearchResponse queryIndex(QueryBuilder queryBuilder, int maxNumberOfResults, String indexName) throws IOException {
 //        SearchRequest searchRequest = new SearchRequest();
