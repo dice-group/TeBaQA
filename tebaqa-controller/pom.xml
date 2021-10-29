@@ -25,20 +25,20 @@
 			<releases>
 				<enabled>true</enabled>
 			</releases>
-<!--			<snapshots>-->
-<!--				<enabled>true</enabled>-->
-<!--			</snapshots>-->
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
 		</repository>
-<!--		<repository>-->
-<!--			<id>aksw-snapshots</id>-->
-<!--			<url>https://maven.aksw.org/repository/snapshots/</url>-->
-<!--			<releases>-->
-<!--				<enabled>true</enabled>-->
-<!--			</releases>-->
-<!--			<snapshots>-->
-<!--				<enabled>true</enabled>-->
-<!--			</snapshots>-->
-<!--		</repository>-->
+		<repository>
+			<id>aksw-snapshots</id>
+			<url>https://maven.aksw.org/repository/snapshots/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
 	</repositories>
 
 	<!-- Ablation study-->
