@@ -6,8 +6,8 @@
 
 # Install and run ES
 # TODO check if ES already exists
-wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.6.1.tar.gz
-tar -xf elasticsearch-6.6.1.tar.gz
+wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.6.1.zip
+tar -xf elasticsearch-6.6.1.zip
 cd elasticsearch-6.6.1/bin
 nohup ./elasticsearch &
 
