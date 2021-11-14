@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.Lang;
 import de.uni.leipzig.tebaqa.tebaqacommons.nlp.SemanticAnalysisHelper;
+import de.uni.leipzig.tebaqa.tebaqacommons.util.PropertyUtils;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.AnswerToQuestion;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.ResultsetBinding;
+import de.uni.leipzig.tebaqa.tebaqacontroller.utils.ControllerPropertyUtils;
 import de.uni.leipzig.tebaqa.tebaqacontroller.utils.SPARQLUtilities;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,11 +17,15 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static de.uni.leipzig.tebaqa.tebaqacontroller.utils.SPARQLUtilities.SPARQL_ENDPOINT_TEMPLATE;
+
 @Component
 public class OrchestrationService {
 
     private static final Logger LOGGER = Logger.getLogger(OrchestrationService.class);
     private static final String SKOS_CONCEPT = "http://www.w3.org/2004/02/skos/core#Concept";
+
+    private static String TRIPLE_STORE_URL;
 
     private final TemplateClassificationServiceConnector templateClassificationService;
     private final EntityLinkingServiceConnector entityLinkingService;
@@ -30,6 +36,7 @@ public class OrchestrationService {
     private KnowledgeBaseService knowledgeBaseService;
 
     public OrchestrationService() throws IOException {
+        TRIPLE_STORE_URL = ControllerPropertyUtils.getTripleStoreUrl();
         this.templateClassificationService = new TemplateClassificationServiceConnector();
         this.entityLinkingService = new EntityLinkingServiceConnector();
         this.queryRankingService = new QueryRankingServiceConnector();
@@ -60,7 +67,9 @@ public class OrchestrationService {
         printQueryRankingInfos(queryRankingResponse);
 
         Collection<RatedQuery> ratedQueries = queryRankingResponse.getGeneratedQueries();
-        ResultsetBinding resultsetBinding = this.evaluateAndSelectBestQuery(question, ratedQueries);
+        String sparqlEndpoint = TRIPLE_STORE_URL + String.format(SPARQL_ENDPOINT_TEMPLATE, PropertyUtils.getESIndexNamePrefix(kbName));
+        LOGGER.info("SPARQL endpoint - " + sparqlEndpoint);
+        ResultsetBinding resultsetBinding = this.evaluateAndSelectBestQuery(question, ratedQueries, sparqlEndpoint);
 
         // Try all query templates if an answer is not yet found
         if(!allTemplatesTried && resultsetBinding.getResult().isEmpty()) {
@@ -74,7 +83,7 @@ public class OrchestrationService {
             printQueryRankingInfos(queryRankingResponse);
 
             ratedQueries = queryRankingResponse.getGeneratedQueries();
-            resultsetBinding = this.evaluateAndSelectBestQuery(question, ratedQueries);
+            resultsetBinding = this.evaluateAndSelectBestQuery(question, ratedQueries, sparqlEndpoint);
         }
 
         LOGGER.info("Selected query: " + resultsetBinding.getQuery());
@@ -82,10 +91,10 @@ public class OrchestrationService {
 
     }
 
-    public ResultsetBinding evaluateAndSelectBestQuery(String question, Collection<RatedQuery> ratedQueries) {
+    public ResultsetBinding evaluateAndSelectBestQuery(String question, Collection<RatedQuery> ratedQueries, String sparqlEndpoint) {
         List<ResultsetBinding> queryResults = new ArrayList<>();
         for (RatedQuery ratedQuery : ratedQueries) {
-            ResultsetBinding results = SPARQLUtilities.executeQuery(ratedQuery.getQuery());
+            ResultsetBinding results = SPARQLUtilities.executeQuery(ratedQuery.getQuery(), sparqlEndpoint);
             if (!results.getResult().isEmpty()) {
                 results.setRating(ratedQuery.getRating());
                 results.setRatedQuery(ratedQuery);

@@ -29,6 +29,9 @@ public class KnowledgeBaseService {
     @Autowired
     UploadStatusService uploadStatusService;
 
+    @Autowired
+    TripleStoreService tripleStoreService;
+
     public KnowledgeBase save(KnowledgeBase knowledgeBase) {
         knowledgeBaseRepo.saveAndFlush(knowledgeBase);
         return knowledgeBase;
@@ -37,7 +40,7 @@ public class KnowledgeBaseService {
     public KnowledgeBase saveAndIndex(KnowledgeBase knowledgeBase) {
         knowledgeBaseRepo.saveAndFlush(knowledgeBase);
 
-        KnowledgeBaseUploadProcessor dataUploadTask = new KnowledgeBaseUploadProcessor(knowledgeBase.getId(), this, uploadStatusService,null);
+        KnowledgeBaseUploadProcessor dataUploadTask = new KnowledgeBaseUploadProcessor(knowledgeBase.getId(), this, uploadStatusService, tripleStoreService);
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(dataUploadTask);

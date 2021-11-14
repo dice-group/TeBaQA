@@ -36,6 +36,7 @@ public class TeBaQAIndexer {
     private static final String TTL = "ttl";
     private static final String NT = "nt";
     private static final String OWL = "owl";
+    private static final String N3 = "n3";
     private static final String BZ2 = ".bz2";
 
     public static final String TYPE_PREDICATE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type".toLowerCase();
@@ -208,10 +209,14 @@ public class TeBaQAIndexer {
         LOGGER.info("Start parsing: " + inputName);
 
         Lang lang;
-        if (inputName.endsWith(TTL)) {
+        if (inputName.toLowerCase().endsWith(TTL)) {
             lang = Lang.TTL;
-        } else {
+        } else if (inputName.toLowerCase().endsWith(NT)) {
             lang = Lang.NTRIPLES;
+        } else if (inputName.toLowerCase().endsWith(N3)) {
+            lang = Lang.N3;
+        } else {
+            lang = Lang.TTL;
         }
 
         Iterator<Triple> tripleIterator = RDFDataMgr.createIteratorTriples(inputStream, lang, "");

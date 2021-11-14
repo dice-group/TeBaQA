@@ -32,8 +32,7 @@ IF EXIST TeBaQA-speaker-integration\ (
 	IF ERRORLEVEL 2 GOTO :EOF
     endlocal
     GOTO :DOINSTALL
-)
-ELSE (
+) ELSE (
     :DOINSTALL
     ECHO ==============================================
     ECHO Downloading TeBaQA
@@ -51,6 +50,7 @@ ELSE (
     :: Build modules
     cd TeBaQA-speaker-integration
     CALL windows-build-tebaqa.bat
+    cd ..
 )
 
 PAUSE

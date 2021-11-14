@@ -46,10 +46,12 @@
                     <option value="-1" selected>Choose knowledge base</option>
                     <option th:each="kb : ${kbs}" th:value="${kb.id}" th:text="${kb.name}">
                 </select>
-
             </div>
             <div class="col-md-2">
                 <a class="btn btn-outline-primary btn-sm" href="/web/knowledge-base" role="button">View All</a>
+            </div>
+            <div class="col-md-2">
+                <a class="btn btn-outline-primary btn-sm" href="/web/knowledge-base/create" role="button">Create</a>
             </div>
         </div>
         <div class="row">

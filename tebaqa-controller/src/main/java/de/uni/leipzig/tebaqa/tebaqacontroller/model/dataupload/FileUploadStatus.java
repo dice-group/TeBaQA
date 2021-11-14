@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.tebaqacontroller.model.dataupload;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.uni.leipzig.tebaqa.tebaqacontroller.validation.ValidationUtils;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -68,7 +69,7 @@ public class FileUploadStatus implements Serializable {
     }
 
     public String getFileName() {
-        return link.substring(link.lastIndexOf("/") + 1);
+        return ValidationUtils.getFileName(link);
     }
 
     public void setLink(String link) {

@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 public class SPARQLUtilities {
 
     public final static String SPARQL_ENDPOINT = ControllerPropertyUtils.getProperty("sparql.endpoint");
+    public final static String SPARQL_ENDPOINT_TEMPLATE = "%s/query";
 
     public final static String LABEL_SPARQL = "SELECT ?label  WHERE { <%1$s> <http://www.w3.org/2000/01/rdf-schema#label> ?label . FILTER(lang(?label) = \"en\")}";
     public final static String IMAGE_SPARQL = "SELECT ?thumbnail WHERE { <%1$s> <http://dbpedia.org/ontology/thumbnail> ?thumbnail . }";
@@ -227,10 +228,10 @@ public class SPARQLUtilities {
         return query.toString();
 
     }
-    public static ResultsetBinding executeQuery(String queryString) {
+    public static ResultsetBinding executeQuery(String queryString, String sparqlEndpoint) {
         Query query = QueryFactory.create(queryString);
 //        QueryExecution qe = QueryExecutionFactory.sparqlService("http://limbo-triple.cs.upb.de:3030/limbo/query", query);
-        QueryExecution qe = QueryExecutionFactory.sparqlService(SPARQL_ENDPOINT, query);
+        QueryExecution qe = QueryExecutionFactory.sparqlService(sparqlEndpoint, query);
         ResultsetBinding b = new ResultsetBinding();
         if (query.isSelectType()) {
 

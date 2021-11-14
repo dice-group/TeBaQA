@@ -1,19 +1,15 @@
 package de.uni.leipzig.tebaqa.tebaqacontroller.validation;
 
-import de.uni.leipzig.tebaqa.tebaqacontroller.model.dataupload.KnowledgeBase;
 import de.uni.leipzig.tebaqa.tebaqacontroller.model.dataupload.KnowledgeBaseForm;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ValidationUtils {
     public static final Pattern KB_NAME_PATTERN = Pattern.compile("[a-zA-Z\\d\\s-_]+");
@@ -67,5 +63,12 @@ public class ValidationUtils {
         return matcher.matches();
     }
 
-
+    public static String getFileName(String urlOrPath) {
+        if(urlOrPath.contains("/"))
+            return urlOrPath.substring(urlOrPath.lastIndexOf("/") + 1);
+        else if(urlOrPath.contains("\\"))
+            return urlOrPath.substring(urlOrPath.lastIndexOf("\\") + 1);
+        else
+            return urlOrPath;
+    }
 }

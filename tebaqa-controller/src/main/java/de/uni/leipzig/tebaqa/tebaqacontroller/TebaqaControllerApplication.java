@@ -26,11 +26,12 @@ public class TebaqaControllerApplication implements CommandLineRunner {
 
     @Override
     public void run(String... arg) throws Exception {
-        String fileUploadStorageFolder = System.getenv("FILE_UPLOAD_STORAGE_FOLDER");
-        if(fileUploadStorageFolder == null) {
-            fileUploadStorageFolder = "./knowledge-bases/";
+        String fileUploadStorageFolder;
+        if (arg.length > 0)
+            fileUploadStorageFolder = arg[0];
+        else
+            fileUploadStorageFolder = "../../knowledge_base_storage/";
 
-        }
         storageService.init(fileUploadStorageFolder);
     }
 

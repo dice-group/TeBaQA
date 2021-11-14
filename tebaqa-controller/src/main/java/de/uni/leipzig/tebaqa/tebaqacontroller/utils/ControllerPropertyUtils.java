@@ -1,5 +1,6 @@
 package de.uni.leipzig.tebaqa.tebaqacontroller.utils;
 
+import de.uni.leipzig.tebaqa.tebaqacommons.model.RestServiceConfiguration;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -16,6 +17,7 @@ public class ControllerPropertyUtils {
     private static String ALL_TEMPLATES_SERVICE_URL = null;
     private static String LINKING_SERVICE_URL = null;
     private static String RANKING_SERVICE_URL = null;
+    private static String TRIPLE_STORE_URL = null;
 
     static {
         ALL_PROPERTIES = getAllProperties();
@@ -88,6 +90,16 @@ public class ControllerPropertyUtils {
             RANKING_SERVICE_URL = String.format("%s:%s/%s", host, port, endpoint);
         }
         return RANKING_SERVICE_URL;
+    }
+
+    public static String getTripleStoreUrl() {
+        if (TRIPLE_STORE_URL == null) {
+            String scheme = ALL_PROPERTIES.getProperty("triplestore.scheme");
+            String host = ALL_PROPERTIES.getProperty("triplestore.host");
+            String port = ALL_PROPERTIES.getProperty("triplestore.port");
+            TRIPLE_STORE_URL = new RestServiceConfiguration(scheme, host, port).getUrl();
+        }
+        return TRIPLE_STORE_URL;
     }
 
     public static boolean ablationClassification() {

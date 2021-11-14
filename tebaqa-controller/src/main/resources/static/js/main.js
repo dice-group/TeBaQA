@@ -107,6 +107,10 @@ function createEmptyInfobox(title) {
 
 
 function submitForm(s, d) {
+    if(d == "-1") {
+        toastr.error('Please select a knowledge base');
+        return;
+    }
     $.ajax({
         beforeSend() {
             showSpinner();
