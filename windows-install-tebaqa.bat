@@ -23,6 +23,20 @@ IF EXIST elasticsearch-6.6.1\ (
     ECHO ==============================================
 )
 
+:: Install Fuseki 3.9.0
+IF EXIST apache-jena-fuseki-3.9.0\ (
+    ECHO apache-jena-fuseki-3.9.0 already installed
+) ELSE (
+    ECHO ==============================================
+    ECHO Downloading apache-jena-fuseki-3.9.0 ...
+    ECHO ==============================================
+    CALL curl.exe -o apache-jena-fuseki-3.9.0.zip https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-3.9.0.zip
+    CALL tar -xf apache-jena-fuseki-3.9.0.zip
+    ECHO ==============================================
+    ECHO Success.
+    ECHO ==============================================
+)
+
 :: Install and build TeBaQA
 IF EXIST TeBaQA-speaker-integration\ (
 	setlocal
