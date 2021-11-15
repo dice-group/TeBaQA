@@ -7,14 +7,6 @@ CALL elasticsearch-service.bat start
 cd ..
 cd ..
 
-:: run fuseki
-cd apache-jena-fuseki-3.9.0/
-START javaw -jar fuseki-server.jar
-timeout 5 > NUL
-ECHO Started Fuseki
-cd ..
-
-
 :: run TeBaQA services
 cd TeBaQA-speaker-integration
 
@@ -47,6 +39,14 @@ START javaw -jar target/tebaqa-controller-1.0.jar ../../knowledge_base_storage/
 timeout 20 > NUL
 ECHO Started tebaqa/tebaqa-controller
 cd ..
-
 cd ..
+
+
+:: run fuseki
+cd apache-jena-fuseki-3.9.0/
+START javaw -jar fuseki-server.jar
+timeout 5 > NUL
+ECHO Started Fuseki
+cd ..
+
 start http://localhost:8080

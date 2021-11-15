@@ -5,7 +5,7 @@
 TeBaQA is available at https://tebaqa.demos.dice-research.org/
 ## Execution
 
-TeBaQA implements microservices architecture. The application comprises following 5 modules:
+TeBaQA-Offline implements microservices architecture. The application comprises following 5 modules:
 
 - Template Classification :- to classify query templates (localhost:8081)
 - Entity Linking :- finding and linking entities and relations (localhost:8082)
@@ -13,32 +13,22 @@ TeBaQA implements microservices architecture. The application comprises followin
 - TeBaQA Controller :- central controller, frontend application (localhost:8080)
 - NLP Server :- CoreNLP Server endpoint (localhost:8085)
 
-Additionally, Entity Linking requires Elasticsearch indices for data and ontology of the knowledge base. We provide dumps of DBPedia ([2016-10 release](https://downloads.dbpedia.org/2016-10/core/)). Find the dump files along with the instructions at [Hobbit data](https://hobbitdata.informatik.uni-leipzig.de/TeBaQA/). 
+In addition to these, TeBaQA-Offline requires Elasticsearch and Apache Fuseki. To install TeBaQA-Offline, download the [installation script](https://github.com/dice-group/TeBaQA/raw/speaker-integration/windows-run-tebaqa.bat). This will install all the required softwares and dependencies in the current directory.
 
-However, TeBaQA can also be run on your own knowledge base. Check the instruction in [this file](https://github.com/dice-group/TeBaQA/blob/development-modular/tebaqa-commons/src/main/resources/indexing.properties) for more information on creating your own Elasticsearch indices.
+To run TeBaQA-Offline, download the [run](https://github.com/dice-group/TeBaQA/raw/speaker-integration/windows-run-tebaqa.bat) and [stop](https://github.com/dice-group/TeBaQA/raw/speaker-integration/windows-stop-tebaqa.bat) scripts. 
 
+### Memory requirements:
+Softwares:
+- Elasticsearch: 1GB
+- Apache Fuseki: 1GB
 
-#### There are two ways to run TeBaQA
-#### 1. Run locally
-- Checkout the project
-- Build all modules
-  
-  `./build-script.sh`
-- Run all modules
-  
-  `./run-script.sh`
+TeBaQA-Offline services:
+- NLP Server: 4GB
+- Template Classification: 4GB
+- Entity Linking: 1GB
+- Query Ranking: 1GB
+- TeBaQA Controller: 1GB
 
-#### 2. Run as Docker ([installation guide](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-20-04), Ubuntu 20.04) containers
-- Checkout the project
-- Build docker images for each module
-  
-  `./docker/build-images.sh`
-- To run all containers
-
-  `./docker/run-containers.sh`
-- To stop all containers
-  
-  `./docker/stop-containers.sh`
 
 
 ## Citation
