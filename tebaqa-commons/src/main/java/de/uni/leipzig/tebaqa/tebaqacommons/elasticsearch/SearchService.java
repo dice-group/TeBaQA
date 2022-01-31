@@ -2,6 +2,7 @@ package de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.model.*;
 import de.uni.leipzig.tebaqa.tebaqacommons.util.TextUtilities;
+import org.apache.jena.base.Sys;
 import org.apache.jena.ext.com.google.common.collect.Lists;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,7 +66,6 @@ public class SearchService {
 
     public Set<EntityCandidate> searchEntities(Optional<String> coOccurrence, Optional<String> typeFilter, Optional<String> connectedEntity, Optional<String> connectedProperty) {
         Set<EntityCandidate> foundEntities;
-
         try {
             foundEntities = index.searchEntity(coOccurrence, connectedEntity, connectedProperty, typeFilter);
             if (coOccurrence.isPresent()) foundEntities = getBestCandidates(coOccurrence.get(), foundEntities, EntityCandidate.class);
@@ -95,6 +95,7 @@ public class SearchService {
             LOGGER.info("Searching entities by ID for " + entityUris.size() + " URIs");
             LOGGER.error("Failed to search entities: " + e.getMessage());
             foundEntities = Collections.emptySet();
+
         }
         return foundEntities;
     }
@@ -107,7 +108,7 @@ public class SearchService {
 
         return searchResult;
     }
-    
+
     public Set<PropertyCandidate> searchPropertiesByIds(@Nonnull Collection<String> propertyUris) {
         Set<PropertyCandidate> foundProperties;
         try {
@@ -119,7 +120,7 @@ public class SearchService {
         }
         return foundProperties;
     }
-    
+
     public Set<PropertyCandidate> searchProperties(String coOccurrence, boolean searchSynonyms) {
         Set<PropertyCandidate> propertyCandidates;
 

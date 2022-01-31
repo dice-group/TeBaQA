@@ -23,7 +23,7 @@ public class PropertyUtil {
             Properties prop = new Properties();
             InputStream input;
             try {
-                input = new FileInputStream("src/main/resources/entityLinking.properties");
+                input = new FileInputStream("entity-linking/src/main/resources/entityLinking.properties");
                 prop.load(input);
                 String hostname = prop.getProperty("el_hostname");
                 String port = prop.getProperty("el_port");
@@ -48,7 +48,7 @@ public class PropertyUtil {
             Properties prop = new Properties();
             InputStream input;
             try {
-                input = new FileInputStream("src/main/resources/nlp.properties");
+                input = new FileInputStream("entity-linking/src/main/resources/nlp.properties");
                 prop.load(input);
                 String hostname = prop.getProperty("service.nlp.host");
                 String port = prop.getProperty("service.nlp.port");

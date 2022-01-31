@@ -20,7 +20,7 @@ public class SearchProvider {
             InputStream input;
             try {
 
-                input = new FileInputStream("src/main/resources/elasticsearch.properties");
+                input = new FileInputStream("query-ranking/src/main/resources/elasticsearch.properties");
                 prop.load(input);
 
                 String hostname = prop.getProperty("el_hostname");
