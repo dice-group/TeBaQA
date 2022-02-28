@@ -15,7 +15,7 @@ TeBaQA implements microservices architecture. The application comprises followin
 
 Additionally, Entity Linking requires Elasticsearch indices for data and ontology of the knowledge base. We provide dumps of DBPedia ([2016-10 release](https://downloads.dbpedia.org/2016-10/core/)). Find the dump files along with the instructions at [Hobbit data](https://hobbitdata.informatik.uni-leipzig.de/TeBaQA/). 
 The indices were generated on Elastiscearch 6.6.1
-However, TeBaQA can also be run on your own knowledge base. Check the instruction in [this file](https://github.com/dice-group/TeBaQA/blob/development-modular/tebaqa-commons/src/main/resources/indexing.properties) for more information on creating your own Elasticsearch indices.
+However, TeBaQA can also be run on your own knowledge base. Check the instruction in [this file](https://github.com/dice-group/TeBaQA/blob/development-modular/tebaqa-commons/src/main/resources/indexing.properties) for more information on creating your own Elasticsearch indices. The script for createing the indices is located [here](https://github.com/dice-group/TeBaQA/blob/development-modular/tebaqa-commons/src/main/java/de/uni/leipzig/tebaqa/tebaqacommons/elasticsearch/TeBaQAIndexer.java)
 
 
 #### There are two ways to run TeBaQA
