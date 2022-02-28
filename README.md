@@ -21,7 +21,8 @@ However, TeBaQA can also be run on your own knowledge base. Check the instructio
 #### There are two ways to run TeBaQA
 #### 1. Run locally
 - Checkout the project
-- Build all modules
+- make files executable (chmod +x <file>.sh)
+- Build all modules 
   
   `./build-script.sh`
 - Run all modules
