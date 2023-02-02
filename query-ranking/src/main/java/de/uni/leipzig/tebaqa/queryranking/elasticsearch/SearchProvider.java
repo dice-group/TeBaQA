@@ -2,6 +2,8 @@ package de.uni.leipzig.tebaqa.queryranking.elasticsearch;
 
 import de.uni.leipzig.tebaqa.tebaqacommons.elasticsearch.SearchService;
 import de.uni.leipzig.tebaqa.tebaqacommons.model.ESConnectionProperties;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,9 +12,17 @@ import java.util.Properties;
 
 import static de.uni.leipzig.tebaqa.queryranking.QueryRankingApplication.LOGGER;
 
+@Component
 public class SearchProvider {
 
     private static SearchService searchService = null;
+
+    private static String FILE_NAME;
+
+    @Value("${spring.application.query-ranking.properties}")
+    public void setFileName(String name){
+        this.FILE_NAME = name;
+    }
 
     public static SearchService getSingletonSearchClient() {
         if (searchService == null) {
@@ -20,7 +30,7 @@ public class SearchProvider {
             InputStream input;
             try {
 
-                input = new FileInputStream("src/main/resources/elasticsearch.properties");
+                input = SearchService.class.getResourceAsStream(FILE_NAME);
                 prop.load(input);
 
                 String hostname = prop.getProperty("el_hostname");
