@@ -74,6 +74,8 @@ public class SearchService {
             LOGGER.info("Searching entities for co-occurrence: " + coOccurrence);
             LOGGER.error("Failed to search entities: " + e.getMessage());
             foundEntities = Collections.emptySet();
+            // FIXME
+            System.exit(1);
         }
         return foundEntities;
     }
@@ -131,6 +133,8 @@ public class SearchService {
             LOGGER.info("Searching properties for co-occurrence: " + coOccurrence);
             LOGGER.error("Failed to search properties: " + e.getMessage());
             propertyCandidates = Collections.emptySet();
+            // FIXME
+            System.exit(1);
         }
         return propertyCandidates;
     }
@@ -156,6 +160,8 @@ public class SearchService {
             LOGGER.info("Searching classes by ID for " + classUris.size() + " URIs");
             LOGGER.error("Failed to search classes: " + e.getMessage());
             foundClasses = Collections.emptySet();
+            // FIXME
+            System.exit(1);
         }
         return foundClasses;
     }
@@ -171,6 +177,8 @@ public class SearchService {
             LOGGER.info("Searching classes for co-occurrence: " + coOccurrence);
             LOGGER.error("Failed to search classes: " + e.getMessage());
             classCandidates = Collections.emptySet();
+            // FIXME
+            System.exit(1);
         }
 
         return classCandidates;
